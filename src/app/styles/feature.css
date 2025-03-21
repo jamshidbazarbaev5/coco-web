@@ -1,0 +1,146 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: var(--font-plus-jakarta);
+  }
+  
+  body {
+    background-color: #f5f3ed;
+    color: #333;
+    line-height: 1.6;
+  }
+  
+  .features-container {
+    width: 100%;
+    padding: 60px 20px;
+  }
+  
+  .features-content {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  
+  .features-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 60px;
+    gap: 40px;
+  }
+  
+  .header-left {
+    flex: 1;
+  }
+  
+  .header-right {
+    flex: 1;
+  }
+  
+  .subtitle {
+    font-size: 12px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: #666;
+    margin-bottom: 15px;
+  }
+  
+  .title {
+    font-size: 36px;
+    font-weight: 500;
+    line-height: 1.2;
+    max-width: 400px;
+  }
+  
+  .description {
+    font-size: 16px;
+    color: #666;
+    margin-bottom: 20px;
+    line-height: 1.6;
+  }
+  
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+    padding-top: 40px;
+  }
+  
+  .feature-card {
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    position: relative;
+    border-right: 1px solid #e0d9c9;
+    height: 100%;
+  }
+  
+  .feature-card:last-child {
+    border-right: none;
+  }
+  
+  .feature-icon {
+    margin-bottom: 20px;
+    color: #c19a6b;
+  }
+  
+  .feature-title {
+    font-size: 18px;
+    font-weight: 500;
+    margin-bottom: 30px;
+  }
+  
+  .feature-arrow {
+    font-size: 20px;
+    color: #666;
+    margin-top: auto;
+  }
+  
+  /* Responsive Design */
+  @media (max-width: 1024px) {
+    .features-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  
+    .feature-card {
+      border-right: 1px solid #e0d9c9;
+      border-bottom: 1px solid #e0d9c9;
+      padding: 30px;
+    }
+  
+    .feature-card:nth-child(2n) {
+      border-right: none;
+    }
+  
+    .feature-card:nth-child(3),
+    .feature-card:nth-child(4) {
+      border-bottom: none;
+    }
+  }
+  
+  @media (max-width: 768px) {
+    .features-header {
+      flex-direction: column;
+      gap: 30px;
+    }
+  
+    .title {
+      font-size: 28px;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .features-grid {
+      grid-template-columns: 1fr;
+    }
+  
+    .feature-card {
+      border-right: none;
+      border-bottom: 1px solid #e0d9c9;
+    }
+  
+    .feature-card:last-child {
+      border-bottom: none;
+    }
+  }
+  
+  

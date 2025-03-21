@@ -1,0 +1,214 @@
+.main {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #121212;
+    color: #ffffff;
+    padding: 2rem;
+  }
+  
+  .container {
+    display: flex;
+    width: 100%;
+    max-width: 1200px;
+    justify-content: space-between;
+    gap: 2rem;
+  }
+  
+  /* Brand Section */
+  .brandSection {
+    flex: 1;
+  }
+  
+  .brandName {
+    font-size: 2.5rem;
+    font-weight: 500;
+    margin: 0 0 1.5rem 0;
+    letter-spacing: 0.05em;
+    
+  }
+  
+  .brandTagline {
+    font-size: 1.5rem;
+    font-weight: 300;
+    line-height: 1.4;
+    margin: 0;
+    font-family: var(--font-plus-jakarta);
+  }
+  
+  /* Social Section */
+  .socialSection {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    font-family: var(--font-plus-jakarta);
+    padding: 0 2rem;
+  }
+  
+  .socialLink {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 1rem;
+    color: #ffffff;
+  }
+  
+  .socialIcon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  /* Form Section */
+  .formSection {
+    flex: 2;
+  }
+  
+  .formTitle {
+    font-size: 1.25rem;
+    font-weight: 400;
+    margin: 0 0 1.5rem 0;
+    font-family: var(--font-plus-jakarta);
+  }
+  
+  .contactForm {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+  
+  .inputRow {
+    display: flex;
+    gap: 1rem;
+  }
+  
+  .inputGroup {
+    flex: 1;
+    position: relative;
+  }
+  
+  .input,
+  .textarea {
+    width: 100%;
+    background-color: transparent;
+    border: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+    color: #ffffff;
+    padding: 0.5rem 0;
+    font-size: 1rem;
+    outline: none;
+    transition: border-color 0.3s;
+  }
+  
+  .input::placeholder,
+  .textarea::placeholder {
+    color: rgba(255, 255, 255, 0.6);
+    font-family: var(--font-plus-jakarta);
+  }
+  
+  .input:focus,
+  .textarea:focus {
+    border-color: #c9aa71;
+  }
+  
+  .textarea {
+    resize: none;
+    min-height: 100px;
+  }
+  
+  .formFooter {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1rem;
+  }
+  
+  .submitButton {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background-color: #c9aa71;
+    color: #ffffff;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    font-family: var(--font-plus-jakarta);
+  }
+  
+  .submitButton:hover {
+    background-color: #b89b65;
+  }
+  
+  .checkboxGroup {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .checkbox {
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    background-color: transparent;
+    position: relative;
+    font-family: var(--font-plus-jakarta);
+    cursor: pointer;
+  }
+  
+  .checkbox:checked {
+    background-color: #c9aa71;
+    border-color: #c9aa71;
+    font-family: var(--font-plus-jakarta);
+
+  }
+  
+  .checkbox:checked::after {
+    content: "✓";
+    position: absolute;
+    color: #ffffff;
+    font-size: 12px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-family: var(--font-plus-jakarta);
+
+  }
+  
+  .checkboxLabel {
+    font-size: 0.75rem;
+    font-family: var(--font-plus-jakarta);
+    color: rgba(255, 255, 255, 0.6);
+  }
+  
+  /* Responsive */
+  @media (max-width: 992px) {
+    .container {
+      flex-direction: column;
+    }
+  
+    .socialSection {
+      flex-direction: row;
+      padding: 1rem 0;
+    }
+  
+    .inputRow {
+      flex-direction: column;
+    }
+  
+    .formFooter {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 1rem;
+    }
+  }
+  
+  @media (max-width: 576px) {
+    .socialSection {
+      flex-direction: column;
+    }
+  }
+  
+  
