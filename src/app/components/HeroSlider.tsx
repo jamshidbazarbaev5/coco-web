@@ -18,10 +18,10 @@ const slides: Slide[] = [
     image: "/main-image.png"
   },
   {
-    label: "Специальное предложение",
-    title: "\"Осень 2024\"",
+    label: "Новая коллекция",
+    title: "\"Весна-Лето\"",
     description: ["Lorem ipsum", "Lorem ipsum", "Lorem ipsum", "Lorem ipsum"],
-   image: "/main-image.png"
+    image: "/main-image.png"
   },
   {
     label: "Эксклюзивная серия",
@@ -50,7 +50,7 @@ export default function HeroSlider() {
   };
 
   useEffect(() => {
-    const timer = setInterval(nextSlide, 5000); // Auto-advance every 5 seconds
+    const timer = setInterval(nextSlide, 5000); 
     return () => clearInterval(timer);
   }, []);
 

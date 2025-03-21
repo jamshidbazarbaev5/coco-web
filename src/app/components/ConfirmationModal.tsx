@@ -3,7 +3,12 @@
 import { useState, useEffect } from "react"
 import '../styles/confirm.css'
 
-export default function ConfirmationModal() {
+interface ConfirmationModalProps {
+  message?: string;
+  onClose?: () => void;
+}
+
+export default function ConfirmationModal({ message = "Товар добавлен в корзину!", onClose }: ConfirmationModalProps) {
   const [isVisible, setIsVisible] = useState(true)
   const [isClosing, setIsClosing] = useState(false)
 
@@ -11,14 +16,14 @@ export default function ConfirmationModal() {
     setIsClosing(true)
     setTimeout(() => {
       setIsVisible(false)
-    }, 300) // Match the CSS transition duration
+      onClose?.();
+    }, 300)
   }
 
-  // Optional: Auto-close the modal after a few seconds
   useEffect(() => {
     const timer = setTimeout(() => {
       closeModal()
-    }, 5000)
+    }, 3000)
 
     return () => clearTimeout(timer)
   }, [])
@@ -32,7 +37,7 @@ export default function ConfirmationModal() {
           ✕
         </button>
 
-        <h2 className="confirmation-title">Ваш запрос отправлен!</h2>
+        <h2 className="confirmation-title">{message}</h2>
 
         <div className="confirmation-icon">
           <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">

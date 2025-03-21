@@ -1,128 +1,224 @@
-import React from 'react';
-import BrandCard from './BrabdCard';
-import { ChevronRight, ChevronLeft } from 'lucide-react';
-import { Swiper, SwiperSlide } from 'swiper/react';
-import { Navigation, Autoplay } from 'swiper/modules';
-import 'swiper/css';
-import 'swiper/css/navigation';
-import 'swiper/css/autoplay';
-import '../styles/BrandShowcases.css';
-
-interface Brand {
-    id: number;
-    number: string;
-    name: string;
-    description: string;
-    imageUrl: string;
-}
-
-const luxuryBrands: Brand[] = [
-    {
-        id: 1,
-        number: '01.',
-        name: 'Louis Vuitton',
-        description: 'Adipiscing elit sed',
-        imageUrl: 'https://images.unsplash.com/photo-1584917865442-de89df76afd3?q=80&w=1035&auto=format&fit=crop'
-    },
-    {
-        id: 2,
-        number: '02.',
-        name: 'Saint Laurent',
-        description: 'Adipiscing elit sed',
-        imageUrl: 'https://images.unsplash.com/photo-1575032617751-6ddec2089882?q=80&w=1374&auto=format&fit=crop'
-    },
-    {
-        id: 3,
-        number: '03.',
-        name: 'Balenciaga',
-        description: 'Adipiscing elit sed',
-        imageUrl: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?q=80&w=1374&auto=format&fit=crop'
-    },
-    {
-        id: 4,
-        number: '04.',
-        name: 'Alexander McQueen',
-        description: 'Adipiscing elit sed',
-        imageUrl: 'https://images.unsplash.com/photo-1604001307862-2d953b875079?q=80&w=1287&auto=format&fit=crop'
-    }
+"use client";
+import { useState, useEffect, useRef, TouchEvent } from "react";
+import styles from "../styles/BrandSlider.module.css";
+const slides = [
+  {
+    id: "01",
+    brand: "Louis Vuitton",
+    description: "Adipiscing elit sed",
+    image: "/cart-3.jpg",
+  },
+  {
+    id: "02",
+    brand: "Saint Laurent",
+    description: "Adipiscing elit sed",
+    image: "/cart-1.jpg",
+  },
+  {
+    id: "03",
+    brand: "Balenciaga",
+    description: "Adipiscing elit sed",
+    image: "/cart-2.jpg",
+  },
+  {
+    id: "04",
+    brand: "Alexander McQueen",
+    description: "Adipiscing elit sed",
+    image: "/cart-4.jpg",
+  },
 ];
 
-const BrandShowcase: React.FC = () => {
-    // Add useRef hooks
-    const prevRef = React.useRef<HTMLButtonElement>(null);
-    const nextRef = React.useRef<HTMLButtonElement>(null);
+export default function BrandSlider() {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchMove, setTouchMove] = useState<number | null>(null);
+  const sliderRef = useRef<HTMLDivElement>(null);
 
-    return (
-        <div className="showcase-container">
-            <div className="luxury-container">
-                <div className="showcase-header">
-                    <h2 className="showcase-title">Luxury Collection</h2>
-                    <div className="showcase-controls">
-                        <button ref={prevRef} className="control-button prev-button" aria-label="Previous brand">
-                            <ChevronLeft size={20} />
-                        </button>
-                        <button ref={nextRef} className="control-button next-button" aria-label="Next brand">
-                            <ChevronRight size={20} />
-                        </button>
-                    </div>
-                </div>
-                
-                <Swiper
-                    modules={[Navigation, Autoplay]}
-                    spaceBetween={24}
-                    slidesPerView={4}
-                    navigation={{
-                        prevEl: prevRef.current,
-                        nextEl: nextRef.current,
-                    }}
-                    onBeforeInit={(swiper) => {
-                        if (swiper.params.navigation && typeof swiper.params.navigation !== 'boolean') {
-                            swiper.params.navigation.prevEl = prevRef.current;
-                            swiper.params.navigation.nextEl = nextRef.current;
-                        }
-                    }}
-                    loop={true}
-                    autoplay={{
-                        delay: 3000,
-                        disableOnInteraction: false,
-                    }}
-                    speed={800}
-                    effect={'slide'}
-                    cssMode={false}
-                    breakpoints={{
-                        320: {
-                            slidesPerView: 1,
-                            spaceBetween: 20
-                        },
-                        640: {
-                            slidesPerView: 2,
-                            spaceBetween: 20
-                        },
-                        768: {
-                            slidesPerView: 3,
-                            spaceBetween: 24
-                        },
-                        1024: {
-                            slidesPerView: 4,
-                            spaceBetween: 24
-                        }
-                    }}
-                >
-                    {luxuryBrands.map((brand) => (
-                        <SwiperSlide key={brand.id}>
-                            <BrandCard
-                                number={brand.number}
-                                brand={brand.name}
-                                description={brand.description}
-                                imageUrl={brand.imageUrl}
-                                isActive={false}
-                            />
-                        </SwiperSlide>
-                    ))}
-                </Swiper>
+  // Create an extended array of slides for infinite effect
+  const extendedSlides = [...slides, ...slides, ...slides];
+
+  // Get the slide width based on screen size
+  const getSlideWidth = () => {
+    if (typeof window === 'undefined') return 25;
+    if (window.innerWidth <= 768) return 100;
+    if (window.innerWidth <= 1200) return 50;
+    return 25;
+  };
+
+  const handleTransitionEnd = () => {
+    setIsTransitioning(false);
+    if (currentIndex >= slides.length) {
+      setCurrentIndex(currentIndex % slides.length);
+    } else if (currentIndex < 0) {
+      setCurrentIndex(slides.length - 1);
+    }
+  };
+
+  const nextSlide = () => {
+    if (!isTransitioning) {
+      setIsTransitioning(true);
+      setCurrentIndex(prev => prev + 1);
+    }
+  };
+
+  const prevSlide = () => {
+    if (!isTransitioning) {
+      setIsTransitioning(true);
+      setCurrentIndex(prev => prev - 1);
+    }
+  };
+
+  // Touch handlers
+  const handleTouchStart = (e: TouchEvent) => {
+    setTouchStart(e.touches[0].clientX);
+    setTouchMove(e.touches[0].clientX);
+  };
+
+  const handleTouchMove = (e: TouchEvent) => {
+    setTouchMove(e.touches[0].clientX);
+    if (sliderRef.current && touchStart !== null) {
+      const diff = touchStart - e.touches[0].clientX;
+      const slideWidth = getSlideWidth();
+      const currentTransform = -(currentIndex * slideWidth);
+      const move = (diff / sliderRef.current.offsetWidth) * 100;
+      sliderRef.current.style.transform = `translateX(${-(currentTransform + move)}%)`;
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (touchStart !== null && touchMove !== null) {
+      const diff = touchStart - touchMove;
+      const threshold = window.innerWidth * 0.15; // 15% of screen width
+
+      if (Math.abs(diff) > threshold) {
+        if (diff > 0) {
+          nextSlide();
+        } else {
+          prevSlide();
+        }
+      } else {
+        // Reset to original position
+        setIsTransitioning(true);
+      }
+    }
+    setTouchStart(null);
+    setTouchMove(null);
+  };
+
+  // Auto advance slides
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (!touchStart) { // Don't auto-advance while touching
+        nextSlide();
+      }
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [touchStart]);
+
+  // Calculate slider position
+  const getSliderStyle = () => {
+    const slideWidth = getSlideWidth();
+    const baseTransform = -(currentIndex * slideWidth);
+    return {
+      transform: `translateX(${baseTransform}%)`,
+      transition: isTransitioning ? 'transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)' : 'none',
+    };
+  };
+
+  return (
+    <div className={styles.sliderContainer}>
+      <div 
+        ref={sliderRef}
+        className={styles.slider} 
+        style={getSliderStyle()}
+        onTransitionEnd={handleTransitionEnd}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
+        {extendedSlides.map((slide, index) => (
+          <div 
+            key={`${slide.id}-${index}`} 
+            className={styles.slide}
+          >
+            <div className={styles.slideContent}>
+              <span className={styles.slideNumber}>{slide.id}.</span>
+              <div className={styles.slideInfo}>
+                <h2 className={styles.brandName}>{slide.brand}</h2>
+                <p className={styles.description}>{slide.description}</p>
+              </div>
             </div>
-        </div>
-    );
-};
+            <img
+              src={slide.image}
+              alt={slide.brand}
+              className={styles.slideImage}
+              loading="lazy"
+            />
+          </div>
+        ))}
+      </div>
 
-export default BrandShowcase;
+      {/* Hide navigation buttons on mobile */}
+      <div className={styles.navigationButtons}>
+        <button
+          className={`${styles.navButton} ${styles.prevButton}`}
+          onClick={prevSlide}
+          aria-label="Previous slide"
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path
+              d="M15 19l-7-7 7-7"
+              stroke="#fff"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </button>
+        <button
+          className={`${styles.navButton} ${styles.nextButton}`}
+          onClick={nextSlide}
+          aria-label="Next slide"
+        >
+          <svg
+            width="54"
+            height="54"
+            viewBox="0 0 54 54"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <g opacity="0.7">
+              <path
+                d="M8.64035 26.9999C8.64035 16.8479 16.8484 8.63989 27.0004 8.63989C37.1524 8.63989 45.3604 16.8479 45.3604 26.9999C45.3604 37.1519 37.1524 45.3599 27.0004 45.3599C16.8484 45.3599 8.64035 37.1519 8.64035 26.9999ZM43.2004 26.9999C43.2004 18.0359 35.9644 10.7999 27.0004 10.7999C18.0364 10.7999 10.8004 18.0359 10.8004 26.9999C10.8004 35.9639 18.0364 43.1999 27.0004 43.1999C35.9644 43.1999 43.2004 35.9639 43.2004 26.9999Z"
+                fill="white"
+              />
+              <path
+                d="M25.1643 35.9639L34.1283 26.9999L25.1643 18.0359L26.6763 16.5239L37.1523 26.9999L26.6763 37.4759L25.1643 35.9639Z"
+                fill="white"
+              />
+              <path
+                d="M35.6396 25.9199V28.0799H17.2796V25.9199H35.6396Z"
+                fill="white"
+              />
+            </g>
+          </svg>
+        </button>
+      </div>
+
+      <div className={styles.pagination}>
+        {slides.map((_, index) => (
+          <button
+            key={index}
+            className={`${styles.paginationDot} ${
+              currentIndex % slides.length === index ? styles.active : ""
+            }`}
+            onClick={() => setCurrentIndex(index)}
+            aria-label={`Go to slide ${index + 1}`}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}

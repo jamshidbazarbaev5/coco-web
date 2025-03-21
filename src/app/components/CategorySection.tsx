@@ -1,5 +1,6 @@
 import Image from "next/image"
 import Link from "next/link"
+import { motion } from "framer-motion"
 
 export default function CategorySection() {
   const categories = [
@@ -17,29 +18,66 @@ export default function CategorySection() {
     
   ]
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1
+      }
+    }
+  }
+
+  const itemVariants = {
+    hidden: { 
+      opacity: 0, 
+      y: 20 
+    },
+    visible: { 
+      opacity: 1, 
+      y: 0,
+      transition: {
+        duration: 0.5,
+        ease: "easeOut"
+      }
+    }
+  }
+
   return (
-    <section className="category-section">
-      <div className="category-grid">
+    <motion.section 
+      className="category-section"
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true, margin: "-100px" }}
+    >
+      <motion.div 
+        className="category-grid"
+        variants={containerVariants}
+      >
         {categories.map((category, index) => (
-          <Link
-            href={`/category/${category.name.toLowerCase().replace(/\s+/g, "-")}`}
+          <motion.div
             key={index}
-            className="category-item"
+            variants={itemVariants}
           >
-            <div className="category-image">
-              <Image 
-                src={category.image || "/placeholder.svg"} 
-                alt={category.name} 
-                width={158} 
-                height={210}
-                className="category-img" 
-              />
-            </div>
-            <h3 className="category-name">{category.name}</h3>
-          </Link>
+            <Link
+              href={`/category/${category.name.toLowerCase().replace(/\s+/g, "-")}`}
+              className="category-item"
+            >
+              <div className="category-image">
+                <Image 
+                  src={category.image || "/placeholder.svg"} 
+                  alt={category.name} 
+                  width={158} 
+                  height={210}
+                  className="category-img" 
+                />
+              </div>
+              <h3 className="category-name">{category.name}</h3>
+            </Link>
+          </motion.div>
         ))}
-      </div>
-    </section>
+      </motion.div>
+    </motion.section>
   )
 }
 

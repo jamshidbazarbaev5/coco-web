@@ -9,6 +9,7 @@ import { useRouter, usePathname } from "next/navigation";
 export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
 
@@ -39,7 +40,7 @@ export default function Header() {
             <path d="M3 18H21V16H3V18ZM3 13H21V11H3V13ZM3 6V8H21V6H3Z" fill="#18191A"/>
           </svg>
         </button>
-        {isSearchOpen && <FilterModal />}
+        {isSearchOpen && <FilterModal onClose={() => setIsSearchOpen(false)} />}
         <div className="logo">
           <Link href="/">
             <svg
@@ -85,8 +86,10 @@ export default function Header() {
           </ul>
         </nav>
         <div className="header-actions">
-        <div className="header-actions">
-          <button className="icon-button search" onClick={() => setIsSearchOpen(true)}>
+          <button 
+            className="icon-button search" 
+            onClick={() => setIsFilterModalOpen(true)}
+          >
             <svg
               width="24"
               height="24"
@@ -133,8 +136,11 @@ export default function Header() {
           </button>
           <LanguageSelector />
         </div>
-        </div>
       </header>
+
+      {isFilterModalOpen && (
+        <FilterModal onClose={() => setIsFilterModalOpen(false)} />
+      )}
 
       {/* Mobile Menu */}
       <div className={`mobile-menu ${isMobileMenuOpen ? 'open' : ''}`}>

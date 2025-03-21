@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import FilterModal from "./filter-modal";
+import ConfirmationModal from "./ConfirmationModal";
 
 export default function CatalogPage() {
   // State for active brand filter
@@ -10,7 +11,7 @@ export default function CatalogPage() {
 
   // Add state for filter modal
   const [showFilterModal, setShowFilterModal] = useState(false);
-
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   // Brand filters
   const brands = [
     "Все",
@@ -104,6 +105,12 @@ export default function CatalogPage() {
     },
   ];
 
+  const [showConfirmation, setShowConfirmation] = useState(false);
+
+  const handleAddToCart = () => {
+    setShowConfirmation(true);
+  };
+
   return (
     <div className="catalog-container">
       <h1 className="catalog-title">Наш каталог</h1>
@@ -142,7 +149,7 @@ export default function CatalogPage() {
       </div>
 
       {/* Add Filter Modal */}
-      {showFilterModal && <FilterModal />}
+      {showFilterModal && <FilterModal onClose={() => setShowFilterModal(false)} />}
 
       {/* Categories */}
       <div className="categories-container">
@@ -174,7 +181,10 @@ export default function CatalogPage() {
                 height={300}
                 className="product-image"
               />
-              <button className="cart-button">
+              <button 
+                className="cart-button"
+                onClick={handleAddToCart}
+              >
                 <svg
                   width="24"
                   height="24"
@@ -198,6 +208,13 @@ export default function CatalogPage() {
           </div>
         ))}
       </div>
+
+      {/* Add Confirmation Modal */}
+      {showConfirmation && (
+        <ConfirmationModal 
+          onClose={() => setShowConfirmation(false)}
+        />
+      )}
 
       <style jsx global>{`
         * {

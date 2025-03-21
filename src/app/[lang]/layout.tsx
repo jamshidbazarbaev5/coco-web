@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Plus_Jakarta_Sans } from "next/font/google";
+import { Cormorant, Geist, Geist_Mono, Plus_Jakarta_Sans } from "next/font/google";
 import "../globals.css";
 import I18nProvider from "../i18/provider";
 import styles from "../styles/contact.module.css";
@@ -20,6 +20,10 @@ const plusJakarta = Plus_Jakarta_Sans({
   variable: "--font-plus-jakarta",
   subsets: ["latin"],
 });
+const cormorant = Cormorant({
+  variable: "--font-cormorant",
+  subsets: ["latin"],
+});
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -35,7 +39,7 @@ export default function RootLayout({
     <html lang="en">
       <body
         suppressHydrationWarning={true}
-        className={`${geistSans.variable} ${geistMono.variable} ${plusJakarta.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${plusJakarta.variable} ${cormorant.variable} antialiased`}
       >
         <I18nProvider>
         <Header />
