@@ -1,64 +1,68 @@
 .languageSelector {
     position: relative;
-    width: 68px;
-    font-family: var(--font-plus-jakarta);
-      /* height: 40; */
+    width: 75px;
+    font-family: system-ui, -apple-system, sans-serif;
+    /* background-color: rgba(193, 154, 91, 0.27); */
   }
   
-  .selectedLanguage {
+  .trigger {
+    width: 100%;
+    padding: 8px 12px;
+    background-color: rgba(193, 154, 91, 0.27);
+    border: none;
+    border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 10px 10px;
-    background-color: #e8dcc5;
-    border-radius: 10px;
     cursor: pointer;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    font-size: 16px;
+  }
+  
+  .trigger:hover {
+    background-color: rgb(233, 226, 217);
+  }
+  
+  .flag {
+    display: flex;
+    align-items: center;
+    margin-right: 8px;
+  }
+  
+  .arrow {
+    font-size: 12px;
+    color: #666;
   }
   
   .dropdown {
     position: absolute;
-    top: 100%;
+    top: calc(100% + 4px);
     left: 0;
     width: 100%;
-    background-color: rgba(193, 154, 91, 0.27);
-    border-radius: 0 0 20px 20px;
+    background-color: rgb(242, 236, 228);
+    border-radius: 8px;
     overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     z-index: 10;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   }
   
   .option {
+    width: 100%;
+    padding: 8px 12px;
+    border: none;
+    background: none;
     display: flex;
     align-items: center;
-    padding: 15px 20px;
     cursor: pointer;
     transition: background-color 0.2s;
   }
   
   .option:hover {
-    background-color: #d6caaf;
+    background-color: rgb(233, 226, 217);
   }
   
-  .active {
-    background-color: rgba(193, 154, 91, 0.27);
-  }
-  
-  .flag {
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    object-fit: cover;
-    margin-right: 15px;
-  }
-  
-  .languageName {
-    font-size: 24px;
-    color: #222;
-  }
-  
-  .chevron {
-    color: #222;
+  .label {
+    font-size: 16px;
+    color: #333;
   }
   
   

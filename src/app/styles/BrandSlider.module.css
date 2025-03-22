@@ -134,11 +134,42 @@
     .slide {
       min-width: 50%;
     }
+    .sliderContainer {
+      height: 380px;
+    }
   }
   
   @media (max-width: 768px) {
     .slide {
       min-width: 100%;
+    }
+    .sliderContainer {
+      height: 300px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .sliderContainer {
+      height: 250px;
+    }
+    
+    .slideContent {
+      bottom: 15px;
+      left: 15px;
+    }
+
+    .slideNumber {
+      font-size: 16px;
+      margin-bottom: 0.5rem;
+    }
+
+    .brandName {
+      font-size: 18px;
+      margin-bottom: 0.25rem;
+    }
+
+    .description {
+      font-size: 14px;
     }
   }
 

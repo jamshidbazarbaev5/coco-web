@@ -38,11 +38,12 @@ export default function BrandSlider() {
   // Create an extended array of slides for infinite effect
   const extendedSlides = [...slides, ...slides, ...slides];
 
-  // Get the slide width based on screen size
+  // Updated getSlideWidth function
   const getSlideWidth = () => {
     if (typeof window === 'undefined') return 25;
-    if (window.innerWidth <= 768) return 100;
-    if (window.innerWidth <= 1200) return 50;
+    const width = window.innerWidth;
+    if (width <= 768) return 100;
+    if (width <= 1200) return 50;
     return 25;
   };
 
@@ -69,7 +70,20 @@ export default function BrandSlider() {
     }
   };
 
-  // Touch handlers
+  // Add resize handler
+  useEffect(() => {
+    const handleResize = () => {
+      const slideWidth = getSlideWidth();
+      if (sliderRef.current) {
+        sliderRef.current.style.transform = `translateX(-${currentIndex * slideWidth}%)`;
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [currentIndex]);
+
+  // Updated touch handlers
   const handleTouchStart = (e: TouchEvent) => {
     setTouchStart(e.touches[0].clientX);
     setTouchMove(e.touches[0].clientX);
@@ -81,7 +95,7 @@ export default function BrandSlider() {
       const diff = touchStart - e.touches[0].clientX;
       const slideWidth = getSlideWidth();
       const currentTransform = -(currentIndex * slideWidth);
-      const move = (diff / sliderRef.current.offsetWidth) * 100;
+      const move = (diff / window.innerWidth) * slideWidth;
       sliderRef.current.style.transform = `translateX(${-(currentTransform + move)}%)`;
     }
   };
@@ -97,9 +111,12 @@ export default function BrandSlider() {
         } else {
           prevSlide();
         }
-      } else {
-        // Reset to original position
-        setIsTransitioning(true);
+      }
+      // Always reset to proper position after touch
+      setIsTransitioning(true);
+      if (sliderRef.current) {
+        const slideWidth = getSlideWidth();
+        sliderRef.current.style.transform = `translateX(-${currentIndex * slideWidth}%)`;
       }
     }
     setTouchStart(null);
@@ -162,21 +179,7 @@ export default function BrandSlider() {
 
       {/* Hide navigation buttons on mobile */}
       <div className={styles.navigationButtons}>
-        <button
-          className={`${styles.navButton} ${styles.prevButton}`}
-          onClick={prevSlide}
-          aria-label="Previous slide"
-        >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <path
-              d="M15 19l-7-7 7-7"
-              stroke="#fff"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </button>
+       
         <button
           className={`${styles.navButton} ${styles.nextButton}`}
           onClick={nextSlide}

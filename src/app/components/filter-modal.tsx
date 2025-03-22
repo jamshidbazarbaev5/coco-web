@@ -413,6 +413,9 @@ export default function FilterModal({ onClose }: { onClose: () => void }) {
           justify-content: center;
           align-items: center;
           z-index: 1000;
+          @media (max-width: 768px) {
+            align-items: flex-end;
+          }
         }
 
         .filter-modal {
@@ -425,6 +428,15 @@ export default function FilterModal({ onClose }: { onClose: () => void }) {
           height: ${isAnyDropdownOpen ? '560px' : 'auto'};
           min-height: 300px;
           transition: height 0.3s ease;
+          overflow-y: auto;
+          
+          @media (max-width: 768px) {
+            width: 100%;
+            height: 100%;
+            max-height: 100vh;
+            border-radius: 0;
+            padding: 15px;
+          }
         }
 
         .modal-header {
@@ -466,6 +478,9 @@ export default function FilterModal({ onClose }: { onClose: () => void }) {
           font-size: 14px;
           padding: 5px 0;
           width: 100%;
+          @media (max-width: 768px) {
+            font-size: 16px;
+          }
         }
 
         .filter-section {
@@ -505,9 +520,16 @@ export default function FilterModal({ onClose }: { onClose: () => void }) {
           border: 1px solid #d4c9a8;
           overflow: hidden;
           width: 312px;
-          height:179px;
+          height: 179px;
           position: relative;
-          left:140px;
+          left: 140px;
+
+          @media (max-width: 768px) {
+            width: 100%;
+            left: 0;
+            height: auto;
+            max-height: 179px;
+          }
         }
 
         .brand-input {
@@ -526,6 +548,9 @@ export default function FilterModal({ onClose }: { onClose: () => void }) {
         .brand-list {
           max-height: 150px;
           overflow-y: auto;
+          @media (max-width: 768px) {
+            max-height: 200px;
+          }
         }
 
         .brand-item {
@@ -554,6 +579,23 @@ export default function FilterModal({ onClose }: { onClose: () => void }) {
           flex-wrap: wrap;
           align-items: center;
           gap: 10px;
+          @media (max-width: 480px) {
+            flex-direction: column;
+            align-items: flex-start;
+            
+            .price-inputs {
+              width: 100%;
+            }
+            
+            .price-input {
+              width: 100%;
+            }
+            
+            .price-to {
+              margin-left: 0;
+              margin-top: 10px;
+            }
+          }
         }
 
         .price-inputs {
@@ -585,6 +627,23 @@ export default function FilterModal({ onClose }: { onClose: () => void }) {
           display: flex;
           justify-content: end;
           margin-top: 20px;
+          gap: 10px;
+
+          @media (max-width: 768px) {
+            position: sticky;
+            bottom: 0;
+            background: #f9f5eb;
+            padding: 15px 0;
+            margin-top: 10px;
+          }
+        }
+
+        .apply-button,
+        .reset-button {
+          @media (max-width: 768px) {
+            flex: 1;
+            margin-right: 0;
+          }
         }
 
         .apply-button {
@@ -623,6 +682,9 @@ export default function FilterModal({ onClose }: { onClose: () => void }) {
         .options-list {
           max-height: 150px;
           overflow-y: auto;
+          @media (max-width: 768px) {
+            max-height: 200px;
+          }
         }
 
         .option-item {
