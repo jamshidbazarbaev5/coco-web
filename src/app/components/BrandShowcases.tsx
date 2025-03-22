@@ -85,25 +85,27 @@ export default function BrandSlider() {
 
   // Updated touch handlers
   const handleTouchStart = (e: TouchEvent) => {
+    setIsTransitioning(false); // Disable transition during touch
     setTouchStart(e.touches[0].clientX);
     setTouchMove(e.touches[0].clientX);
   };
 
   const handleTouchMove = (e: TouchEvent) => {
+    e.preventDefault(); // Prevent scrolling while swiping
     setTouchMove(e.touches[0].clientX);
+    
     if (sliderRef.current && touchStart !== null) {
       const diff = touchStart - e.touches[0].clientX;
       const slideWidth = getSlideWidth();
-      const currentTransform = -(currentIndex * slideWidth);
-      const move = (diff / window.innerWidth) * slideWidth;
-      sliderRef.current.style.transform = `translateX(${-(currentTransform + move)}%)`;
+      const move = (diff / window.innerWidth) * 100; // Use percentage based on screen width
+      sliderRef.current.style.transform = `translateX(${-(currentIndex * slideWidth + move)}%)`;
     }
   };
 
   const handleTouchEnd = () => {
     if (touchStart !== null && touchMove !== null) {
       const diff = touchStart - touchMove;
-      const threshold = window.innerWidth * 0.15; // 15% of screen width
+      const threshold = window.innerWidth * 0.2; // Increased threshold to 20% for better detection
 
       if (Math.abs(diff) > threshold) {
         if (diff > 0) {
@@ -111,14 +113,16 @@ export default function BrandSlider() {
         } else {
           prevSlide();
         }
-      }
-      // Always reset to proper position after touch
-      setIsTransitioning(true);
-      if (sliderRef.current) {
-        const slideWidth = getSlideWidth();
-        sliderRef.current.style.transform = `translateX(-${currentIndex * slideWidth}%)`;
+      } else {
+        // Reset to current slide if threshold not met
+        if (sliderRef.current) {
+          const slideWidth = getSlideWidth();
+          sliderRef.current.style.transform = `translateX(-${currentIndex * slideWidth}%)`;
+        }
       }
     }
+    
+    setIsTransitioning(true); // Re-enable transition
     setTouchStart(null);
     setTouchMove(null);
   };
