@@ -2,17 +2,9 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import FilterModal from "./filter-modal";
 import ConfirmationModal from "./ConfirmationModal";
 import { useRouter } from "next/navigation";
 import i18n from "../i18/config";
-
-// Define interfaces for your data structures
-interface Category {
-  id: number;
-  name: string;
-  image: string;
-}
 
 interface Product {
   id: number;
@@ -25,7 +17,6 @@ interface Product {
   new_price: number;
 }
 
-// Add a new interface for cart items
 interface CartItem {
   product: number;
   quantity: number;
@@ -36,37 +27,15 @@ interface CartItem {
   image: string;
 }
 
-export default function CatalogPage() {
-  // Add state for brands
-  const [brands, setBrands] = useState<{id: number, name: string}[]>([]);
-  const [activeFilter, setActiveFilter] = useState("Все");
-
-  // Add state for filter modal
-  const [showFilterModal, setShowFilterModal] = useState(false);
-  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
-  
-  // Add state for API data with proper typing
-  const [categories, setCategories] = useState<Category[]>([]);
+export default function SalesPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  
   const router = useRouter();
   
-  // Add translation based on current language
   const getTranslatedTitle = (product: any) => {
     return i18n.language === 'uz' ? product.title_uz : product.title_ru;
   };
 
-  const getTranslatedDescription = (product: any) => {
-    return i18n.language === 'uz' ? product.description_uz : product.description_ru;
-  };
-
-  // Modify the catalog title based on language
-  const getCatalogTitle = () => {
-    return i18n.language === 'uz' ? "Bizning katalog" : "Наш каталог";
-  };
-
-  // Modify the availability text based on language
   const getAvailabilityText = (quantity: number) => {
     if (i18n.language === 'uz') {
       return quantity > 0 ? `Mavjud: ${quantity}` : "Buyurtma asosida";
@@ -74,61 +43,32 @@ export default function CatalogPage() {
     return quantity > 0 ? `В наличии: ${quantity}` : "На заказ";
   };
 
-  // Modify the "All" filter text based on language
-  const getAllFilterText = () => {
-    return i18n.language === 'uz' ? "Hammasi" : "Все";
+  // Modify the sales title based on language
+  const getSalesTitle = () => {
+    return i18n.language === 'uz' ? "Chegirmalar" : "Скидки";
   };
 
-  // Add translation helper for category names
-  const getTranslatedCategoryName = (category: any) => {
-    return i18n.language === 'uz' ? category.name_uz : category.name_ru;
-  };
-
-  // Modify useEffect to fetch brands as well
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch brands
-        const brandsResponse = await fetch('https://coco20.uz/api/v1/brands/crud/brand/');
-        const brandsData = await brandsResponse.json();
-        
-        // Add "All" as the first option with translation
-        const formattedBrands = [
-          { id: 0, name: getAllFilterText() },
-          ...brandsData.results
-        ];
-        
-        setBrands(formattedBrands);
-        setActiveFilter(getAllFilterText());
-
-        // Fetch categories
-        const categoriesResponse = await fetch('https://coco20.uz/api/v1/brands/crud/category/?page=1');
-        const categoriesData = await categoriesResponse.json();
-        
-        // Fetch products
+        // Fetch all products
         const productsResponse = await fetch('https://coco20.uz/api/v1/products/crud/product/');
         const productsData = await productsResponse.json();
         
-        // Transform categories data with translations
-        const formattedCategories: Category[] = categoriesData.results.map((category: any, index: number) => ({
-          id: index + 1,
-          name: getTranslatedCategoryName(category),
-          image: "/cart-" + ((index % 4) + 1) + ".jpg",
-        }));
+        // Filter and transform only products that are on sale
+        const formattedProducts: Product[] = productsData.results
+          .filter((product: any) => product.on_sale)
+          .map((product: any) => ({
+            id: product.id,
+            brand: product.brand === 1 ? "Apple" : "Gucci",
+            name: getTranslatedTitle(product),
+            price: `${product.price} uzs`,
+            availability: getAvailabilityText(product.quantity),
+            image: product.product_attributes[0]?.image || "/placeholder.svg",
+            on_sale: product.on_sale,
+            new_price: product.new_price
+          }));
         
-        // Transform products data with translations
-        const formattedProducts: Product[] = productsData.results.map((product: any) => ({
-          id: product.id,
-          brand: product.brand === 1 ? "Apple" : "Gucci",
-          name: getTranslatedTitle(product),
-          price: `${product.price} uzs`,
-          availability: getAvailabilityText(product.quantity),
-          image: product.product_attributes[0]?.image || "/placeholder.svg",
-          on_sale: product.on_sale,
-          new_price: product.new_price
-        }));
-        
-        setCategories(formattedCategories);
         setProducts(formattedProducts);
         setLoading(false);
       } catch (error) {
@@ -138,12 +78,11 @@ export default function CatalogPage() {
     };
     
     fetchData();
-  }, [i18n.language]); // This will trigger a refetch when language changes
+  }, [i18n.language]);
   
   const [showConfirmation, setShowConfirmation] = useState(false);
 
   const handleAddToCart = (product: Product) => {
-    // Create a cart item from the product
     const cartItem: CartItem = {
       product: product.id,
       quantity: 1,
@@ -154,24 +93,16 @@ export default function CatalogPage() {
       image: product.image
     };
     
-    // Get existing cart from localStorage or initialize empty array
     const existingCart = JSON.parse(localStorage.getItem('cart') || '[]');
-    
-    // Check if product already exists in cart
     const existingItemIndex = existingCart.findIndex((item: CartItem) => item.product === product.id);
     
     if (existingItemIndex >= 0) {
-      // Update quantity if product already in cart
       existingCart[existingItemIndex].quantity += 1;
     } else {
-      // Add new item to cart
       existingCart.push(cartItem);
     }
     
-    // Save updated cart to localStorage
     localStorage.setItem('cart', JSON.stringify(existingCart));
-    
-    // Show confirmation modal
     setShowConfirmation(true);
   };
 
@@ -181,61 +112,7 @@ export default function CatalogPage() {
 
   return (
     <div className="catalog-container">
-      <h1 className="catalog-title">{getCatalogTitle()}</h1>
-
-      {/* Updated Brand filters */}
-      <div className="brand-filters">
-        {brands.map((brand) => (
-          <button
-            key={brand.id}
-            className={`brand-filter ${activeFilter === brand.name ? "active" : ""}`}
-            onClick={() => setActiveFilter(brand.name)}
-          >
-            {brand.name}
-          </button>
-        ))}
-        <button
-          className="filter-button"
-          onClick={() => setShowFilterModal(true)}
-        >
-          <svg
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M3 7H21M6 12H18M10 17H14"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </button>
-      </div>
-
-      {/* Add Filter Modal */}
-      {showFilterModal && <FilterModal onClose={() => setShowFilterModal(false)} />}
-
-      {/* Categories */}
-      <div className="categories-container">
-        {categories.map((category) => (
-          <div className="category-item" key={category.id}>
-            <div className="category-image-container">
-              <Image
-                src={category.image || "/placeholder.svg"}
-                alt={category.name}
-                width={150}
-                height={150}
-                className="category-image"
-              />
-            </div>
-            <p className="category-name">{category.name}</p>
-          </div>
-        ))}
-      </div>
+      <h1 className="catalog-title">{getSalesTitle()}</h1>
 
       {/* Products grid */}
       <div className="products-grid">
@@ -278,14 +155,16 @@ export default function CatalogPage() {
             <div className="product-details">
               <h3 className="product-brand">{product.brand}</h3>
               <p className="product-name">{product.name}</p>
-              <p className="product-price">{product.price}</p>
+              <div className="price-container">
+                <p className="product-old-price">{product.price}</p>
+                <p className="product-new-price">{product.new_price} uzs</p>
+              </div>
               <p className="product-availability">{product.availability}</p>
             </div>
           </div>
         ))}
       </div>
 
-      {/* Add Confirmation Modal */}
       {showConfirmation && (
         <ConfirmationModal 
           onClose={() => setShowConfirmation(false)}
@@ -315,87 +194,6 @@ export default function CatalogPage() {
           font-weight: 400;
           margin-bottom: 30px;
           color: #000;
-        }
-
-        /* Brand filters */
-        .brand-filters {
-          display: flex;
-          align-items: center;
-          margin-bottom: 30px;
-          border-bottom: 1px solid #eee;
-          padding-bottom: 10px;
-          overflow-x: auto;
-          scrollbar-width: none; /* Firefox */
-        }
-
-        .brand-filters::-webkit-scrollbar {
-          display: none; /* Chrome, Safari, Edge */
-        }
-
-        .brand-filter {
-          background: none;
-          border: none;
-          padding: 8px 16px;
-          margin-right: 10px;
-          font-size: 14px;
-          cursor: pointer;
-          color: #666;
-          white-space: nowrap;
-        }
-
-        .brand-filter.active {
-          color: #000;
-          border-bottom: 2px solid #000;
-        }
-
-        .filter-button {
-          margin-left: auto;
-          background: none;
-          border: none;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-
-        /* Categories */
-        .categories-container {
-          display: flex;
-          overflow-x: auto;
-          gap: 15px;
-          margin-bottom: 40px;
-          padding-bottom: 10px;
-          scrollbar-width: none; /* Firefox */
-        }
-
-        .categories-container::-webkit-scrollbar {
-          display: none; /* Chrome, Safari, Edge */
-        }
-
-        .category-item {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          min-width: 100px;
-        }
-
-        .category-image-container {
-          width: 100px;
-          height: 100px;
-          overflow: hidden;
-          margin-bottom: 10px;
-        }
-
-        .category-image {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-        }
-
-        .category-name {
-          font-size: 12px;
-          text-align: center;
-          color: #333;
         }
 
         /* Products grid */
@@ -485,6 +283,24 @@ export default function CatalogPage() {
         .product-availability {
           font-size: 14px;
           color: #666;
+        }
+
+        .price-container {
+          display: flex;
+          gap: 10px;
+          align-items: center;
+        }
+
+        .product-old-price {
+          text-decoration: line-through;
+          color: #666;
+          font-size: 14px;
+        }
+
+        .product-new-price {
+          color: #E11D48;
+          font-weight: 500;
+          font-size: 16px;
         }
       `}</style>
     </div>

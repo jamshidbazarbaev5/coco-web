@@ -5,7 +5,7 @@ import LanguageSelector from "./LanguageSelector";
 import i18n from "../i18/config";
 import FilterModal from "./filter-modal";
 import { useRouter, usePathname } from "next/navigation";
-import Details from '../[lang]/details/page';
+import { useTranslation } from 'react-i18next';
 
 export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -13,6 +13,7 @@ export default function Header() {
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
+  const { t } = useTranslation();
 
   useEffect(() => {
     setIsSearchOpen(false);
@@ -73,19 +74,17 @@ export default function Header() {
         <nav className="nav">
           <ul>
             <li className={isActive('/') ? 'active' : ''}>
-              <Link href="/">Главная</Link>
+              <Link href="/">{t('header.home')}</Link>
             </li>
             <li className={isActive(`/${i18n.language}/categories`) ? 'active' : ''}>
-              <Link href={`/${i18n.language}/categories`}>Каталог</Link>
+              <Link href={`/${i18n.language}/categories`}>{t('header.catalog')}</Link>
             </li>
             <li className={isActive(`/${i18n.language}/about`) ? 'active' : ''}>
-              <Link href={`/${i18n.language}/about`}>О нас</Link>
+              <Link href={`/${i18n.language}/about`}>{t('header.about')}</Link>
             </li>
-            <li className={isActive(`/${i18n.language}/details`) ? 'active' : ''}>
-              <Link href={`/${i18n.language}/details`}>Details</Link>
-            </li>
-            <li className={isActive('/sale') ? 'active' : ''}>
-              <Link href="/sale">Распродажа</Link>
+           
+            <li className={isActive('/sales') ? 'active' : ''}>
+              <Link href={`/${i18n.language}/sales`}>{t('header.sale')}</Link>
             </li>
           </ul>
         </nav>
@@ -180,16 +179,16 @@ export default function Header() {
         <nav>
           <ul>
             <li className={isActive('/') ? 'active' : ''}>
-              <Link href="/" onClick={() => setIsMobileMenuOpen(false)}>Главная</Link>
+              <Link href="/" onClick={() => setIsMobileMenuOpen(false)}>{t('header.home')}</Link>
             </li>
             <li className={isActive(`/${i18n.language}/categories`) ? 'active' : ''}>
-              <Link href={`/${i18n.language}/categories`} onClick={() => setIsMobileMenuOpen(false)}>Каталог</Link>
+              <Link href={`/${i18n.language}/categories`} onClick={() => setIsMobileMenuOpen(false)}>{t('header.catalog')}</Link>
             </li>
             <li className={isActive(`/${i18n.language}/about`) ? 'active' : ''}>
-              <Link href={`/${i18n.language}/about`} onClick={() => setIsMobileMenuOpen(false)}>О нас</Link>
+              <Link href={`/${i18n.language}/about`} onClick={() => setIsMobileMenuOpen(false)}>{t('header.about')}</Link>
             </li>
             <li className={isActive('/sale') ? 'active' : ''}>
-              <Link href="/sale" onClick={() => setIsMobileMenuOpen(false)}>Распродажа</Link>
+              <Link href="/sale" onClick={() => setIsMobileMenuOpen(false)}>{t('header.sale')}</Link>
             </li>
           </ul>
         </nav>

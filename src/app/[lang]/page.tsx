@@ -12,7 +12,8 @@ import FeatureList from "../components/FeatureList";
 import ContactPage from "../components/ContactPage";
 import Header from "../components/Header";
 
-export default function Home() {
+export 
+default function Home() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   return (

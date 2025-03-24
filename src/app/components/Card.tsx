@@ -1,95 +1,53 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Image from "next/image"
 import { Send } from "lucide-react"
 import styles from '../styles/language-selector.module.css'
-export default function CartPage() {
-  // Initial cart items data
-  const initialItems = [
-    {
-      id: 1,
-      name: "Gucci",
-      description: "Garavani for Women",
-      price: "4 850 540 uzs",
-      stock: 5,
-      quantity: 1,
-      image:"/cart-1.jpg"
-    },
-    {
-      id: 2,
-      name: "Gucci",
-      description: "Garavani for Women",
-      price: "4 850 540 uzs",
-      stock: 5,
-      quantity: 1,
-      image: "/cart-2.jpg"
-    },
-    {
-      id: 3,
-      name: "Gucci",
-      description: "Garavani for Women",
-      price: "4 850 540 uzs",
-      stock: 5,
-      quantity: 1,
-      image: "/cart-3.jpg"
-    },
-    {
-      id: 4,
-      name: "Gucci",
-      description: "Garavani for Women",
-      price: "4 850 540 uzs",
-      stock: 1,
-      quantity: 1,
-      image:"/cart-4.jpg"
-    },
-    {
-      id: 5,
-      name: "Gucci",
-      description: "Garavani for Women",
-      price: "4 850 540 uzs",
-      stock: 5,
-      quantity: 1,
-        image: "/cart-3.jpg"
-    },
-    {
-      id: 6,
-      name: "Gucci",
-      description: "Garavani for Women",
-      price: "4 850 540 uzs",
-      stock: 5,
-      quantity: 1,
-     image:"/cart-4.jpg"
-    },
-    {
-      id: 7,
-      name: "Gucci",
-      description: "Garavani for Women",
-      price: "4 850 540 uzs",
-      stock: 5,
-      quantity: 1,
-       image: "/cart-3.jpg"
-    },
-    {
-      id: 8,
-      name: "Gucci",
-      description: "Garavani for Women",
-      price: "4 850 540 uzs",
-      stock: 1,
-      quantity: 1,
-       image: "/cart-3.jpg"
-    },
-  ]
+import ConfirmationModal from "./ConfirmationModal"
+import { useTranslation } from 'react-i18next'
 
+// Define interface for cart items
+interface CartItem {
+  product: number;
+  quantity: number;
+  name: string;
+  description: string;
+  price: string;
+  stock: number;
+  image: string;
+}
+
+export default function CartPage() {
+  const { t } = useTranslation()
   // State for cart items
-  const [cartItems, setCartItems] = useState(initialItems)
+  const [cartItems, setCartItems] = useState<CartItem[]>([])
+  const [loading, setLoading] = useState(true)
+  const [orderSuccess, setOrderSuccess] = useState(false)
+  const [orderError, setOrderError] = useState("")
+
+  // Load cart items from localStorage on component mount
+  useEffect(() => {
+    const storedCart = localStorage.getItem('cart')
+    if (storedCart) {
+      setCartItems(JSON.parse(storedCart))
+    }
+    setLoading(false)
+  }, [])
+
+  // Update localStorage whenever cart items change
+  useEffect(() => {
+    if (!loading) {
+      localStorage.setItem('cart', JSON.stringify(cartItems))
+    }
+  }, [cartItems, loading])
 
   // Function to update item quantity
-  const updateQuantity = (id:any, newQuantity:any) => {
+  const updateQuantity = (id: number, newQuantity: number) => {
     if (newQuantity < 1) return
 
     const updatedItems = cartItems.map((item) => {
-      if (item.id === id) {
+      if (item.product === id) {
         // Don't allow quantity to exceed stock
         const quantity = Math.min(newQuantity, item.stock)
         return { ...item, quantity }
@@ -101,8 +59,8 @@ export default function CartPage() {
   }
 
   // Function to remove item from cart
-  const removeItem = (id:any) => {
-    const updatedItems = cartItems.filter((item) => item.id !== id)
+  const removeItem = (id: number) => {
+    const updatedItems = cartItems.filter((item) => item.product !== id)
     setCartItems(updatedItems)
   }
 
@@ -113,131 +71,250 @@ export default function CartPage() {
     consent: false,
   });
 
+  // Initialize phone number with +998 prefix
+  useEffect(() => {
+    setFormData(prev => ({ ...prev, phone: '+998 ' }))
+  }, [])
+
+  const handlePhoneChange = (value: string) => {
+    let digits = value.replace(/[^\d+]/g, '')
+    
+    if (!digits.startsWith('+998')) {
+      digits = '+998' + digits.replace(/^\+998/, '')
+    }
+    let formatted = digits
+    
+    if (digits.length > 4) {
+      formatted = `+998 ${digits.slice(4, 6)}`
+      
+      if (digits.length > 6) {
+        formatted += ` ${digits.slice(6, 9)}`
+        
+        if (digits.length > 9) {
+          formatted += `-${digits.slice(9, 11)}`
+          
+          if (digits.length > 11) {
+            formatted += `-${digits.slice(11, 13)}`
+          }
+        }
+      }
+    }
+    if (formatted.replace(/[^\d+]/g, '').length > 13) {
+      return
+    }
+    
+    setFormData(prev => ({ ...prev, phone: formatted }))
+  }
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
     const checked = type === "checkbox" ? (e.target as HTMLInputElement).checked : undefined;
 
-    setFormData({
-      ...formData,
-      [name]: type === "checkbox" ? checked : value,
-    });
+    if (name === 'phone') {
+      // Handle phone number formatting
+      handlePhoneChange(value)
+    } else {
+      setFormData({
+        ...formData,
+        [name]: type === "checkbox" ? checked : value,
+      });
+    }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Form submitted:", formData);
+    
+    if (!formData.name || !formData.phone || !formData.consent) {
+      setOrderError("Please fill in all required fields and accept the terms");
+      return;
+    }
+    
+    try {
+      // Prepare order data with cleaned phone number
+      const orderData = {
+        customer_name: formData.name,
+        customer_phone: formData.phone.replace(/[^\d+]/g, ''), // Remove all non-digit characters except +
+        customer_preferences: formData.message,
+        order_items: cartItems.map(item => ({
+          product: item.product,
+          quantity: item.quantity
+        }))
+      };
+      
+      // Send order to API
+      const response = await fetch('https://coco20.uz/api/v1/orders/crud/order/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(orderData),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to place order');
+      }
+      
+      // Clear cart and show success message
+      localStorage.removeItem('cart');
+      setCartItems([]);
+      setFormData({
+        name: "",
+        phone: "",
+        message: "",
+        consent: false,
+      });
+      setOrderSuccess(true);
+      
+    } catch (error) {
+      console.error('Error placing order:', error);
+      setOrderError("Failed to place order. Please try again.");
+    }
+  };
+
+  if (loading) {
+    return <div className="cart-container">Loading...</div>;
+  }
+  const cartConfirmationMessage = {
+    uz: "Mahsulot muvaffaqiyatli savatga qo'shildi",
+    ru: "Товар успешно добавлен в корзину"
   };
 
   return (
     <div className="cart-container">
-      <h1 className="cart-title">Корзина</h1>
+      <h1 className="cart-title">{t('cart.title', 'Корзина')}</h1>
 
-      <div className="cart-grid">
-        {cartItems.map((item) => (
-          <div className="cart-item" key={item.id}>
-            <div className="item-image-container">
-              <Image
-                src={item.image}
-                alt={item.description}
-                width={300}
-                height={300}
-                className="item-image"
-              />
-              <button className="remove-button" onClick={() => removeItem(item.id)} aria-label="Remove item">
-              <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path d="M5.46882 7.24854L7.93398 22.1387C8.04674 22.8204 8.39784 23.4399 8.92472 23.8869C9.4516 24.3338 10.1201 24.5792 10.811 24.5794H14.717M22.5313 7.24854L20.0673 22.1387C19.9546 22.8204 19.6035 23.4399 19.0766 23.8869C18.5497 24.3338 17.8813 24.5792 17.1903 24.5794H13.2843M11.693 12.9687V18.8592M16.3083 12.9687V18.8592M3.20898 7.24854H24.7923M17.2405 7.24854V5.17187C17.2405 4.70775 17.0561 4.26263 16.7279 3.93444C16.3997 3.60625 15.9546 3.42188 15.4905 3.42188H12.5108C12.0467 3.42188 11.6016 3.60625 11.2734 3.93444C10.9452 4.26263 10.7608 4.70775 10.7608 5.17187V7.24854H17.2405Z" stroke="white" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
-</svg>
-
-              </button>
-            </div>
-
-            <div className="item-details">
-              <h3 className="item-brand">{item.name}</h3>
-              <p className="item-name">{item.description}</p>
-              <p className="item-price">{item.price}</p>
-              <p className="item-stock">В наличии: {item.stock}</p>
-
-              <div className="quantity-control">
-                <button
-                  className="quantity-button"
-                  onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                  disabled={item.quantity <= 1}
-                >
-                  -
-                </button>
-                <input type="text" className="quantity-input" value={item.quantity} readOnly />
-                <button
-                  className="quantity-button"
-                  onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                  disabled={item.quantity >= item.stock}
-                >
-                  +
-                </button>
-              </div>
-            </div>
-          </div>
-        ))}
-        
-        <div className="contact-content">
-          <div className="contact-form">
-            <form onSubmit={handleSubmit}>
-              <div className="form-row">
-                <div className="form-group">
-                  <input
-                    type="text"
-                    name="name"
-                    placeholder="Имя"
-                    value={formData.name}
-                    onChange={handleChange}
-                    className="form-input"
-                  />
-                </div>
-
-                <div className="form-group">
-                  <input
-                    type="tel"
-                    name="phone"
-                    placeholder="Телефон"
-                    value={formData.phone}
-                    onChange={handleChange}
-                    className="form-input"
-                  />
-                </div>
-              </div>
-
-              <div className="form-group">
-                <textarea
-                  name="message"
-                  placeholder="Ваше предложение/пожелание"
-                  value={formData.message}
-                  onChange={handleChange}
-                  className="form-input message-input"
-                ></textarea>
-              </div>
-
-              <div className="form-footer">
-                <button type="submit" className="submit-button">
-                  <Send size={16} />
-                  <span>Отправить</span>
-                </button>
-
-                <div className="consent-checkbox">
-                  <input 
-                    type="checkbox" 
-                    id="consent" 
-                    name="consent" 
-                    checked={formData.consent} 
-                    onChange={handleChange} 
-                  />
-                  <label htmlFor="consent">
-                    I agree that my data is <a href="#">collected and stored</a>
-                  </label>
-                </div>
-              </div>
-            </form>
+      {cartItems.length === 0 ? (
+        <div className="empty-cart-container">
+          <div className="empty-cart">
+            <p>{t('cart.empty', 'Ваша корзина пуста')}</p>
           </div>
         </div>
-      </div>
+      ) : (
+        <div className="cart-grid">
+          {cartItems.map((item) => (
+            <div className="cart-item" key={item.product}>
+              <div className="item-image-container">
+                <Image
+                  src={item.image}
+                  alt={item.description}
+                  width={300}
+                  height={300}
+                  className="item-image"
+                />
+                <button 
+                  className="remove-button" 
+                  onClick={() => removeItem(item.product)} 
+                  aria-label={t('cart.remove_item')}
+                >
+                  <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M5.46882 7.24854L7.93398 22.1387C8.04674 22.8204 8.39784 23.4399 8.92472 23.8869C9.4516 24.3338 10.1201 24.5792 10.811 24.5794H14.717M22.5313 7.24854L20.0673 22.1387C19.9546 22.8204 19.6035 23.4399 19.0766 23.8869C18.5497 24.3338 17.8813 24.5792 17.1903 24.5794H13.2843M11.693 12.9687V18.8592M16.3083 12.9687V18.8592M3.20898 7.24854H24.7923M17.2405 7.24854V5.17187C17.2405 4.70775 17.0561 4.26263 16.7279 3.93444C16.3997 3.60625 15.9546 3.42188 15.4905 3.42188H12.5108C12.0467 3.42188 11.6016 3.60625 11.2734 3.93444C10.9452 4.26263 10.7608 4.70775 10.7608 5.17187V7.24854H17.2405Z" stroke="white" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </button>
+              </div>
+
+              <div className="item-details">
+                <h3 className="item-brand">{item.name}</h3>
+                <p className="item-name">{item.description}</p>
+                <p className="item-price">{item.price}</p>
+                <p className="item-stock">{t('cart.in_stock')} {item.stock}</p>
+
+                <div className="quantity-control">
+                  <button
+                    className="quantity-button"
+                    onClick={() => updateQuantity(item.product, item.quantity - 1)}
+                    disabled={item.quantity <= 1}
+                    aria-label={t('cart.quantity.decrease')}
+                  >
+                    -
+                  </button>
+                  <input type="text" className="quantity-input" value={item.quantity} readOnly />
+                  <button
+                    className="quantity-button"
+                    onClick={() => updateQuantity(item.product, item.quantity + 1)}
+                    disabled={item.quantity >= item.stock}
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+          
+          <div className="contact-content">
+            <div className="contact-form">
+              <form onSubmit={handleSubmit}>
+                <div className="form-row">
+                  <div className="form-group">
+                    <input
+                      type="text"
+                      name="name"
+                      placeholder={t('form.name')}
+                      value={formData.name}
+                      onChange={handleChange}
+                      className="form-input"
+                      required
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <input
+                      type="tel"
+                      name="phone"
+                      placeholder={t('form.phone')}
+                      value={formData.phone}
+                      onChange={handleChange}
+                      className="form-input"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <textarea
+                    name="message"
+                    placeholder={t('form.feedback')}
+                    value={formData.message}
+                    onChange={handleChange}
+                    className="form-input message-input"
+                  ></textarea>
+                </div>
+
+                {orderError && <p className="error-message">{t('form.alerts.error')}</p>}
+
+                <div className="form-footer">
+                  <button type="submit" className="submit-button">
+                    <Send size={16} />
+                    <span>{t('form.send')}</span>
+                  </button>
+
+                  <div className="consent-checkbox">
+                    <input 
+                      type="checkbox" 
+                      id="consent" 
+                      name="consent" 
+                      checked={formData.consent} 
+                      onChange={handleChange} 
+                      required
+                    />
+                    <label htmlFor="consent">
+                      {t('form.consent')}
+                    </label>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Order Success Modal */}
+      {orderSuccess && (
+        <ConfirmationModal 
+          messageUz="Mahsulot muvaffaqiyatli buyurtma qilindi"
+          messageRu="Товар успешно заказан  !"
+          onClose={() => setOrderSuccess(false)}
+        />
+      )}
 
       <style jsx global>{`
         * {
@@ -473,6 +550,25 @@ export default function CartPage() {
             flex-direction: column;
             align-items: flex-start;
           }
+        }
+
+        .empty-cart-container {
+          display: flex;
+          flex-direction: column;
+          min-height: 60vh;
+          justify-content: center;
+        }
+        
+        .empty-cart {
+          text-align: center;
+          padding: 40px;
+          font-size: 18px;
+          color: #666;
+        }
+        
+        .error-message {
+          color: #ff3b30;
+          margin-bottom: 15px;
         }
       `}</style>
     </div>

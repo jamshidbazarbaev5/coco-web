@@ -6,23 +6,23 @@ let defaultLocale = "uz";
 
 // Get the preferred locale from headers
 function getLocale(request: NextRequest) {
-  const headers = new Headers(request.headers)
-  const acceptLanguage = headers.get('accept-language')
+  // Get accept-language header
+  const acceptLanguage = request.headers.get('accept-language')
   
-  if (acceptLanguage) {
-    headers.set('accept-language', acceptLanguage.replaceAll('_', '-'))
-  }
-
-  const headersObj = Object.fromEntries(headers.entries())
-//   const languages = new Negotiator({ headers: headersObj }).languages()
+  if (!acceptLanguage) return defaultLocale;
   
-//   return match(languages, locales, defaultLocale)
+  // Check if any of our locales match the accepted languages
+  const preferredLocale = locales.find(locale => 
+    acceptLanguage.toLowerCase().includes(locale)
+  );
+  
+  return preferredLocale || defaultLocale;
 }
 
 export function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname
 
-  // Check if the pathname is root (/) or missing a locale
+  // Check if the pathname is missing a locale
   const pathnameIsMissingLocale = locales.every(
     (locale) => !pathname.startsWith(`/${locale}/`) && pathname !== `/${locale}`
   )
@@ -30,14 +30,13 @@ export function middleware(request: NextRequest) {
   if (pathnameIsMissingLocale) {
     const locale = getLocale(request)
 
-    // Special handling for root path
-    if (pathname === '/') {
-      // For root path, redirect to default locale
-      return NextResponse.redirect(new URL(`/${defaultLocale}`, request.url))
-    }
-
-    // For other paths, add the locale prefix
-    return NextResponse.redirect(new URL(`/${locale}${pathname}`, request.url))
+    // For root path or paths missing locale, redirect with locale prefix
+    return NextResponse.redirect(
+      new URL(
+        pathname === '/' ? `/${locale}` : `/${locale}${pathname}`,
+        request.url
+      )
+    )
   }
 }
 

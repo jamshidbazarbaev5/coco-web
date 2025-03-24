@@ -4,13 +4,19 @@ import { useState, useEffect } from "react"
 import '../styles/confirm.css'
 
 interface ConfirmationModalProps {
-  message?: string;
+  messageUz?: string;
+  messageRu?: string;
   onClose?: () => void;
 }
 
-export default function ConfirmationModal({ message = "Товар добавлен в корзину!", onClose }: ConfirmationModalProps) {
+export default function ConfirmationModal({ 
+  messageUz = "Mahsulot savatga qo'shildi!", 
+  messageRu = "Товар добавлен в корзину!", 
+  onClose 
+}: ConfirmationModalProps) {
   const [isVisible, setIsVisible] = useState(true)
   const [isClosing, setIsClosing] = useState(false)
+  const [currentLang, setCurrentLang] = useState<'uz' | 'ru'>('uz')
 
   const closeModal = () => {
     setIsClosing(true)
@@ -23,7 +29,7 @@ export default function ConfirmationModal({ message = "Товар добавле
   useEffect(() => {
     const timer = setTimeout(() => {
       closeModal()
-    }, 3000)
+    }, 2000)
 
     return () => clearTimeout(timer)
   }, [])
@@ -37,7 +43,24 @@ export default function ConfirmationModal({ message = "Товар добавле
           ✕
         </button>
 
-        <h2 className="confirmation-title">{message}</h2>
+        {/* <div className="language-switcher">
+          <button 
+            onClick={() => setCurrentLang('uz')}
+            className={currentLang === 'uz' ? 'active' : ''}
+          >
+            UZ
+          </button>
+          <button 
+            onClick={() => setCurrentLang('ru')}
+            className={currentLang === 'ru' ? 'active' : ''}
+          >
+            RU
+          </button>
+        </div> */}
+
+        <h2 className="confirmation-title">
+          {currentLang === 'uz' ? messageUz : messageRu}
+        </h2>
 
         <div className="confirmation-icon">
           <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">

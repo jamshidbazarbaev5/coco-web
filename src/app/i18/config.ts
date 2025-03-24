@@ -12,18 +12,18 @@ const initI18n = async () => {
     .use(initReactI18next)
     .init({
       fallbackLng: 'uz',
-      supportedLngs: ['uz', 'ru', ],
+      supportedLngs: ['uz', 'ru'],
       debug: process.env.NODE_ENV === 'development',
       interpolation: {
         escapeValue: false,
       },
       backend: {
-        loadPath: '/locales/{{lng}}/translation.json',
+        loadPath: '/locales/{{lng}}/translations.json',
       },
       detection: {
-        order: ['path', 'localStorage', 'cookie', 'navigator'],
+        order: ['path', 'localStorage', 'navigator'],
         lookupFromPathIndex: 0,
-        caches: ['localStorage', 'cookie'],
+        caches: ['localStorage'],
       },
     });
 };

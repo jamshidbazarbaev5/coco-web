@@ -1,34 +1,175 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Image from "next/image"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
+import ConfirmationModal from "./ConfirmationModal"
+
+// Define interfaces for the data
+interface ProductAttribute {
+  color: string;
+  image: string;
+  sizes: number[];
+}
+
+interface Product {
+  id: number;
+  brand: number;
+  category: number;
+  title_ru: string;
+  title_uz: string;
+  description_ru: string;
+  description_uz: string;
+  material: number;
+  price: string;
+  new_price: string;
+  quantity: number;
+  product_attributes: ProductAttribute[];
+  on_sale: boolean;
+}
+
+interface CartItem {
+  product: number;
+  quantity: number;
+  name: string;
+  description: string;
+  price: string;
+  stock: number;
+  image: string;
+}
+
+interface Brand {
+  id: number;
+  name: string;
+}
 
 export default function ProductPage() {
   const [selectedColor, setSelectedColor] = useState("brown")
-  const router = useRouter()
-
+  const [product, setProduct] = useState<Product | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [showConfirmation, setShowConfirmation] = useState(false)
+  const [brands, setBrands] = useState<Brand[]>([])
+  const [brandsLoading, setBrandsLoading] = useState(true)
   
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const productId = searchParams.get('id')
+  
+  useEffect(() => {
+    const fetchProductDetails = async () => {
+      if (!productId) {
+        router.push('/catalog')
+        return
+      }
+      
+      try {
+        const response = await fetch(`https://coco20.uz/api/v1/products/crud/product/${productId}/`)
+        const data = await response.json()
+        setProduct(data)
+        setLoading(false)
+      } catch (error) {
+        console.error("Error fetching product details:", error)
+        setLoading(false)
+      }
+    }
+    
+    fetchProductDetails()
+  }, [productId, router])
+  
+  useEffect(() => {
+    const fetchBrands = async () => {
+      setBrandsLoading(true)
+      try {
+        const response = await fetch('https://coco20.uz/api/v1/products/crud/brand/')
+        const data = await response.json()
+        setBrands(data.results)
+      } catch (error) {
+        console.error("Error fetching brands:", error)
+      } finally {
+        setBrandsLoading(false)
+      }
+    }
+
+    fetchBrands()
+  }, [])
+
+  // Helper function to get brand name
+  const getBrandName = (brandId: number) => {
+    if (brandsLoading) return "Loading..."
+    const brand = brands.find(b => b.id === brandId)
+    return brand?.name || 'Unknown Brand'
+  }
+
   const handleAddToCart = () => {
-    alert("Product added to cart!")
+    if (!product) return
+    
+    // Create a cart item from the product
+    const cartItem: CartItem = {
+      product: product.id,
+      quantity: 1,
+      name: getBrandName(product.brand),
+      description: product.title_ru,
+      price: `${product.price} uzs`,
+      stock: product.quantity,
+      image: product.product_attributes[0]?.image || "/placeholder.svg"
+    }
+    
+    // Get existing cart from localStorage or initialize empty array
+    const existingCart = JSON.parse(localStorage.getItem('cart') || '[]')
+    
+    // Check if product already exists in cart
+    const existingItemIndex = existingCart.findIndex((item: CartItem) => item.product === product.id)
+    
+    if (existingItemIndex >= 0) {
+      // Update quantity if product already in cart
+      existingCart[existingItemIndex].quantity += 1
+    } else {
+      // Add new item to cart
+      existingCart.push(cartItem)
+    }
+    
+    // Save updated cart to localStorage
+    localStorage.setItem('cart', JSON.stringify(existingCart))
+    
+    // Show confirmation modal
+    setShowConfirmation(true)
+  }
+
+  if (loading || brandsLoading) {
+    return <div className="loading">Loading...</div>
+  }
+
+  if (!product) {
+    return <div className="error">Product not found</div>
   }
 
   return (
     <div className="product-container">
       <div className="product-image">
         <Image
-        src={'/DETAILS.png'}
-          alt="Gucci Garavani for Women"
+          src={product.product_attributes[0]?.image || '/DETAILS.png'}
+          alt={product.title_ru}
           width={801}
           height={914}
           className="main-image"
         />
       </div>
       <div className="product-info">
-        <h1 className="brand-name">Gucci</h1>
-        <p className="product-name">Garavani for Women</p>
-        <p className="product-price">4 850 540 uzs</p>
-        <p className="product-availability">В наличии: 1</p>
+        <h1 className="brand-name">
+          {product && getBrandName(product.brand)}
+        </h1>
+        <p className="product-name">{product.title_ru}</p>
+        <p className="product-price">
+          {product.on_sale ? (
+            <>
+              <span className="original-price">{product.price} uzs</span>
+              <span className="sale-price">{product.new_price} uzs</span>
+            </>
+          ) : (
+            `${product.price} uzs`
+          )}
+        </p>
+        <p className="product-availability">В наличии: {product.quantity}</p>
 
         <div className="color-section">
           <p className="color-title">Цвета:</p>
@@ -72,6 +213,10 @@ export default function ProductPage() {
                 <td className="info-label">Размеры</td>
                 <td className="info-value">34/10/24</td>
               </tr>
+              <tr>
+                <td className="info-label">Описание</td>
+                <td className="info-value">{product.description_ru}</td>
+              </tr>
             </tbody>
           </table>
         </div>
@@ -80,6 +225,13 @@ export default function ProductPage() {
           Добавить в корзину
         </button>
       </div>
+
+      {/* Add Confirmation Modal */}
+      {showConfirmation && (
+        <ConfirmationModal 
+          onClose={() => setShowConfirmation(false)}
+        />
+      )}
 
       <style jsx global>{`
         * {
@@ -258,6 +410,26 @@ export default function ProductPage() {
           .product-image, .product-info {
             width: 100%;
           }
+        }
+        
+        .original-price {
+          text-decoration: line-through;
+          color: #999;
+          margin-right: 10px;
+        }
+        
+        .sale-price {
+          color: #e74c3c;
+          font-weight: bold;
+        }
+        
+        .loading, .error {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          height: 50vh;
+          font-size: 18px;
+          color: #666;
         }
       `}</style>
     </div>

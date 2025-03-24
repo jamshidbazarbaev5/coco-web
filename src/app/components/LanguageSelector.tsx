@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import styles from "../styles/language-selector.module.css";
+import { useTranslation } from "react-i18next";
 
 const languages = [
   {
@@ -101,6 +102,7 @@ export default function LanguageSelector() {
   const [isOpen, setIsOpen] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
+  const { i18n } = useTranslation();
   
   const currentLang = pathname.split('/')[1];
   const [selectedLang, setSelectedLang] = useState(
@@ -115,8 +117,16 @@ export default function LanguageSelector() {
     setSelectedLang(language);
     setIsOpen(false);
     
-    // Change the URL path
-    const newPathname = pathname.replace(`/${currentLang}`, `/${language.code}`);
+    // Get the path segments after the language code
+    const pathSegments = pathname.split('/').slice(2);
+    
+    // Construct new path with selected language
+    const newPathname = `/${language.code}/${pathSegments.join('/')}`;
+    
+    // Update i18n language
+    i18n.changeLanguage(language.code);
+    
+    // Navigate to new URL
     router.push(newPathname);
   };
 

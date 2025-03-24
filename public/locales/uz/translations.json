@@ -1,0 +1,106 @@
+{
+    "beauty_comfort": "GO'ZALLIK VA QULAYLIK",
+    "info_text": "Biz eng yuqori sifatli va uslubli sumkalarni taqdim etamiz.",
+    "benefits": {
+      "exclusive_offers": "Maxsus takliflar va chegirmalar",
+      "expert_tips": "Ekspertlarimizdan maslahatlar",
+      "inspiration": "Yangi ko'rinishingiz uchun ajoyib ilhom"
+    },
+    "contact": {
+      "contact_us": "BIZ BILAN BOG'LANING",
+      "have_questions": "Savollaringiz bormi?",
+      "get_in_touch": "Bog'lanish",
+      "address": "2972 Westheimer Rd, Santa Ana, Illinois 85486"
+    },
+    "form": {
+      "name": "Ism",
+      "phone": "Telefon",
+      "feedback": "Sizning taklif/istağingiz",
+      "sending": "Yuborilmoqda...",
+      "send": "Yuborish",
+      "consent": "Ma'lumotlarimni yig'ish va saqlashga roziman",
+      "alerts": {
+        "consent_required": "Iltimos, ma'lumotlarni yig'ishga rozilik bering",
+        "complete_phone": "Iltimos, to'liq telefon raqamini kiriting",
+        "send_failed": "Xabar yuborilmadi. Qaytadan urinib ko'ring.",
+        "error": "Xatolik yuz berdi. Iltimos, keyinroq qayta urinib ko'ring."
+      }
+    },
+    "cart": {
+      "title": "Savatcha",
+      "empty": "Savatingiz bo'sh",
+      "order_success": "Buyurtmangiz muvaffaqiyatli yuborildi!",
+      "in_stock": "Mavjud:",
+      "remove_item": "Mahsulotni o'chirish",
+      "quantity": {
+        "increase": "Miqdorni oshirish",
+        "decrease": "Miqdorni kamaytirish"
+      }
+    },
+    "product_details": {
+      "loading": "Yuklanmoqda...",
+      "error": "Mahsulot topilmadi",
+      "colors": "Ranglar:",
+      "additional_info": "Qo'shimcha ma'lumot:",
+      "add_to_cart": "Savatga qo'shish",
+      "table": {
+        "color": "Rang",
+        "material": "Material",
+        "sizes": "O'lchamlar",
+        "description": "Tavsif",
+        "brown": "Jigarrang",
+        "premium_leather": "Premium vegan teri"
+      },
+      "in_stock": "Mavjud:",
+      "color_title": "Ranglar:"
+    },
+    "header": {
+      "home": "Asosiy",
+      "catalog": "Katalog",
+      "about": "Biz haqimizda",
+      "sale": "Chegirmalar"
+    },
+    "contact_page": {
+      "brand_tagline": "Biz zamonaviy sumkalarni\nishlab chiqaramiz va yaratamiz",
+      "help_title": "Biz sizga qanday yordam bera olamiz?",
+      "social": {
+        "telegram": "@coco.uz",
+        "instagram": "@coco.uz",
+        "facebook": "@coco.uz"
+      }
+    },
+    "filters": {
+      "enter_name": "Nomini kiriting",
+      "brands": "Brendlar",
+      "sizes": "O'lchamlar",
+      "colors": "Ranglar",
+      "price": {
+        "from": "dan:",
+        "to": "gacha:",
+        "currency": "UZS"
+      },
+      "colors_list": {
+        "black": "Qora",
+        "blue": "Ko'k",
+        "yellow": "Sariq",
+        "red": "Qizil",
+        "white": "Oq",
+        "green": "Yashil"
+      },
+      "loading": "Yuklanmoqda...",
+      "buttons": {
+        "apply": "Qo'llash",
+        "reset": "Tozalash"
+      }
+    },
+    "features": {
+      "company_features": "KOMPANIYA XUSUSIYATLARI",
+      "wide_range": "Biz keng ko'lamli tayyor mahsulotlarni ishlab chiqaramiz",
+      "description1": "Biz mijozlarimiz uchun eng yuqori sifatli mahsulotlarni yaratishda har bir tafsilotga e'tibor beramiz.",
+      "description2": "Kompaniyamiz doimiy ravishda rivojlanib bormoqda va xizmat ko'rsatish sifatini yaxshilash uchun innovatsion yechimlarni joriy etmoqda.",
+      "individual_approach": "Individual yondashuv",
+      "fast_delivery": "Tezkor yetkazib berish",
+      "wide_assortment": "Keng assortiment",
+      "quality_guarantee": "Sifat kafolati"
+    }
+  }

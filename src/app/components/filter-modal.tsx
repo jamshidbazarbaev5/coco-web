@@ -1,8 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
+
+// Add interfaces for API responses
+interface Brand {
+  id: number;
+  name: string;
+}
+
+interface Size {
+  id: number;
+  name: string;
+}
 
 export default function FilterModal({ onClose }: { onClose: () => void }) {
+  const { t } = useTranslation();
+
   // State for form inputs
   const [searchQuery, setSearchQuery] = useState("");
   const [brandInput, setBrandInput] = useState("");
@@ -15,22 +29,66 @@ export default function FilterModal({ onClose }: { onClose: () => void }) {
   const [sizesOpen, setSizesOpen] = useState(false);
   const [colorsOpen, setColorsOpen] = useState(false);
 
+  // Replace hardcoded data with state from API
+  const [brands, setBrands] = useState<Brand[]>([]);
+  const [sizes, setSizes] = useState<Size[]>([]);
+  const [isLoadingBrands, setIsLoadingBrands] = useState(true);
+  const [isLoadingSizes, setIsLoadingSizes] = useState(true);
+
   // Selected brands
-  const [selectedBrands, setSelectedBrands] = useState(["Prada"]);
+  const [selectedBrands, setSelectedBrands] = useState<Brand[]>([]);
 
   // Add new state for selected sizes and colors
   const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
   const [selectedColors, setSelectedColors] = useState<string[]>([]);
 
   // Available brands, sizes, and colors
-  const brands = ["Gucci", "Prada", "Louis Vuitton", "Giancarlo petrigila"];
-  const sizes = ["XS", "S", "M", "L", "XL", "2XL"];
-  const colors = ["Черный", "синий", "желтый", "красный", "белый", "зеленый"];
+  const colors = ["black", "blue", "yellow", "red", "white", "green"];
+
+  // Fetch brands and sizes from API
+  useEffect(() => {
+    const fetchBrands = async () => {
+      setIsLoadingBrands(true);
+      try {
+        let allBrands: Brand[] = [];
+        let nextUrl = "https://coco20.uz/api/v1/brands/crud/brand/?page=1&page_size=10";
+        
+        while (nextUrl) {
+          const response = await fetch(nextUrl);
+          const data = await response.json();
+          allBrands = [...allBrands, ...data.results];
+          nextUrl = data.next;
+        }
+        
+        setBrands(allBrands);
+      } catch (error) {
+        console.error("Error fetching brands:", error);
+      } finally {
+        setIsLoadingBrands(false);
+      }
+    };
+    
+    const fetchSizes = async () => {
+      setIsLoadingSizes(true);
+      try {
+        const response = await fetch("https://coco20.uz/api/v1/products/crud/size/?page=1&page_size=10");
+        const data = await response.json();
+        setSizes(data.results);
+      } catch (error) {
+        console.error("Error fetching sizes:", error);
+      } finally {
+        setIsLoadingSizes(false);
+      }
+    };
+    
+    fetchBrands();
+    fetchSizes();
+  }, []);
 
   // Toggle brand selection
-  const toggleBrand = (brand: string) => {
-    if (selectedBrands.includes(brand)) {
-      setSelectedBrands(selectedBrands.filter((b) => b !== brand));
+  const toggleBrand = (brand: Brand) => {
+    if (selectedBrands.some(b => b.id === brand.id)) {
+      setSelectedBrands(selectedBrands.filter(b => b.id !== brand.id));
     } else {
       setSelectedBrands([...selectedBrands, brand]);
     }
@@ -53,7 +111,7 @@ export default function FilterModal({ onClose }: { onClose: () => void }) {
     }
   };
 
-  // Reset all filters
+  // Reset filters updated for new data structure
   const resetFilters = () => {
     setSearchQuery("");
     setBrandInput("");
@@ -64,21 +122,23 @@ export default function FilterModal({ onClose }: { onClose: () => void }) {
     setSelectedColors([]);
   };
 
-  // Apply filters
+  // Apply filters updated for new data structure
   const applyFilters = () => {
     console.log("Applying filters:", {
       searchQuery,
-      selectedBrands,
+      selectedBrands: selectedBrands.map(brand => ({ id: brand.id, name: brand.name })),
+      selectedSizes: selectedSizes,
+      selectedColors: selectedColors,
       priceRange: { min: minPrice, max: maxPrice },
     });
     onClose();
   };
 
-  // Helper function to format selected items display
-  const formatSelectedItems = (items: string[], limit: number = 2) => {
+  // Helper function to format selected items display for brands
+  const formatSelectedBrands = (items: Brand[], limit: number = 2) => {
     if (items.length === 0) return "";
-    if (items.length <= limit) return `: ${items.join(", ")}`;
-    return `: ${items.slice(0, limit).join(", ")} +${items.length - limit}`;
+    if (items.length <= limit) return `: ${items.map(item => item.name).join(", ")}`;
+    return `: ${items.slice(0, limit).map(item => item.name).join(", ")} +${items.length - limit}`;
   };
 
   // Modified dropdown state handling
@@ -126,7 +186,7 @@ export default function FilterModal({ onClose }: { onClose: () => void }) {
             </span>
             <input
               type="text"
-              placeholder="Введите название"
+              placeholder={t('filters.enter_name')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -140,7 +200,7 @@ export default function FilterModal({ onClose }: { onClose: () => void }) {
               onClick={() => handleDropdownClick('brands')}
             >
               <span className="filter-title">
-                Бренды{formatSelectedItems(selectedBrands)}
+                {t('filters.brands')}{formatSelectedBrands(selectedBrands)}
               </span>
               <span className={`arrow ${brandsOpen ? "up" : "down"}`}>
                 <svg
@@ -173,39 +233,42 @@ export default function FilterModal({ onClose }: { onClose: () => void }) {
 
           {brandsOpen && (
             <div className="filter-content brands-filter">
-             
               <div className="brand-list">
-                {brands
-                  .filter((brand) =>
-                    brand.toLowerCase().includes(brandInput.toLowerCase())
-                  )
-                  .map((brand) => (
-                    <div
-                      key={brand}
-                      className={`brand-item ${
-                        selectedBrands.includes(brand) ? "selected" : ""
-                      }`}
-                      onClick={() => toggleBrand(brand)}
-                    >
-                      <span>{brand}</span>
-                      {selectedBrands.includes(brand) && (
-                        <span className="checkmark">
-                          <svg
-                            width="17"
-                            height="16"
-                            viewBox="0 0 17 16"
-                            fill="none"
-                            xmlns="http://www.w3.org/2000/svg"
-                          >
-                            <path
-                              d="M14.2631 4.69818L6.33894 12.6223L2.70703 8.99044L3.63812 8.05935L6.33894 10.7536L13.332 3.76709L14.2631 4.69818Z"
-                              fill="black"
-                            />
-                          </svg>
-                        </span>
-                      )}
-                    </div>
-                  ))}
+                {isLoadingBrands ? (
+                  <div className="loading">Loading brands...</div>
+                ) : (
+                  brands
+                    .filter((brand) =>
+                      brand.name.toLowerCase().includes(brandInput.toLowerCase())
+                    )
+                    .map((brand) => (
+                      <div
+                        key={brand.id}
+                        className={`brand-item ${
+                          selectedBrands.some(b => b.id === brand.id) ? "selected" : ""
+                        }`}
+                        onClick={() => toggleBrand(brand)}
+                      >
+                        <span>{brand.name}</span>
+                        {selectedBrands.some(b => b.id === brand.id) && (
+                          <span className="checkmark">
+                            <svg
+                              width="17"
+                              height="16"
+                              viewBox="0 0 17 16"
+                              fill="none"
+                              xmlns="http://www.w3.org/2000/svg"
+                            >
+                              <path
+                                d="M14.2631 4.69818L6.33894 12.6223L2.70703 8.99044L3.63812 8.05935L6.33894 10.7536L13.332 3.76709L14.2631 4.69818Z"
+                                fill="black"
+                              />
+                            </svg>
+                          </span>
+                        )}
+                      </div>
+                    ))
+                )}
               </div>
             </div>
           )}
@@ -219,9 +282,9 @@ export default function FilterModal({ onClose }: { onClose: () => void }) {
             >
               <span className="filter-title">
                 {selectedSizes.length > 0 ? (
-                  <span>Размеры : {selectedSizes.join(", ")}</span>
+                  <span>{t('filters.sizes')} : {selectedSizes.join(", ")}</span>
                 ) : (
-                  <span>Размеры {sizes.join(", ")}</span>
+                  <span>{t('filters.sizes')} {isLoadingSizes ? t('filters.loading') : sizes.map(s => s.name).join(", ")}</span>
                 )}
               </span>
               <span className={`arrow ${sizesOpen ? "up" : "down"}`}>
@@ -258,14 +321,14 @@ export default function FilterModal({ onClose }: { onClose: () => void }) {
               <div className="options-list">
                 {sizes.map((size) => (
                   <div
-                    key={size}
+                    key={size.id}
                     className={`option-item ${
-                      selectedSizes.includes(size) ? "selected" : ""
+                      selectedSizes.includes(size.name) ? "selected" : ""
                     }`}
-                    onClick={() => toggleSize(size)}
+                    onClick={() => toggleSize(size.name)}
                   >
-                    <span>{size}</span>
-                    {selectedSizes.includes(size) && (
+                    <span>{size.name}</span>
+                    {selectedSizes.includes(size.name) && (
                       <span className="checkmark">
                         {" "}
                         <svg
@@ -290,7 +353,7 @@ export default function FilterModal({ onClose }: { onClose: () => void }) {
         </div>
 
         <div className="filter-section price-filter">
-          <div className="filter-title">от:</div>
+          <div className="filter-title">{t('filters.price.from')}</div>
           <div className="price-inputs">
             <input
               type="text"
@@ -298,10 +361,10 @@ export default function FilterModal({ onClose }: { onClose: () => void }) {
               onChange={(e) => setMinPrice(e.target.value)}
               className="price-input"
             />
-            <span className="price-currency">UZS</span>
+            <span className="price-currency">{t('filters.price.currency')}</span>
           </div>
 
-          <div className="filter-title price-to">до:</div>
+          <div className="filter-title price-to">{t('filters.price.to')}</div>
           <div className="price-inputs">
             <input
               type="text"
@@ -309,7 +372,7 @@ export default function FilterModal({ onClose }: { onClose: () => void }) {
               onChange={(e) => setMaxPrice(e.target.value)}
               className="price-input"
             />
-            <span className="price-currency">UZS</span>
+            <span className="price-currency">{t('filters.price.currency')}</span>
           </div>
         </div>
 
@@ -321,9 +384,9 @@ export default function FilterModal({ onClose }: { onClose: () => void }) {
             >
               <span className="filter-title">
                 {selectedColors.length > 0 ? (
-                  <span>Цвета : {selectedColors.join(", ")}</span>
+                  <span>{t('filters.colors')} : {selectedColors.map(c => t(`filters.colors_list.${c}`)).join(", ")}</span>
                 ) : (
-                  <span>Цвета {colors.join(", ")}</span>
+                  <span>{t('filters.colors')} {colors.map(c => t(`filters.colors_list.${c}`)).join(", ")}</span>
                 )}
               </span>
               <span className={`arrow ${colorsOpen ? "up" : "down"}`}>
@@ -366,7 +429,7 @@ export default function FilterModal({ onClose }: { onClose: () => void }) {
                     }`}
                     onClick={() => toggleColor(color)}
                   >
-                    <span>{color}</span>
+                    <span>{t(`filters.colors_list.${color}`)}</span>
                     {selectedColors.includes(color) && (
                       <span className="checkmark">
                         {" "}
@@ -393,10 +456,10 @@ export default function FilterModal({ onClose }: { onClose: () => void }) {
 
         <div className="filter-actions">
           <button className="apply-button" onClick={applyFilters}>
-            Применить
+            {t('filters.buttons.apply')}
           </button>
           <button className="reset-button" onClick={resetFilters}>
-            Сбросить
+            {t('filters.buttons.reset')}
           </button>
         </div>
       </div>

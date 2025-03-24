@@ -1,8 +1,11 @@
 import Image from "next/image"
 import styles from  '../styles/feature.module.css'
 import { motion } from "framer-motion"
+import { useTranslation } from 'react-i18next'
 
 export default function Home() {
+  const { t } = useTranslation()
+
   return (
     <main className={styles.main}>
       <section className={styles.newArrivalsSection}>
@@ -48,11 +51,11 @@ export default function Home() {
             whileInView={{ opacity: 1 }}
             transition={{ delay: 0.4 }}
           >
-            BEAUTY & COMFORT
+            {t('beauty_comfort')}
           </motion.span>
-          <h2 className={styles.heading}>New Arrivals</h2>
+          <h2 className={styles.heading}>{t('features.company_features')}</h2>
           <p className={styles.description}>
-            Dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit.
+            {t('features.wide_range')}
           </p>
 
           <motion.ul 
@@ -62,9 +65,9 @@ export default function Home() {
             transition={{ delay: 0.6 }}
           >
             {[
-              "Exclusive Offers and discounts",
-              "Tips and advice from our experts",
-              "Beautiful inspiration for your new home"
+              t('benefits.exclusive_offers'),
+              t('benefits.expert_tips'),
+              t('benefits.inspiration')
             ].map((feature, index) => (
               <motion.li 
                 key={index}
@@ -88,7 +91,7 @@ export default function Home() {
             whileHover={{ scale: 1.05 }}
             viewport={{ once: true }}
           >
-            Find Out More
+            {t('contact.get_in_touch')}
           </motion.button>
         </motion.div>
       </section>

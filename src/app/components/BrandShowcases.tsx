@@ -1,39 +1,65 @@
 "use client";
 import { useState, useEffect, useRef, TouchEvent } from "react";
 import styles from "../styles/BrandSlider.module.css";
-const slides = [
-  {
-    id: "01",
-    brand: "Louis Vuitton",
-    description: "Adipiscing elit sed",
-    image: "/cart-3.jpg",
-  },
-  {
-    id: "02",
-    brand: "Saint Laurent",
-    description: "Adipiscing elit sed",
-    image: "/cart-1.jpg",
-  },
-  {
-    id: "03",
-    brand: "Balenciaga",
-    description: "Adipiscing elit sed",
-    image: "/cart-2.jpg",
-  },
-  {
-    id: "04",
-    brand: "Alexander McQueen",
-    description: "Adipiscing elit sed",
-    image: "/cart-4.jpg",
-  },
-];
+
+// Add new interfaces for the API response
+interface ProductAttribute {
+  color: string;
+  image: string;
+  sizes: number[];
+}
+
+interface Product {
+  id: number;
+  brand: number;
+  title_uz: string;
+  title_ru: string;
+  description_uz: string;
+  description_ru: string;
+  product_attributes: ProductAttribute[];
+}
+
+interface ApiResponse {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: Product[];
+}
 
 export default function BrandSlider() {
+  const [slides, setSlides] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchMove, setTouchMove] = useState<number | null>(null);
   const sliderRef = useRef<HTMLDivElement>(null);
+
+  // Add function to fetch all products from paginated API
+  const fetchAllProducts = async () => {
+    try {
+      let url = 'https://coco20.uz/api/v1/products/crud/product/';
+      let allProducts: Product[] = [];
+      
+      while (url) {
+        const response = await fetch(url);
+        const data: ApiResponse = await response.json();
+        allProducts = [...allProducts, ...data.results];
+        url = data.next || '';
+      }
+      
+      setSlides(allProducts);
+      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching products:', error);
+      setLoading(false);
+    }
+  };
+
+  // Add useEffect to fetch data on component mount
+  useEffect(() => {
+    fetchAllProducts();
+  }, []);
 
   // Create an extended array of slides for infinite effect
   const extendedSlides = [...slides, ...slides, ...slides];
@@ -148,84 +174,115 @@ export default function BrandSlider() {
     };
   };
 
+  // Function to truncate text with null check
+  const truncateText = (text?: string, maxLength: number = 50) => {
+    if (!text) return '';
+    if (text.length <= maxLength) return text;
+    return text.slice(0, maxLength) + '...';
+  };
+
+  // Function to get visible pagination dots (only 3)
+  const getVisibleDots = () => {
+    const totalDots = slides.length;
+    const currentDot = currentIndex % totalDots;
+    
+    // If we have 3 or fewer slides, show all dots
+    if (totalDots <= 3) return slides.map((_, i) => i);
+    
+    // Otherwise, show current dot and one on each side
+    if (currentDot === 0) return [0, 1, 2];
+    if (currentDot === totalDots - 1) return [totalDots - 3, totalDots - 2, totalDots - 1];
+    return [currentDot - 1, currentDot, currentDot + 1];
+  };
+
   return (
     <div className={styles.sliderContainer}>
-      <div 
-        ref={sliderRef}
-        className={styles.slider} 
-        style={getSliderStyle()}
-        onTransitionEnd={handleTransitionEnd}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-      >
-        {extendedSlides.map((slide, index) => (
+      {loading ? (
+        <div className={styles.loading}>Loading...</div>
+      ) : (
+        <>
           <div 
-            key={`${slide.id}-${index}`} 
-            className={styles.slide}
+            ref={sliderRef}
+            className={styles.slider} 
+            style={getSliderStyle()}
+            onTransitionEnd={handleTransitionEnd}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
           >
-            <div className={styles.slideContent}>
-              <span className={styles.slideNumber}>{slide.id}.</span>
-              <div className={styles.slideInfo}>
-                <h2 className={styles.brandName}>{slide.brand}</h2>
-                <p className={styles.description}>{slide.description}</p>
+            {extendedSlides.map((slide, index) => (
+              <div 
+                key={`${slide.id}-${index}`} 
+                className={styles.slide}
+              >
+                <div className={styles.slideContent}>
+                  <span className={styles.slideNumber}>
+                    {`${(index % (slides?.length || 1)) + 1}`.padStart(2, '0')}.
+                  </span>
+                  <div className={styles.slideInfo}>
+                    <h2 className={styles.brandName}>{slide?.title_ru || ''}</h2>
+                    <p className={styles.description}>
+                      {truncateText(slide?.description_ru)}
+                    </p>
+                  </div>
+                </div>
+                <img
+                  src={slide?.product_attributes?.[0]?.image || ''}
+                  alt={slide?.title_ru || ''}
+                  className={styles.slideImage}
+                  loading="lazy"
+                />
               </div>
-            </div>
-            <img
-              src={slide.image}
-              alt={slide.brand}
-              className={styles.slideImage}
-              loading="lazy"
-            />
+            ))}
           </div>
-        ))}
-      </div>
 
-      {/* Hide navigation buttons on mobile */}
-      <div className={styles.navigationButtons}>
-       
-        <button
-          className={`${styles.navButton} ${styles.nextButton}`}
-          onClick={nextSlide}
-          aria-label="Next slide"
-        >
-          <svg
-            width="54"
-            height="54"
-            viewBox="0 0 54 54"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <g opacity="0.7">
-              <path
-                d="M8.64035 26.9999C8.64035 16.8479 16.8484 8.63989 27.0004 8.63989C37.1524 8.63989 45.3604 16.8479 45.3604 26.9999C45.3604 37.1519 37.1524 45.3599 27.0004 45.3599C16.8484 45.3599 8.64035 37.1519 8.64035 26.9999ZM43.2004 26.9999C43.2004 18.0359 35.9644 10.7999 27.0004 10.7999C18.0364 10.7999 10.8004 18.0359 10.8004 26.9999C10.8004 35.9639 18.0364 43.1999 27.0004 43.1999C35.9644 43.1999 43.2004 35.9639 43.2004 26.9999Z"
-                fill="white"
-              />
-              <path
-                d="M25.1643 35.9639L34.1283 26.9999L25.1643 18.0359L26.6763 16.5239L37.1523 26.9999L26.6763 37.4759L25.1643 35.9639Z"
-                fill="white"
-              />
-              <path
-                d="M35.6396 25.9199V28.0799H17.2796V25.9199H35.6396Z"
-                fill="white"
-              />
-            </g>
-          </svg>
-        </button>
-      </div>
+          {/* Hide navigation buttons on mobile */}
+          <div className={styles.navigationButtons}>
+           
+            <button
+              className={`${styles.navButton} ${styles.nextButton}`}
+              onClick={nextSlide}
+              aria-label="Next slide"
+            >
+              <svg
+                width="54"
+                height="54"
+                viewBox="0 0 54 54"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <g opacity="0.7">
+                  <path
+                    d="M8.64035 26.9999C8.64035 16.8479 16.8484 8.63989 27.0004 8.63989C37.1524 8.63989 45.3604 16.8479 45.3604 26.9999C45.3604 37.1519 37.1524 45.3599 27.0004 45.3599C16.8484 45.3599 8.64035 37.1519 8.64035 26.9999ZM43.2004 26.9999C43.2004 18.0359 35.9644 10.7999 27.0004 10.7999C18.0364 10.7999 10.8004 18.0359 10.8004 26.9999C10.8004 35.9639 18.0364 43.1999 27.0004 43.1999C35.9644 43.1999 43.2004 35.9639 43.2004 26.9999Z"
+                    fill="white"
+                  />
+                  <path
+                    d="M25.1643 35.9639L34.1283 26.9999L25.1643 18.0359L26.6763 16.5239L37.1523 26.9999L26.6763 37.4759L25.1643 35.9639Z"
+                    fill="white"
+                  />
+                  <path
+                    d="M35.6396 25.9199V28.0799H17.2796V25.9199H35.6396Z"
+                    fill="white"
+                  />
+                </g>
+              </svg>
+            </button>
+          </div>
 
-      <div className={styles.pagination}>
-        {slides.map((_, index) => (
-          <button
-            key={index}
-            className={`${styles.paginationDot} ${
-              currentIndex % slides.length === index ? styles.active : ""
-            }`}
-            onClick={() => setCurrentIndex(index)}
-            aria-label={`Go to slide ${index + 1}`}
-          />
-        ))}
-      </div>
+          <div className={styles.pagination}>
+            {getVisibleDots().map((dotIndex) => (
+              <button
+                key={dotIndex}
+                className={`${styles.paginationDot} ${
+                  currentIndex % slides.length === dotIndex ? styles.active : ""
+                }`}
+                onClick={() => setCurrentIndex(dotIndex)}
+                aria-label={`Go to slide ${dotIndex + 1}`}
+              />
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }

@@ -1,16 +1,148 @@
+"use client"
+
+import { useState, useEffect } from 'react'
 import styles from '../styles/contact.module.css'
 import { Send } from "lucide-react"
 import Image from 'next/image'
+import ConfirmationModal from './ConfirmationModal'
+import { useTranslation } from 'react-i18next'
+
 export default function ContactPage() {
+  const { t } = useTranslation()
+  const [formData, setFormData] = useState({
+    name: '',
+    phone_number: '',
+    feedback: ''
+  })
+  const [showConfirmation, setShowConfirmation] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [consentChecked, setConsentChecked] = useState(false)
+
+  // Initialize phone number with +998 prefix
+  useEffect(() => {
+    setFormData(prev => ({ ...prev, phone_number: '+998 ' }))
+  }, [])
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target
+    
+    if (name === 'phone_number') {
+      // Handle phone number formatting
+      handlePhoneChange(value)
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }))
+    }
+  }
+  // Add custom messages for the cart confirmation
+const cartConfirmationMessage = {
+  uz: "Arizangiz muvaffaqiyatli jo'natildi",
+  ru: "Ваша пожелание успешно отправлен!"
+};
+
+  const handlePhoneChange = (value: string) => {
+    // Remove all non-digit characters except the plus sign
+    let digits = value.replace(/[^\d+]/g, '')
+    
+    // Ensure the number starts with +998
+    if (!digits.startsWith('+998')) {
+      digits = '+998' + digits.replace(/^\+998/, '')
+    }
+    
+    // Format the phone number: +998 XX XXX-XX-XX
+    let formatted = digits
+    
+    if (digits.length > 4) {
+      formatted = `+998 ${digits.slice(4, 6)}`
+      
+      if (digits.length > 6) {
+        formatted += ` ${digits.slice(6, 9)}`
+        
+        if (digits.length > 9) {
+          formatted += `-${digits.slice(9, 11)}`
+          
+          if (digits.length > 11) {
+            formatted += `-${digits.slice(11, 13)}`
+          }
+        }
+      }
+    }
+    
+    // Limit to the correct length for Uzbekistan numbers
+    if (formatted.replace(/[^\d+]/g, '').length > 13) {
+      return
+    }
+    
+    setFormData(prev => ({ ...prev, phone_number: formatted }))
+  }
+
+  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setConsentChecked(e.target.checked)
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    if (!consentChecked) {
+      alert('Please agree to the data collection consent')
+      return
+    }
+    
+    // Validate phone number format
+    const phoneDigits = formData.phone_number.replace(/[^\d+]/g, '')
+    if (phoneDigits.length < 13) {
+      alert('Please enter a complete phone number')
+      return
+    }
+    
+    setIsSubmitting(true)
+    
+    try {
+      // Send only the digits for the phone number to the API
+      const apiData = {
+        ...formData,
+        phone_number: formData.phone_number.replace(/[^\d+]/g, '')
+      }
+      
+      const response = await fetch('https://coco20.uz/api/v1/feedback/crud/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(apiData),
+      })
+      
+      if (response.ok) {
+        setShowConfirmation(true)
+        setFormData({ name: '', phone_number: '+998 ', feedback: '' })
+        setConsentChecked(false)
+      } else {
+        alert('Failed to send message. Please try again.')
+      }
+    } catch (error) {
+      console.error('Error sending feedback:', error)
+      alert('An error occurred. Please try again later.')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
   return (
     <main className={styles.main}>
+      {showConfirmation && (
+        <ConfirmationModal 
+        
+          messageUz="Arizangiz muvaffaqiyatli jo'natildi"
+          messageRu="Ваша пожелание успешно отправлен!"
+        
+          onClose={() => setShowConfirmation(false)} 
+        />
+      )}
+      
       <div className={styles.container}>
         <div className={styles.brandSection}>
-         <Image src="/coco.png" alt="COCO" width={112} height={27} unoptimized={true} />
+          <Image src="/coco.png" alt="COCO" width={112} height={27} unoptimized={true} />
           <p className={styles.brandTagline}>
-            We develop & create
-            <br />
-            modern bags
+            {t('contact_page.brand_tagline')}
           </p>
         </div>
 
@@ -19,7 +151,7 @@ export default function ContactPage() {
             <div className={styles.socialIcon}>
               <Send size={18} />
             </div>
-            <span>@coco.uz</span>
+            <span>{t('contact_page.social.telegram')}</span>
           </div>
           <div className={styles.socialLink}>
             <div className={styles.socialIcon}>
@@ -30,7 +162,7 @@ export default function ContactPage() {
                 />
               </svg>
             </div>
-            <span>@coco.uz</span>
+            <span>{t('contact_page.social.instagram')}</span>
           </div>
           <div className={styles.socialLink}>
             <div className={styles.socialIcon}>
@@ -41,33 +173,68 @@ export default function ContactPage() {
                 />
               </svg>
             </div>
-            <span>@coco.uz</span>
+            <span>{t('contact_page.social.facebook')}</span>
           </div>
         </div>
 
         <div className={styles.formSection}>
-          <h2 className={styles.formTitle}>Чем мы можем вам помочь?</h2>
-          <form className={styles.contactForm}>
+          <h2 className={styles.formTitle}>{t('contact_page.help_title')}</h2>
+          <form className={styles.contactForm} onSubmit={handleSubmit}>
             <div className={styles.inputRow}>
               <div className={styles.inputGroup}>
-                <input type="text" className={styles.input} placeholder="Имя" />
+                <input 
+                  type="text" 
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  className={styles.input} 
+                  placeholder={t('form.name')}
+                  required
+                />
               </div>
               <div className={styles.inputGroup}>
-                <input type="tel" className={styles.input} placeholder="Телефон" />
+                <input 
+                  type="tel" 
+                  name="phone_number"
+                  value={formData.phone_number}
+                  onChange={handleChange}
+                  className={styles.input} 
+                  placeholder={t('form.phone')}
+                  required
+                />
               </div>
             </div>
             <div className={styles.inputGroup}>
-              <textarea className={styles.textarea} placeholder="Ваше предложение/пожелание" rows={4}></textarea>
+              <textarea 
+                name="feedback"
+                value={formData.feedback}
+                onChange={handleChange}
+                className={styles.textarea} 
+                placeholder={t('form.feedback')}
+                rows={4}
+                required
+              ></textarea>
             </div>
             <div className={styles.formFooter}>
-              <button type="submit" className={styles.submitButton}>
+              <button 
+                type="submit" 
+                className={styles.submitButton}
+                disabled={isSubmitting}
+              >
                 <Send size={16} />
-                <span>Отправить</span>
+                <span>{isSubmitting ? t('form.sending') : t('form.send')}</span>
               </button>
               <div className={styles.checkboxGroup}>
-                <input type="checkbox" id="dataConsent" className={styles.checkbox} />
+                <input 
+                  type="checkbox" 
+                  id="dataConsent" 
+                  checked={consentChecked}
+                  onChange={handleCheckboxChange}
+                  className={styles.checkbox} 
+                  required
+                />
                 <label htmlFor="dataConsent" className={styles.checkboxLabel}>
-                  I agree that my data is collected and stored
+                  {t('form.consent')}
                 </label>
               </div>
             </div>
