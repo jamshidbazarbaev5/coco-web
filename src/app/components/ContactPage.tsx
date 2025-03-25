@@ -18,7 +18,6 @@ export default function ContactPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [consentChecked, setConsentChecked] = useState(false)
 
-  // Initialize phone number with +998 prefix
   useEffect(() => {
     setFormData(prev => ({ ...prev, phone_number: '+998 ' }))
   }, [])
@@ -27,28 +26,23 @@ export default function ContactPage() {
     const { name, value } = e.target
     
     if (name === 'phone_number') {
-      // Handle phone number formatting
       handlePhoneChange(value)
     } else {
       setFormData(prev => ({ ...prev, [name]: value }))
     }
   }
-  // Add custom messages for the cart confirmation
 const cartConfirmationMessage = {
   uz: "Arizangiz muvaffaqiyatli jo'natildi",
   ru: "Ваша пожелание успешно отправлен!"
 };
 
   const handlePhoneChange = (value: string) => {
-    // Remove all non-digit characters except the plus sign
     let digits = value.replace(/[^\d+]/g, '')
     
-    // Ensure the number starts with +998
     if (!digits.startsWith('+998')) {
       digits = '+998' + digits.replace(/^\+998/, '')
     }
     
-    // Format the phone number: +998 XX XXX-XX-XX
     let formatted = digits
     
     if (digits.length > 4) {
@@ -67,7 +61,6 @@ const cartConfirmationMessage = {
       }
     }
     
-    // Limit to the correct length for Uzbekistan numbers
     if (formatted.replace(/[^\d+]/g, '').length > 13) {
       return
     }
@@ -87,7 +80,6 @@ const cartConfirmationMessage = {
       return
     }
     
-    // Validate phone number format
     const phoneDigits = formData.phone_number.replace(/[^\d+]/g, '')
     if (phoneDigits.length < 13) {
       alert('Please enter a complete phone number')
@@ -97,7 +89,6 @@ const cartConfirmationMessage = {
     setIsSubmitting(true)
     
     try {
-      // Send only the digits for the phone number to the API
       const apiData = {
         ...formData,
         phone_number: formData.phone_number.replace(/[^\d+]/g, '')
@@ -182,6 +173,7 @@ const cartConfirmationMessage = {
           <form className={styles.contactForm} onSubmit={handleSubmit}>
             <div className={styles.inputRow}>
               <div className={styles.inputGroup}>
+                
                 <input 
                   type="text" 
                   name="name"
@@ -201,7 +193,9 @@ const cartConfirmationMessage = {
                   className={styles.input} 
                   placeholder={t('form.phone')}
                   required
+                  
                 />
+                
               </div>
             </div>
             <div className={styles.inputGroup}>

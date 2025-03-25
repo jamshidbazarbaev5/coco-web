@@ -35,7 +35,8 @@
     "quantity": {
       "increase": "Увеличить количество",
       "decrease": "Уменьшить количество"
-    }
+    },
+    "total": "Итого"
   },
   "product_details": {
     "loading": "Загрузка...",

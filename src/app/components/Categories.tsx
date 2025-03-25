@@ -83,6 +83,17 @@ export default function CatalogPage() {
   const getTranslatedCategoryName = (category: any) => {
     return i18n.language === 'uz' ? category.name_uz : category.name_ru;
   };
+  // Add this helper function at the top level of your component
+const formatPrice = (price: string | number) => {
+  // Remove any non-digit characters and convert to string
+  const numStr = price.toString().replace(/\D/g, '');
+  
+  // Split into groups of 3 from the right and join with spaces
+  const formattedNum = numStr.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+  
+  // Return formatted price with 'uzs' suffix
+  return `${formattedNum} uzs`;
+};
 
   // Modify useEffect to fetch brands as well
   useEffect(() => {
@@ -121,7 +132,7 @@ export default function CatalogPage() {
           id: product.id,
           brand: product.brand === 1 ? "Apple" : "Gucci",
           name: getTranslatedTitle(product),
-          price: `${product.price} uzs`,
+          price: formatPrice(product.price),
           availability: getAvailabilityText(product.quantity),
           image: product.product_attributes[0]?.image || "/placeholder.svg",
           on_sale: product.on_sale,
@@ -138,8 +149,7 @@ export default function CatalogPage() {
     };
     
     fetchData();
-  }, [i18n.language]); // This will trigger a refetch when language changes
-  
+  }, [i18n.language]); 
   const [showConfirmation, setShowConfirmation] = useState(false);
 
   const handleAddToCart = (product: Product) => {
@@ -168,8 +178,10 @@ export default function CatalogPage() {
       existingCart.push(cartItem);
     }
     
+
     // Save updated cart to localStorage
     localStorage.setItem('cart', JSON.stringify(existingCart));
+    window.dispatchEvent(new Event('cartUpdated'));
     
     // Show confirmation modal
     setShowConfirmation(true);
@@ -288,6 +300,8 @@ export default function CatalogPage() {
       {/* Add Confirmation Modal */}
       {showConfirmation && (
         <ConfirmationModal 
+        messageRu="Товар успешно добавлен в корзину"
+        messageUz="Mahsulot muvaffaqiyatli savatga qo'shildi"
           onClose={() => setShowConfirmation(false)}
         />
       )}

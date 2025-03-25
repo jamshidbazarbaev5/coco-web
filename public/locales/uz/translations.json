@@ -15,7 +15,7 @@
     "form": {
       "name": "Ism",
       "phone": "Telefon",
-      "feedback": "Sizning taklif/istağingiz",
+      "feedback": "Sizning taklif/istaklaringiz",
       "sending": "Yuborilmoqda...",
       "send": "Yuborish",
       "consent": "Ma'lumotlarimni yig'ish va saqlashga roziman",
@@ -35,7 +35,8 @@
       "quantity": {
         "increase": "Miqdorni oshirish",
         "decrease": "Miqdorni kamaytirish"
-      }
+      },
+      "total": "Jami"
     },
     "product_details": {
       "loading": "Yuklanmoqda...",

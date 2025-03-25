@@ -62,6 +62,9 @@ export default function CartPage() {
   const removeItem = (id: number) => {
     const updatedItems = cartItems.filter((item) => item.product !== id)
     setCartItems(updatedItems)
+    localStorage.setItem('cart', JSON.stringify(updatedItems))
+    // Dispatch the cartUpdated event
+    window.dispatchEvent(new Event('cartUpdated'))
   }
 
   const [formData, setFormData] = useState({
@@ -164,11 +167,19 @@ export default function CartPage() {
         consent: false,
       });
       setOrderSuccess(true);
-      
+      window.dispatchEvent(new Event('cartUpdated'));
     } catch (error) {
       console.error('Error placing order:', error);
       setOrderError("Failed to place order. Please try again.");
     }
+  };
+
+  // Calculate total amount
+  const calculateTotal = () => {
+    return cartItems.reduce((total, item) => {
+      const price = parseFloat(item.price.replace(/[^\d.]/g, '')); // Remove non-digit characters except decimal point
+      return total + (price * item.quantity);
+    }, 0);
   };
 
   if (loading) {
@@ -181,7 +192,15 @@ export default function CartPage() {
 
   return (
     <div className="cart-container">
-      <h1 className="cart-title">{t('cart.title', 'Корзина')}</h1>
+      <div className="cart-header">
+        <h1 className="cart-title">{t('cart.title', 'Корзина')}</h1>
+        {cartItems.length > 0 && (
+          <div className="cart-total">
+            <span>{t('cart.total')}:</span>
+            <span className="total-price">{calculateTotal().toLocaleString()} UZS</span>
+          </div>
+        )}
+      </div>
 
       {cartItems.length === 0 ? (
         <div className="empty-cart-container">
@@ -335,11 +354,30 @@ export default function CartPage() {
           padding: 20px;
         }
         
+        .cart-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 30px;
+        }
+        
         .cart-title {
           font-size: 24px;
           font-weight: 400;
-          margin-bottom: 30px;
           color: #000;
+          margin: 0; /* Remove default margin */
+        }
+        
+        .cart-total {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          font-size: 18px;
+          font-weight: 500;
+        }
+        
+        .total-price {
+          color: #b39b65;
         }
         
         .cart-grid {
@@ -548,6 +586,14 @@ export default function CartPage() {
           
           .form-footer {
             flex-direction: column;
+            align-items: flex-start;
+          }
+        }
+
+        @media (max-width: 576px) {
+          .cart-header {
+            flex-direction: column;
+            gap: 15px;
             align-items: flex-start;
           }
         }

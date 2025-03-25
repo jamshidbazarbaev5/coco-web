@@ -62,11 +62,11 @@ export default function SalesPage() {
             id: product.id,
             brand: product.brand === 1 ? "Apple" : "Gucci",
             name: getTranslatedTitle(product),
-            price: `${product.price} uzs`,
+            price: `${Math.floor(product.price)} uzs`,
             availability: getAvailabilityText(product.quantity),
             image: product.product_attributes[0]?.image || "/placeholder.svg",
             on_sale: product.on_sale,
-            new_price: product.new_price
+            new_price: Math.floor(product.new_price)
           }));
         
         setProducts(formattedProducts);

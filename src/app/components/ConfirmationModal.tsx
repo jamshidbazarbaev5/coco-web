@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import '../styles/confirm.css'
+import i18n from "../i18/config"
 
 interface ConfirmationModalProps {
   messageUz?: string;
@@ -16,7 +17,7 @@ export default function ConfirmationModal({
 }: ConfirmationModalProps) {
   const [isVisible, setIsVisible] = useState(true)
   const [isClosing, setIsClosing] = useState(false)
-  const [currentLang, setCurrentLang] = useState<'uz' | 'ru'>('uz')
+  const currentLang = i18n.language === 'uz' ? 'uz' : 'ru'
 
   const closeModal = () => {
     setIsClosing(true)
@@ -42,21 +43,6 @@ export default function ConfirmationModal({
         <button className="close-button" onClick={closeModal}>
           ✕
         </button>
-
-        {/* <div className="language-switcher">
-          <button 
-            onClick={() => setCurrentLang('uz')}
-            className={currentLang === 'uz' ? 'active' : ''}
-          >
-            UZ
-          </button>
-          <button 
-            onClick={() => setCurrentLang('ru')}
-            className={currentLang === 'ru' ? 'active' : ''}
-          >
-            RU
-          </button>
-        </div> */}
 
         <h2 className="confirmation-title">
           {currentLang === 'uz' ? messageUz : messageRu}

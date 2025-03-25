@@ -1,6 +1,8 @@
 "use client";
 import { useState, useEffect, useRef, TouchEvent } from "react";
 import styles from "../styles/BrandSlider.module.css";
+import { useRouter } from "next/navigation";
+import i18n from "../i18/config";
 
 // Add new interfaces for the API response
 interface ProductAttribute {
@@ -27,6 +29,7 @@ interface ApiResponse {
 }
 
 export default function BrandSlider() {
+  const router = useRouter();
   const [slides, setSlides] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -195,6 +198,11 @@ export default function BrandSlider() {
     return [currentDot - 1, currentDot, currentDot + 1];
   };
 
+  // Add click handler for product navigation
+  const handleProductClick = (productId: number) => {
+    router.push(`/${i18n.language}/details/${productId}`);
+  };
+
   return (
     <div className={styles.sliderContainer}>
       {loading ? (
@@ -214,6 +222,8 @@ export default function BrandSlider() {
               <div 
                 key={`${slide.id}-${index}`} 
                 className={styles.slide}
+                onClick={() => handleProductClick(slide.id)}
+                style={{ cursor: 'pointer' }}  // Add cursor pointer to indicate clickable
               >
                 <div className={styles.slideContent}>
                   <span className={styles.slideNumber}>
