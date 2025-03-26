@@ -95,7 +95,7 @@ export default function CategorySection() {
             <div className="category-item">
               <div className="category-image">
                 <Image 
-                  src={`/cart-${(category.id % 4) + 1}.jpg`}
+                  src={category.image || '/default-category-image.jpg'}
                   alt={getTranslatedName(category)} 
                   width={158} 
                   height={210}

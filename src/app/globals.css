@@ -105,6 +105,7 @@ body {
 
 .language-selector {
   margin-left: 10px;
+  position: relative;
 }
 
 .language-selector button {
@@ -115,14 +116,43 @@ body {
   cursor: pointer;
   padding: 5px;
   gap: 5px;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.language-selector button.en {
+  color: #2B5A9B; /* British blue */
+}
+
+.language-selector button.ru {
+  color: #D52B1E; /* Russian red */
+}
+
+.language-selector button.uk {
+  color: #005BBB; /* Ukrainian blue */
 }
 
 .flag {
   font-size: 20px;
+  margin-right: 4px;
+}
+
+.flag.en::before {
+  content: "🇬🇧";
+}
+
+.flag.ru::before {
+  content: "🇷🇺";
+}
+
+.flag.uk::before {
+  content: "🇺🇦";
 }
 
 .arrow {
   font-size: 10px;
+  margin-left: 4px;
+  color: #18191A; /* Keep arrow color consistent */
 }
 
 /* Hero Section */
@@ -470,6 +500,14 @@ body {
 
   .features-grid {
     grid-template-columns: 1fr;
+  }
+
+  .language-selector button {
+    font-size: 14px;
+  }
+  
+  .flag {
+    font-size: 18px;
   }
 }
 
