@@ -17,10 +17,26 @@ export default function ContactPage() {
   const [showConfirmation, setShowConfirmation] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [consentChecked, setConsentChecked] = useState(false)
+  const [contactDetails, setContactDetails] = useState<any>(null)
 
   useEffect(() => {
     setFormData(prev => ({ ...prev, phone_number: '+998 ' }))
+    fetchContactDetails()
   }, [])
+
+  const fetchContactDetails = async () => {
+    try {
+      const response = await fetch('https://coco20.uz/api/v1/contact_detail/crud/')
+      const data = await response.json()
+      console.log('API Response:', data)
+      if (data.results && data.results.length > 0) {
+        setContactDetails(data.results[0])
+        console.log('Contact Details:', data.results[0])
+      }
+    } catch (error) {
+      console.error('Error fetching contact details:', error)
+    }
+  }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
@@ -142,7 +158,14 @@ const cartConfirmationMessage = {
             <div className={styles.socialIcon}>
               <Send size={18} />
             </div>
-            <span>{t('contact_page.social.telegram')}</span>
+            <a 
+              href={`https://t.me/${contactDetails?.social_media_urls?.telegram?.replace('@', '')}`} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className={styles.socialLink}
+            >
+              <span>coco.uz</span>
+            </a>
           </div>
           <div className={styles.socialLink}>
             <div className={styles.socialIcon}>
@@ -153,7 +176,14 @@ const cartConfirmationMessage = {
                 />
               </svg>
             </div>
-            <span>{t('contact_page.social.instagram')}</span>
+            <a 
+              href={`https://instagram.com/${contactDetails?.social_media_urls?.instagram?.replace('@', '')}`}
+              target="_blank" 
+              rel="noopener noreferrer"
+              className={styles.socialLink}
+            >
+              <span>coco.uz</span>
+            </a>
           </div>
           <div className={styles.socialLink}>
             <div className={styles.socialIcon}>
@@ -164,8 +194,16 @@ const cartConfirmationMessage = {
                 />
               </svg>
             </div>
-            <span>{t('contact_page.social.facebook')}</span>
+            <a 
+              href={`https://facebook.com/${contactDetails?.social_media_urls?.facebook?.replace('@', '')}`}
+              target="_blank" 
+              rel="noopener noreferrer"
+              className={styles.socialLink}
+            >
+              <span>coco.uz</span>
+            </a>
           </div>
+          
         </div>
 
         <div className={styles.formSection}>

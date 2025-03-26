@@ -11,6 +11,15 @@
     line-height: 1.6;
   }
   
+  .contact-detail-item a {
+    text-decoration: none;
+    color: inherit;
+    transition: color 0.2s ease;
+  }
+  
+  .contact-detail-item a:hover {
+    color: #C19A5B;
+  }
   .container {
     max-width: 1200px;
     margin: 0 auto;

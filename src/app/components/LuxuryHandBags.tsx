@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import "../styles/luxury-handbags.css";
 import Image from "next/image";
 import { Send, MapPin, Phone, AtSign, Instagram, Facebook } from "lucide-react";
@@ -15,9 +15,41 @@ export default function LuxuryHandbags() {
     feedback: "",
     consent: false,
   });
+  const [contactDetails, setContactDetails] = useState({
+    address: "",
+    phone: "",
+    mapUrl: "",
+    socialMedia: {
+      facebook: "",
+      instagram: "",
+      telegram: ""
+    }
+  });
 
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    const fetchContactDetails = async () => {
+      try {
+        const response = await fetch('https://coco20.uz/api/v1/contact_detail/crud/');
+        const data = await response.json();
+        if (data.results && data.results[0]) {
+          const details = data.results[0];
+          setContactDetails({
+            address: details.address_ru,
+            phone: details.phone,
+            mapUrl: details.map_url,
+            socialMedia: details.social_media_urls
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching contact details:', error);
+      }
+    };
+
+    fetchContactDetails();
+  }, []);
 
   const handlePhoneChange = (value: string) => {
     let digits = value.replace(/[^\d+]/g, "");
@@ -244,27 +276,45 @@ export default function LuxuryHandbags() {
             <div className="contact-details">
               <div className="contact-detail-item">
                 <MapPin className="contact-icon" size={20} />
-                <span>{t("contact.address")}</span>
+                <span>{contactDetails.address}</span>
               </div>
 
               <div className="contact-detail-item">
                 <Phone className="contact-icon" size={20} />
-                <span>+998 90 909-90-90</span>
+                <a href={`tel:${contactDetails.phone}`}>{contactDetails.phone}</a>
               </div>
 
               <div className="contact-detail-item">
                 <AtSign className="contact-icon" size={20} />
-                <span>@cocobags.uz</span>
+                <a 
+                  href="https://t.me/cocouz" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                >
+                  @cocouz
+                </a>
               </div>
 
               <div className="contact-detail-item">
                 <Instagram className="contact-icon" size={20} />
-                <span>@cocobags.uz</span>
+                <a 
+                  href={contactDetails.socialMedia.instagram} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                >
+                  @coco.uz
+                </a>
               </div>
 
               <div className="contact-detail-item">
                 <Facebook className="contact-icon" size={20} />
-                <span>@cocobags.uz</span>
+                <a 
+                  href={contactDetails.socialMedia.facebook} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                >
+                  @coco.uz
+                </a>
               </div>
             </div>
           </div>
@@ -346,17 +396,19 @@ export default function LuxuryHandbags() {
           onClose={() => setShowConfirmation(false)}
         />
       )}
-      <div className="map-container">
-        <iframe
-          src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d9931.956214047315!2d-0.12775!3d51.507222!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x487604ce3941eb1f%3A0x1a5342fdf089c627!2sLondon%2C%20UK!5e0!3m2!1sen!2sus!4v1647881760889!5m2!1sen!2sus"
-          width="100%"
-          height="600"
-          style={{ border: 0, marginBottom: "120px" }}
-          allowFullScreen
-          loading="lazy"
-          referrerPolicy="no-referrer-when-downgrade"
-        ></iframe>
-      </div>
+      {contactDetails.mapUrl && (
+        <div className="map-container">
+          <iframe
+            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2995.638607840318!2d69.33361277617684!3d41.33811999531243!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x38aef5a4c9418203%3A0x789d3d8f1c331f5c!2sCoco!5e0!3m2!1sen!2s!4v1710240431736!5m2!1sen!2s"
+            width="100%"
+            height="600"
+            style={{ border: 0, marginBottom: "120px" }}
+            allowFullScreen
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+          ></iframe>
+        </div>
+      )}
     </>
   );
 }
