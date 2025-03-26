@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { useRouter } from "next/navigation";
 
 // Add interfaces for API responses
 interface Brand {
@@ -14,14 +15,25 @@ interface Size {
   name: string;
 }
 
-export default function FilterModal({ onClose }: { onClose: () => void }) {
-  const { t } = useTranslation();
+export default function FilterModal({ onClose, onApply, initialFilters }: { 
+  onClose: () => void, 
+  onApply?: (filterData: any) => void,
+  initialFilters?: {
+    searchQuery?: string,
+    selectedBrands?: Brand[],
+    selectedSizes?: {id: number, name: string}[],
+    selectedColors?: string[],
+    priceRange?: { min: string, max: string }
+  }
+}) {
+  const router = useRouter();
+  const { t, i18n } = useTranslation();
 
-  // State for form inputs
-  const [searchQuery, setSearchQuery] = useState("");
+  // State for form inputs - initialize with values from props if available
+  const [searchQuery, setSearchQuery] = useState(initialFilters?.searchQuery || "");
   const [brandInput, setBrandInput] = useState("");
-  const [minPrice, setMinPrice] = useState("0");
-  const [maxPrice, setMaxPrice] = useState("1000000");
+  const [minPrice, setMinPrice] = useState(initialFilters?.priceRange?.min || "0");
+  const [maxPrice, setMaxPrice] = useState(initialFilters?.priceRange?.max || "1000000");
   const [showModal, setShowModal] = useState(true);
 
   // State for dropdowns
@@ -35,12 +47,16 @@ export default function FilterModal({ onClose }: { onClose: () => void }) {
   const [isLoadingBrands, setIsLoadingBrands] = useState(true);
   const [isLoadingSizes, setIsLoadingSizes] = useState(true);
 
-  // Selected brands
-  const [selectedBrands, setSelectedBrands] = useState<Brand[]>([]);
+  // Selected brands - initialize with values from props if available
+  const [selectedBrands, setSelectedBrands] = useState<Brand[]>(initialFilters?.selectedBrands || []);
 
-  // Add new state for selected sizes and colors
-  const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
-  const [selectedColors, setSelectedColors] = useState<string[]>([]);
+  // Update selected sizes state to store objects with id and name
+  const [selectedSizes, setSelectedSizes] = useState<{id: number, name: string}[]>(
+    initialFilters?.selectedSizes || []
+  );
+
+  // Add new state for selected colors - initialize with values from props if available
+  const [selectedColors, setSelectedColors] = useState<string[]>(initialFilters?.selectedColors || []);
 
   // Available brands, sizes, and colors
   const colors = ["black", "blue", "yellow", "red", "white", "green"];
@@ -56,7 +72,10 @@ export default function FilterModal({ onClose }: { onClose: () => void }) {
         while (nextUrl) {
           const response = await fetch(nextUrl);
           const data = await response.json();
-          allBrands = [...allBrands, ...data.results];
+          const filteredResults = data.results.filter((brand: Brand) => 
+            brand.name !== "Все" && brand.name !== "Hammasi"
+          );
+          allBrands = [...allBrands, ...filteredResults];
           nextUrl = data.next;
         }
         
@@ -85,7 +104,6 @@ export default function FilterModal({ onClose }: { onClose: () => void }) {
     fetchSizes();
   }, []);
 
-  // Toggle brand selection
   const toggleBrand = (brand: Brand) => {
     if (selectedBrands.some(b => b.id === brand.id)) {
       setSelectedBrands(selectedBrands.filter(b => b.id !== brand.id));
@@ -94,10 +112,9 @@ export default function FilterModal({ onClose }: { onClose: () => void }) {
     }
   };
 
-  // Add toggle functions for sizes and colors
-  const toggleSize = (size: string) => {
-    if (selectedSizes.includes(size)) {
-      setSelectedSizes(selectedSizes.filter((s) => s !== size));
+  const toggleSize = (size: Size) => {
+    if (selectedSizes.some(s => s.id === size.id)) {
+      setSelectedSizes(selectedSizes.filter(s => s.id !== size.id));
     } else {
       setSelectedSizes([...selectedSizes, size]);
     }
@@ -111,7 +128,6 @@ export default function FilterModal({ onClose }: { onClose: () => void }) {
     }
   };
 
-  // Reset filters updated for new data structure
   const resetFilters = () => {
     setSearchQuery("");
     setBrandInput("");
@@ -122,19 +138,98 @@ export default function FilterModal({ onClose }: { onClose: () => void }) {
     setSelectedColors([]);
   };
 
-  // Apply filters updated for new data structure
   const applyFilters = () => {
-    console.log("Applying filters:", {
+    const filterData = {
       searchQuery,
-      selectedBrands: selectedBrands.map(brand => ({ id: brand.id, name: brand.name })),
-      selectedSizes: selectedSizes,
-      selectedColors: selectedColors,
+      selectedBrands,
+      selectedSizes,
+      selectedColors,
       priceRange: { min: minPrice, max: maxPrice },
-    });
+    };
+    
+    // Build query parameters
+    const queryParams = new URLSearchParams();
+
+    // Add search query
+    if (searchQuery) {
+      if (i18n.language === 'ru') {
+        queryParams.append('title_ru__icontains', searchQuery);
+      } else {
+        queryParams.append('title_uz__icontains', searchQuery);
+      }
+    }
+
+    // Add brand filter
+    if (selectedBrands.length > 0) {
+      queryParams.append('brand', selectedBrands[0].id.toString());
+    }
+
+    // Add size filter
+    if (selectedSizes.length > 0) {
+      queryParams.append('size', selectedSizes[0].id.toString());
+    }
+
+    // Add color filter
+    if (selectedColors.length > 0) {
+      queryParams.append('color', selectedColors[0]);
+    }
+
+    // Add price range
+    if (minPrice !== '0') {
+      queryParams.append('price__gt', minPrice);
+    }
+    if (maxPrice !== '1000000') {
+      queryParams.append('price__lt', maxPrice);
+    }
+
+    // Call the onApply callback if provided
+    if (onApply) {
+      onApply(filterData);
+    }
+
+    // Close the modal
     onClose();
+
+    // Redirect to categories page with filters
+    const queryString = queryParams.toString();
+    if (queryString) {
+      router.push(`/${i18n.language}/categories?${queryString}`);
+    } else {
+      router.push(`/${i18n.language}/categories`);
+    }
   };
 
-  // Helper function to format selected items display for brands
+  // Update useEffect for initialization
+  useEffect(() => {
+    if (initialFilters) {
+      // Initialize search query
+      if (initialFilters.searchQuery) {
+        setSearchQuery(initialFilters.searchQuery);
+      }
+      
+      // Initialize selected brands
+      if (initialFilters.selectedBrands && initialFilters.selectedBrands.length > 0) {
+        setSelectedBrands(initialFilters.selectedBrands);
+      }
+      
+      // Initialize selected sizes
+      if (initialFilters.selectedSizes && initialFilters.selectedSizes.length > 0) {
+        setSelectedSizes(initialFilters.selectedSizes);
+      }
+      
+      // Initialize selected colors
+      if (initialFilters.selectedColors && initialFilters.selectedColors.length > 0) {
+        setSelectedColors(initialFilters.selectedColors);
+      }
+      
+      // Initialize price range
+      if (initialFilters.priceRange) {
+        setMinPrice(initialFilters.priceRange.min);
+        setMaxPrice(initialFilters.priceRange.max);
+      }
+    }
+  }, [initialFilters]);
+
   const formatSelectedBrands = (items: Brand[], limit: number = 2) => {
     if (items.length === 0) return "";
     if (items.length <= limit) return `: ${items.map(item => item.name).join(", ")}`;
@@ -282,7 +377,7 @@ export default function FilterModal({ onClose }: { onClose: () => void }) {
             >
               <span className="filter-title">
                 {selectedSizes.length > 0 ? (
-                  <span>{t('filters.sizes')} : {selectedSizes.join(", ")}</span>
+                  <span>{t('filters.sizes')} : {selectedSizes.map(s => s.name).join(", ")}</span>
                 ) : (
                   <span>{t('filters.sizes')} {isLoadingSizes ? t('filters.loading') : sizes.map(s => s.name).join(", ")}</span>
                 )}
@@ -323,12 +418,12 @@ export default function FilterModal({ onClose }: { onClose: () => void }) {
                   <div
                     key={size.id}
                     className={`option-item ${
-                      selectedSizes.includes(size.name) ? "selected" : ""
+                      selectedSizes.some(s => s.id === size.id) ? "selected" : ""
                     }`}
-                    onClick={() => toggleSize(size.name)}
+                    onClick={() => toggleSize(size)}
                   >
                     <span>{size.name}</span>
-                    {selectedSizes.includes(size.name) && (
+                    {selectedSizes.some(s => s.id === size.id) && (
                       <span className="checkmark">
                         {" "}
                         <svg
@@ -456,10 +551,10 @@ export default function FilterModal({ onClose }: { onClose: () => void }) {
 
         <div className="filter-actions">
           <button className="apply-button" onClick={applyFilters}>
-            {t('filters.buttons.apply')}
+            {t('filters.apply')}
           </button>
           <button className="reset-button" onClick={resetFilters}>
-            {t('filters.buttons.reset')}
+            {t('filters.reset')}
           </button>
         </div>
       </div>

@@ -71,6 +71,8 @@
       }
     },
     "filters": {
+      "apply": "Qo'llash",
+      "reset": "Tozalash",
       "enter_name": "Nomini kiriting",
       "brands": "Brendlar",
       "sizes": "O'lchamlar",

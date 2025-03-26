@@ -47,6 +47,21 @@ export default function SalesPage() {
   const getSalesTitle = () => {
     return i18n.language === 'uz' ? "Chegirmalar" : "Скидки";
   };
+  const formatPrice = (price: any) => {
+    // Convert price to string if it's a number
+    const priceStr = typeof price === 'number' ? price.toString() : price;
+    
+    // Convert price string to number, removing any non-digit characters except decimal point
+    const numPrice = Number(priceStr.replace(/[^\d.]/g, ''));
+    
+    // Format with spaces between thousands
+    const formattedPrice = Math.floor(numPrice)
+      .toString()
+      .replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    
+    // Return formatted price with 'uzs' suffix
+    return `${formattedPrice} uzs`;
+  }
 
   useEffect(() => {
     const fetchData = async () => {
@@ -156,8 +171,8 @@ export default function SalesPage() {
               <h3 className="product-brand">{product.brand}</h3>
               <p className="product-name">{product.name}</p>
               <div className="price-container">
-                <p className="product-old-price">{product.price}</p>
-                <p className="product-new-price">{product.new_price} uzs</p>
+                <p className="product-old-price">{formatPrice(product.price)}</p>
+                <p className="product-new-price">{formatPrice(product.new_price)} </p>
               </div>
               <p className="product-availability">{product.availability}</p>
             </div>

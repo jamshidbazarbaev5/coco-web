@@ -150,10 +150,16 @@ export default function ProductPage() {
   }
 
   const formatPrice = (price: string) => {
-    // Remove any non-digit characters and convert to number
-    const numPrice = Number(price.replace(/\D/g, ''))
-    // Format with spaces between thousands and add 'uzs'
-    return numPrice.toLocaleString('en-US').replace(/,/g, ' ') + ' uzs'
+    // Convert price string to number, removing any non-digit characters except decimal point
+    const numPrice = Number(price.replace(/[^\d.]/g, ''));
+    
+    // Format with spaces between thousands
+    const formattedPrice = Math.floor(numPrice)
+      .toString()
+      .replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    
+    // Return formatted price with 'uzs' suffix
+    return `${formattedPrice} uzs`;
   }
 
   const getColorName = (hex: string) => {
@@ -182,11 +188,8 @@ export default function ProductPage() {
       '#808000': 'filters.colors_list.olive'
     }
 
-    // Convert hex to lowercase for comparison
-    const lowerHex = hex.toLowerCase()
-    // Get the translation key from the map, or return the hex if not found
+    const lowerHex = hex?.toLowerCase()
     const translationKey = colorMap[lowerHex]
-    // Use the translation if available, otherwise return the hex code
     return translationKey ? t(translationKey) : hex
   }
 

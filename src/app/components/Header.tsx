@@ -55,9 +55,11 @@ export default function Header() {
 
   const isActive = (path: string) => {
     if (path === '/') {
-      return pathname === '/';
+      // Home is active only when we're at the root or language root
+      return pathname === '/' || pathname === `/${i18n.language}`;
     }
-    return pathname.startsWith(path);
+    // For other paths, check if the pathname includes the specified path
+    return pathname.includes(path);
   };
 
   return (
@@ -73,7 +75,7 @@ export default function Header() {
         </button>
         {isSearchOpen && <FilterModal onClose={() => setIsSearchOpen(false)} />}
         <div className="logo">
-          <Link href="/">
+          <Link href={`/${i18n.language}`}>
             <svg
               width="113"
               height="27"
@@ -103,15 +105,14 @@ export default function Header() {
         <nav className="nav">
           <ul>
             <li className={isActive('/') ? 'active' : ''}>
-              <Link href="/">{t('header.home')}</Link>
+              <Link href={`/${i18n.language}`}>{t('header.home')}</Link>
             </li>
-            <li className={isActive(`/${i18n.language}/categories`) ? 'active' : ''}>
+            <li className={isActive('/categories') ? 'active' : ''}>
               <Link href={`/${i18n.language}/categories`}>{t('header.catalog')}</Link>
             </li>
-            <li className={isActive(`/${i18n.language}/about`) ? 'active' : ''}>
+            <li className={isActive('/about') ? 'active' : ''}>
               <Link href={`/${i18n.language}/about`}>{t('header.about')}</Link>
             </li>
-           
             <li className={isActive('/sales') ? 'active' : ''}>
               <Link href={`/${i18n.language}/sales`}>{t('header.sale')}</Link>
             </li>
@@ -194,16 +195,16 @@ export default function Header() {
         <nav>
           <ul>
             <li className={isActive('/') ? 'active' : ''}>
-              <Link href="/" onClick={() => setIsMobileMenuOpen(false)}>{t('header.home')}</Link>
+              <Link href={`/${i18n.language}`} onClick={() => setIsMobileMenuOpen(false)}>{t('header.home')}</Link>
             </li>
-            <li className={isActive(`/${i18n.language}/categories`) ? 'active' : ''}>
+            <li className={isActive('/categories') ? 'active' : ''}>
               <Link href={`/${i18n.language}/categories`} onClick={() => setIsMobileMenuOpen(false)}>{t('header.catalog')}</Link>
             </li>
-            <li className={isActive(`/${i18n.language}/about`) ? 'active' : ''}>
+            <li className={isActive('/about') ? 'active' : ''}>
               <Link href={`/${i18n.language}/about`} onClick={() => setIsMobileMenuOpen(false)}>{t('header.about')}</Link>
             </li>
-            <li className={isActive('/sale') ? 'active' : ''}>
-              <Link href="/sale" onClick={() => setIsMobileMenuOpen(false)}>{t('header.sale')}</Link>
+            <li className={isActive('/sales') ? 'active' : ''}>
+              <Link href={`/${i18n.language}/sales`} onClick={() => setIsMobileMenuOpen(false)}>{t('header.sale')}</Link>
             </li>
           </ul>
         </nav>

@@ -6,6 +6,7 @@ import FilterModal from "./filter-modal";
 import ConfirmationModal from "./ConfirmationModal";
 import { useRouter } from "next/navigation";
 import i18n from "../i18/config";
+import { t } from "i18next";
 
 // Define interfaces for your data structures
 interface Category {
@@ -36,6 +37,19 @@ interface CartItem {
   image: string;
 }
 
+// Add interface for filters
+interface Filters {
+  title_ru__icontains: string;
+  title_uz__icontains: string;
+  price__lt: string;
+  price__gt: string;
+  brand: string;
+  color: string;
+  size: string;
+  category: string;
+  [key: string]: string; // Add index signature for dynamic keys
+}
+
 export default function CatalogPage() {
   // Add state for brands
   const [brands, setBrands] = useState<{id: number, name: string}[]>([]);
@@ -49,6 +63,8 @@ export default function CatalogPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [nextProductsPage, setNextProductsPage] = useState<string | null>(null);
   
   const router = useRouter();
   
@@ -84,72 +100,317 @@ export default function CatalogPage() {
     return i18n.language === 'uz' ? category.name_uz : category.name_ru;
   };
   // Add this helper function at the top level of your component
-const formatPrice = (price: string | number) => {
-  // Remove any non-digit characters and convert to string
-  const numStr = price.toString().replace(/\D/g, '');
-  
-  // Split into groups of 3 from the right and join with spaces
-  const formattedNum = numStr.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
-  
-  // Return formatted price with 'uzs' suffix
-  return `${formattedNum} uzs`;
-};
+  const formatPrice = (price: string) => {
+    // Convert price string to number, removing any non-digit characters except decimal point
+    const numPrice = Number(price.replace(/[^\d.]/g, ''));
+    
+    // Format with spaces between thousands
+    const formattedPrice = Math.floor(numPrice)
+      .toString()
+      .replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    
+    // Return formatted price with 'uzs' suffix
+    return `${formattedPrice} uzs`;
+  }
 
-  // Modify useEffect to fetch brands as well
+  // Update state for filters to include size ID
+  const [filters, setFilters] = useState({
+    title_ru__icontains: '',
+    title_uz__icontains: '',
+    price__lt: '',
+    price__gt: '',
+    brand: '',
+    color: '',
+    size: '',
+    category: ''
+  });
+  
+  // Update state to track all filter selections
+  const [currentFilterData, setCurrentFilterData] = useState({
+    searchQuery: '',
+    selectedBrands: [] as {id: number, name: string}[],
+    selectedSizes: [] as {id: number, name: string}[],
+    selectedColors: [] as string[],
+    priceRange: { min: '0', max: '1000000' }
+  });
+  
+  // Add these helper functions at the top of your component
+  const getActiveFiltersText = () => {
+    return i18n.language === 'uz' ? "Faol filtrlar:" : "Активные фильтры:";
+  };
+
+  const getClearText = () => {
+    return i18n.language === 'uz' ? "Tozalash" : "Очистить";
+  };
+
+  // Update the active filters display section
+  const ActiveFilters = () => {
+    const activeFilters = getActiveFiltersDisplay();
+    
+    // Return null if no active filters
+    if (activeFilters.length === 0) {
+      return null;
+    }
+
+    return (
+      <div className="active-filters">
+        <span>{getActiveFiltersText()}</span>
+        
+        {activeFilters.map((filter, index) => (
+          <span key={`${filter.type}-${index}`} className="filter-tag">
+            {filter.type === 'color' ? t(`filters.colors_list.${filter.label}`) : filter.label}
+            <button
+              className="remove-filter"
+              onClick={() => removeFilter(filter.type)}
+            >
+              ×
+            </button>
+          </span>
+        ))}
+
+        {/* Clear all filters button */}
+        <button
+          className="clear-filters"
+          onClick={clearAllFilters}
+        >
+          {getClearText()}
+        </button>
+      </div>
+    );
+  };
+
+  // Modify useEffect for fetching brands
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch brands
-        const brandsResponse = await fetch('https://coco20.uz/api/v1/brands/crud/brand/');
+        setLoading(true);
+        
+        // Get URL parameters when component mounts
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlFilters: Filters = {
+          title_ru__icontains: '',
+          title_uz__icontains: '',
+          price__lt: '',
+          price__gt: '',
+          brand: '',
+          color: '',
+          size: '',
+          category: ''
+        };
+        
+        // Convert URL parameters to filters
+        urlParams.forEach((value, key) => {
+          if (key in urlFilters) {
+            urlFilters[key] = value;
+          }
+        });
+        
+        // Apply URL filters to state
+        if (Object.keys(urlFilters).length > 0) {
+          setFilters(prevFilters => ({
+            ...prevFilters,
+            ...urlFilters
+          }));
+        }
+        
+        // Fetch brands and categories in parallel
+        const [brandsResponse, categoriesData] = await Promise.all([
+          fetch('https://coco20.uz/api/v1/brands/crud/brand/'),
+          fetchAllCategories()
+        ]);
+        
         const brandsData = await brandsResponse.json();
         
-        // Add "All" as the first option with translation
+        // Remove the "All" option from the API results and add it as the first option
+        const filteredBrands = brandsData.results.filter((brand: any) => 
+          brand.name !== "Все" && brand.name !== "Hammasi"
+        );
+        
+        // Add single "All" option at the beginning
         const formattedBrands = [
           { id: 0, name: getAllFilterText() },
-          ...brandsData.results
+          ...filteredBrands
         ];
         
         setBrands(formattedBrands);
-        setActiveFilter(getAllFilterText());
+        
+        // Only set activeFilter to default if it's not already set
+        if (!activeFilter || activeFilter === "Все" || activeFilter === "Hammasi") {
+          setActiveFilter(getAllFilterText());
+        }
 
-        // Fetch categories
-        const categoriesResponse = await fetch('https://coco20.uz/api/v1/brands/crud/category/?page=1');
-        const categoriesData = await categoriesResponse.json();
-        
-        // Fetch products
-        const productsResponse = await fetch('https://coco20.uz/api/v1/products/crud/product/');
-        const productsData = await productsResponse.json();
-        
         // Transform categories data with translations
-        const formattedCategories: Category[] = categoriesData.results.map((category: any, index: number) => ({
-          id: index + 1,
+        const formattedCategories: Category[] = categoriesData.map((category: any, index: number) => ({
+          id: category.id,
           name: getTranslatedCategoryName(category),
           image: "/cart-" + ((index % 4) + 1) + ".jpg",
         }));
         
-        // Transform products data with translations
-        const formattedProducts: Product[] = productsData.results.map((product: any) => ({
-          id: product.id,
-          brand: product.brand === 1 ? "Apple" : "Gucci",
-          name: getTranslatedTitle(product),
-          price: formatPrice(product.price),
-          availability: getAvailabilityText(product.quantity),
-          image: product.product_attributes[0]?.image || "/placeholder.svg",
-          on_sale: product.on_sale,
-          new_price: product.new_price
-        }));
-        
         setCategories(formattedCategories);
-        setProducts(formattedProducts);
-        setLoading(false);
+        
+        // Fetch initial products with proper typing
+        await fetchProducts(urlFilters);
       } catch (error) {
         console.error("Error fetching data:", error);
+      } finally {
         setLoading(false);
       }
     };
     
     fetchData();
-  }, [i18n.language]); 
+  }, [i18n.language]);
+
+  // Helper function to fetch all categories
+  const fetchAllCategories = async () => {
+    let allCategories: any = [];
+    let nextUrl = 'https://coco20.uz/api/v1/brands/crud/category/?page=1';
+    
+    while (nextUrl) {
+      const categoriesResponse = await fetch(nextUrl);
+      const categoriesData = await categoriesResponse.json();
+      allCategories = [...allCategories, ...categoriesData.results];
+      nextUrl = categoriesData.next;
+    }
+    
+    return allCategories;
+  };
+
+  // Update the fetchProducts function with proper typing
+  const fetchProducts = async (currentFilters: Filters) => {
+    try {
+      // Build query string for products with filters
+      let queryParams = new URLSearchParams();
+      Object.entries(currentFilters).forEach(([key, value]) => {
+        if (value) {
+          queryParams.append(key, value);
+        }
+      });
+      
+      // Fetch products with filters
+      const productsUrl = `https://coco20.uz/api/v1/products/crud/product/?${queryParams.toString()}`;
+      const productsResponse = await fetch(productsUrl);
+      const productsData = await productsResponse.json();
+      
+      // Save next page URL for pagination
+      setNextProductsPage(productsData.next);
+      
+      // Transform products data with translations
+      const formattedProducts: Product[] = productsData.results.map((product: any) => ({
+        id: product.id,
+        brand: product.brand === 1 ? "Apple" : "Gucci",
+        name: getTranslatedTitle(product),
+        price: formatPrice(product.price),
+        availability: getAvailabilityText(product.quantity),
+        image: product.product_attributes[0]?.image || "/placeholder.svg",
+        on_sale: product.on_sale,
+        new_price: product.new_price
+      }));
+      
+      setProducts(formattedProducts);
+    } catch (error) {
+      console.error("Error fetching products:", error);
+    }
+  };
+
+  // Update useEffect for URL params to sync with filter modal
+  useEffect(() => {
+    if (brands.length === 0) return; // Skip if brands aren't loaded yet
+    
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlFilters: any = {};
+    const newFilterData = {
+      searchQuery: '',
+      selectedBrands: [] as {id: number, name: string}[],
+      selectedSizes: [] as {id: number, name: string}[],
+      selectedColors: [] as string[],
+      priceRange: { min: '0', max: '1000000' }
+    };
+    
+    // Process URL parameters
+    urlParams.forEach((value, key) => {
+      urlFilters[key] = value;
+      
+      // Update filter modal data based on URL params
+      switch(key) {
+        case 'brand':
+          const selectedBrand = brands.find(b => b.id.toString() === value);
+          if (selectedBrand) {
+            setActiveFilter(selectedBrand.name);
+            newFilterData.selectedBrands = [selectedBrand];
+          }
+          break;
+        case 'size':
+          // We'll handle this when sizes are loaded
+          break;
+        case 'color':
+          newFilterData.selectedColors = [value];
+          break;
+        case 'price__gt':
+          newFilterData.priceRange.min = value;
+          break;
+        case 'price__lt':
+          newFilterData.priceRange.max = value;
+          break;
+        case 'title_ru__icontains':
+        case 'title_uz__icontains':
+          newFilterData.searchQuery = value;
+          break;
+      }
+    });
+
+    // Update filters state
+    setFilters(prevFilters => ({
+      ...prevFilters,
+      ...urlFilters
+    }));
+
+    // Update current filter data for filter modal
+    setCurrentFilterData(newFilterData);
+
+  }, [i18n.language, brands]);
+
+  // Modify useEffect for handling filter changes
+  useEffect(() => {
+    if (!brands.length) return; // Skip if initial data isn't loaded yet
+    
+    setLoading(true);
+    fetchProducts(filters).finally(() => setLoading(false));
+  }, [filters, i18n.language]);
+
+  // Add function to load more products
+  const loadMoreProducts = async () => {
+    if (!nextProductsPage || isLoadingMore) return;
+    
+    try {
+      setIsLoadingMore(true);
+      
+      const response = await fetch(nextProductsPage);
+      const data = await response.json();
+      
+      // Save next page URL for pagination
+      setNextProductsPage(data.next);
+      
+      // Transform and add new products
+      const newProducts: Product[] = data.results.map((product: any) => ({
+        id: product.id,
+        brand: product.brand === 1 ? "Apple" : "Gucci",
+        name: getTranslatedTitle(product),
+        price: formatPrice(product.price),
+        availability: getAvailabilityText(product.quantity),
+        image: product.product_attributes[0]?.image || "/placeholder.svg",
+        on_sale: product.on_sale,
+        new_price: product.new_price
+      }));
+      
+      // Append new products to existing ones
+      setProducts(prevProducts => [...prevProducts, ...newProducts]);
+    } catch (error) {
+      console.error("Error loading more products:", error);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  };
+
   const [showConfirmation, setShowConfirmation] = useState(false);
 
   const handleAddToCart = (product: Product) => {
@@ -191,25 +452,291 @@ const formatPrice = (price: string | number) => {
     router.push(`/${i18n.language}/details/${productId}`);
   };
 
+  // Update handleFilterApply to sync with URL params
+  const handleFilterApply = (filterData: any) => {
+    // Save current filter data for next modal open
+    setCurrentFilterData(filterData);
+    
+    // Convert filter data to API query parameters
+    const newFilters = {
+      ...filters,  // Keep existing filters (like category)
+      title_ru__icontains: '',
+      title_uz__icontains: '',
+      price__lt: '',
+      price__gt: '',
+      brand: '',
+      color: '',
+      size: ''
+    };
+
+    // Only add non-empty filters
+    if (filterData.searchQuery) {
+      if (i18n.language === 'ru') {
+        newFilters.title_ru__icontains = filterData.searchQuery;
+      } else {
+        newFilters.title_uz__icontains = filterData.searchQuery;
+      }
+    }
+
+    if (filterData.selectedBrands?.length > 0) {
+      newFilters.brand = filterData.selectedBrands[0].id.toString();
+      setActiveFilter(filterData.selectedBrands[0].name);
+    } else {
+      setActiveFilter(getAllFilterText());
+    }
+
+    if (filterData.selectedSizes?.length > 0) {
+      newFilters.size = filterData.selectedSizes[0].id.toString();
+    }
+
+    if (filterData.selectedColors?.length > 0) {
+      newFilters.color = filterData.selectedColors[0];
+    }
+
+    if (filterData.priceRange?.min !== '0') {
+      newFilters.price__gt = filterData.priceRange.min;
+    }
+
+    if (filterData.priceRange?.max !== '1000000') {
+      newFilters.price__lt = filterData.priceRange.max;
+    }
+
+    // Update filters state
+    setFilters(newFilters);
+    
+    // Close the modal
+    setShowFilterModal(false);
+    
+    // Update URL
+    updateURL(newFilters);
+  };
+
+  // Update handleBrandFilterClick to sync with filter modal state
+  const handleBrandFilterClick = (brand: {id: number, name: string}) => {
+    setActiveFilter(brand.name);
+    
+    if (brand.id === 0) {
+      setFilters({...filters, brand: ''});
+      // Sync with filter modal state
+      setCurrentFilterData({
+        ...currentFilterData,
+        selectedBrands: []
+      });
+    } else {
+      setFilters({...filters, brand: brand.id.toString()});
+      // Sync with filter modal state
+      setCurrentFilterData({
+        ...currentFilterData,
+        selectedBrands: [brand]
+      });
+    }
+    
+    // Update URL
+    const newFilters = brand.id === 0 
+      ? {...filters, brand: ''} 
+      : {...filters, brand: brand.id.toString()};
+    updateURL(newFilters);
+  };
+
+  // Update handleCategoryClick to include URL update
+  const handleCategoryClick = (category: Category) => {
+    const newFilters = { ...filters, category: category.name };
+    setFilters(newFilters);
+    updateURL(newFilters);
+  };
+
+  // Update the getActiveCategoryName function
+  const getActiveCategoryName = () => {
+    if (!filters.category) return null;
+    return filters.category;
+  };
+
+  // Update getActiveFiltersDisplay function
+  const getActiveFiltersDisplay = () => {
+    const activeFilters = [];
+    
+    // Add search query if active
+    if (currentFilterData.searchQuery) {
+      activeFilters.push({
+        type: 'search',
+        label: `"${currentFilterData.searchQuery}"`
+      });
+    }
+    
+    // Add brand filters
+    if (currentFilterData.selectedBrands.length > 0) {
+      currentFilterData.selectedBrands.forEach(brand => {
+        activeFilters.push({
+          type: 'brand',
+          label: brand.name
+        });
+      });
+    }
+    
+    // Add size filters
+    if (currentFilterData.selectedSizes.length > 0) {
+      currentFilterData.selectedSizes.forEach(size => {
+        activeFilters.push({
+          type: 'size',
+          label: size.name
+        });
+      });
+    }
+    
+    // Add color filters
+    if (currentFilterData.selectedColors.length > 0) {
+      currentFilterData.selectedColors.forEach(color => {
+        activeFilters.push({
+          type: 'color',
+          label: color
+        });
+      });
+    }
+    
+    // Add price range if different from default
+    if (currentFilterData.priceRange.min !== '0' || 
+        currentFilterData.priceRange.max !== '1000000') {
+      activeFilters.push({
+        type: 'price',
+        label: `${formatPrice(currentFilterData.priceRange.min)} - ${formatPrice(currentFilterData.priceRange.max)}`
+      });
+    }
+    
+    // Add category if active
+    if (filters.category) {
+      activeFilters.push({
+        type: 'category',
+        label: filters.category
+      });
+    }
+    
+    return activeFilters;
+  };
+
+  const clearAllFilters = () => {
+    setActiveFilter(getAllFilterText());
+    setFilters({
+      title_ru__icontains: '',
+      title_uz__icontains: '',
+      price__lt: '',
+      price__gt: '',
+      brand: '',
+      color: '',
+      size: '',
+      category: ''
+    });
+    setCurrentFilterData({
+      searchQuery: '',
+      selectedBrands: [],
+      selectedSizes: [],
+      selectedColors: [],
+      priceRange: { min: '0', max: '1000000' }
+    });
+    router.push(`/${i18n.language}/categories`);
+  };
+
+  const removeFilter = (filterType: string) => {
+    const newFilters = { ...filters };
+    
+    switch (filterType) {
+      case 'brand':
+        setActiveFilter(getAllFilterText());
+        newFilters.brand = '';
+        setCurrentFilterData({...currentFilterData, selectedBrands: []});
+        break;
+      case 'category':
+        newFilters.category = '';
+        break;
+      case 'search':
+        newFilters.title_ru__icontains = '';
+        newFilters.title_uz__icontains = '';
+        setCurrentFilterData({...currentFilterData, searchQuery: ''});
+        break;
+      case 'price':
+        newFilters.price__gt = '0';
+        newFilters.price__lt = '1000000';
+        setCurrentFilterData({
+          ...currentFilterData, 
+          priceRange: {min: '0', max: '1000000'}
+        });
+        break;
+      case 'color':
+        newFilters.color = '';
+        setCurrentFilterData({...currentFilterData, selectedColors: []});
+        break;
+      case 'size':
+        newFilters.size = '';
+        setCurrentFilterData({...currentFilterData, selectedSizes: []});
+        break;
+    }
+
+    setFilters(newFilters);
+
+    // Update URL with remaining filters
+    const queryParams = new URLSearchParams();
+    Object.entries(newFilters).forEach(([key, value]) => {
+      if (value) {
+        queryParams.append(key, value.toString());
+      }
+    });
+
+    // Update URL with remaining filters or clear if none remain
+    if (queryParams.toString()) {
+      router.push(`/${i18n.language}/categories?${queryParams.toString()}`);
+    } else {
+      router.push(`/${i18n.language}/categories`);
+    }
+  };
+
+  // Helper function to update URL
+  const updateURL = (newFilters: any) => {
+    const queryParams = new URLSearchParams();
+    Object.entries(newFilters).forEach(([key, value]) => {
+      if (value) {
+        queryParams.append(key, value.toString());
+      }
+    });
+
+    const newPath = queryParams.toString() 
+      ? `/${i18n.language}/categories?${queryParams.toString()}`
+      : `/${i18n.language}/categories`;
+      
+    router.push(newPath);
+  };
+
+  // Add translation helper for no results message
+  const getNoResultsMessage = () => {
+    return i18n.language === 'uz' 
+      ? "Hech qanday mahsulot topilmadi" 
+      : "Товары не найдены";
+  };
+
+  // Add translation helper for no results description
+  const getNoResultsDescription = () => {
+    return i18n.language === 'uz'
+      ? "Boshqa parametrlar bilan qidirishga harakat qiling"
+      : "Попробуйте поиск с другими параметрами";
+  };
+
   return (
     <div className="catalog-container">
       <h1 className="catalog-title">{getCatalogTitle()}</h1>
 
-      {/* Updated Brand filters */}
+      {/* Active filters display */}
+      <ActiveFilters />
+
+      {/* Updated Brand filters with exact name matching */}
       <div className="brand-filters">
         {brands.map((brand) => (
           <button
             key={brand.id}
-            className={`brand-filter ${activeFilter === brand.name ? "active" : ""}`}
-            onClick={() => setActiveFilter(brand.name)}
+            className={`brand-filter ${activeFilter === brand.name ? 'active' : ''}`}
+            onClick={() => handleBrandFilterClick(brand)}
           >
             {brand.name}
           </button>
         ))}
-        <button
-          className="filter-button"
-          onClick={() => setShowFilterModal(true)}
-        >
+        <button className="filter-button" onClick={() => setShowFilterModal(true)}>
           <svg
             width="24"
             height="24"
@@ -228,13 +755,24 @@ const formatPrice = (price: string | number) => {
         </button>
       </div>
 
-      {/* Add Filter Modal */}
-      {showFilterModal && <FilterModal onClose={() => setShowFilterModal(false)} />}
+      {/* Add Filter Modal with onApply handler and initialFilters */}
+      {showFilterModal && (
+        <FilterModal 
+          onClose={() => setShowFilterModal(false)} 
+          onApply={handleFilterApply}
+          initialFilters={currentFilterData}
+        />
+      )}
 
-      {/* Categories */}
+      {/* Categories - Updated to pass the entire category object */}
       <div className="categories-container">
         {categories.map((category) => (
-          <div className="category-item" key={category.id}>
+          <div 
+            className={`category-item ${filters.category === category.name ? 'active-category' : ''}`}
+            key={category.id}
+            onClick={() => handleCategoryClick(category)}
+            style={{ cursor: 'pointer' }}
+          >
             <div className="category-image-container">
               <Image
                 src={category.image || "/placeholder.svg"}
@@ -249,59 +787,110 @@ const formatPrice = (price: string | number) => {
         ))}
       </div>
 
-      {/* Products grid */}
-      <div className="products-grid">
-        {products.map((product) => (
-          <div 
-            className="product-card" 
-            key={product.id}
-            onClick={() => handleProductClick(product.id)}
-            style={{ cursor: 'pointer' }}
-          >
-            <div className="product-image-container">
-              <Image
-                src={product.image || "/placeholder.svg"}
-                alt={product.name}
-                width={300}
-                height={300}
-                className="product-image"
-              />
-              <button 
-                className="cart-button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleAddToCart(product);
-                }}
-              >
-                <svg
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
+      {/* Loading indicator - only show when loading and no products */}
+      {loading ? (
+        <div className={`loading-container ${products.length > 0 ? 'loading-overlay' : ''}`}>
+          <div className="loading-spinner"></div>
+          <p>{i18n.language === 'uz' ? "Yuklanmoqda..." : "Загрузка..."}</p>
+        </div>
+      ) : (
+        <>
+          {products.length > 0 ? (
+            // Products grid
+            <div className="products-grid">
+              {products.map((product) => (
+                <div 
+                  className="product-card" 
+                  key={product.id}
+                  onClick={() => handleProductClick(product.id)}
+                  style={{ cursor: 'pointer' }}
                 >
-                  <path
-                    d="M18.8337 19.0002C19.4525 19.0002 20.046 19.246 20.4836 19.6836C20.9212 20.1212 21.167 20.7147 21.167 21.3335C21.167 21.9523 20.9212 22.5458 20.4836 22.9834C20.046 23.421 19.4525 23.6668 18.8337 23.6668C18.2148 23.6668 17.6213 23.421 17.1837 22.9834C16.7462 22.5458 16.5003 21.9523 16.5003 21.3335C16.5003 20.0385 17.5387 19.0002 18.8337 19.0002ZM0.166992 0.333496H3.98199L5.07866 2.66683H22.3337C22.6431 2.66683 22.9398 2.78975 23.1586 3.00854C23.3774 3.22733 23.5003 3.52408 23.5003 3.8335C23.5003 4.03183 23.442 4.23016 23.3603 4.41683L19.1837 11.9652C18.787 12.6768 18.017 13.1668 17.142 13.1668H8.45033L7.40032 15.0685L7.36533 15.2085C7.36533 15.2859 7.39605 15.36 7.45075 15.4147C7.50545 15.4694 7.57964 15.5002 7.65699 15.5002H21.167V17.8335H7.16699C6.54815 17.8335 5.95466 17.5877 5.51708 17.1501C5.07949 16.7125 4.83366 16.119 4.83366 15.5002C4.83366 15.0918 4.93866 14.7068 5.11366 14.3802L6.70033 11.5218L2.50033 2.66683H0.166992V0.333496ZM7.16699 19.0002C7.78583 19.0002 8.37932 19.246 8.81691 19.6836C9.25449 20.1212 9.50033 20.7147 9.50033 21.3335C9.50033 21.9523 9.25449 22.5458 8.81691 22.9834C8.37932 23.421 7.78583 23.6668 7.16699 23.6668C6.54815 23.6668 5.95466 23.421 5.51708 22.9834C5.07949 22.5458 4.83366 21.9523 4.83366 21.3335C4.83366 20.0385 5.87199 19.0002 7.16699 19.0002ZM17.667 10.8335L20.9103 5.00016H6.16366L8.91699 10.8335H17.667Z"
-                    fill="#18191A"
-                  />
-                </svg>
+                  <div className="product-image-container">
+                    <Image
+                      src={product.image || "/placeholder.svg"}
+                      alt={product.name}
+                      width={300}
+                      height={300}
+                      className="product-image"
+                    />
+                    <button 
+                      className="cart-button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleAddToCart(product);
+                      }}
+                    >
+                      <svg
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M18.8337 19.0002C19.4525 19.0002 20.046 19.246 20.4836 19.6836C20.9212 20.1212 21.167 20.7147 21.167 21.3335C21.167 21.9523 20.9212 22.5458 20.4836 22.9834C20.046 23.421 19.4525 23.6668 18.8337 23.6668C18.2148 23.6668 17.6213 23.421 17.1837 22.9834C16.7462 22.5458 16.5003 21.9523 16.5003 21.3335C16.5003 20.0385 17.5387 19.0002 18.8337 19.0002ZM0.166992 0.333496H3.98199L5.07866 2.66683H22.3337C22.6431 2.66683 22.9398 2.78975 23.1586 3.00854C23.3774 3.22733 23.5003 3.52408 23.5003 3.8335C23.5003 4.03183 23.442 4.23016 23.3603 4.41683L19.1837 11.9652C18.787 12.6768 18.017 13.1668 17.142 13.1668H8.45033L7.40032 15.0685L7.36533 15.2085C7.36533 15.2859 7.39605 15.36 7.45075 15.4147C7.50545 15.4694 7.57964 15.5002 7.65699 15.5002H21.167V17.8335H7.16699C6.54815 17.8335 5.95466 17.5877 5.51708 17.1501C5.07949 16.7125 4.83366 16.119 4.83366 15.5002C4.83366 15.0918 4.93866 14.7068 5.11366 14.3802L6.70033 11.5218L2.50033 2.66683H0.166992V0.333496ZM7.16699 19.0002C7.78583 19.0002 8.37932 19.246 8.81691 19.6836C9.25449 20.1212 9.50033 20.7147 9.50033 21.3335C9.50033 21.9523 9.25449 22.5458 8.81691 22.9834C8.37932 23.421 7.78583 23.6668 7.16699 23.6668C6.54815 23.6668 5.95466 23.421 5.51708 22.9834C5.07949 22.5458 4.83366 21.9523 4.83366 21.3335C4.83366 20.0385 5.87199 19.0002 7.16699 19.0002ZM17.667 10.8335L20.9103 5.00016H6.16366L8.91699 10.8335H17.667Z"
+                          fill="#18191A"
+                        />
+                      </svg>
+                    </button>
+                  </div>
+                  <div className="product-details">
+                    <h3 className="product-brand">{product.brand}</h3>
+                    <p className="product-name">{product.name}</p>
+                    <p className="product-price">{product.price}</p>
+                    <p className="product-availability">{product.availability}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            // No results message
+            <div className="no-results">
+              <svg 
+                width="64" 
+                height="64" 
+                viewBox="0 0 24 24" 
+                fill="none" 
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path 
+                  d="M15.5 14H14.71L14.43 13.73C15.41 12.59 16 11.11 16 9.5C16 5.91 13.09 3 9.5 3C5.91 3 3 5.91 3 9.5C3 13.09 5.91 16 9.5 16C11.11 16 12.59 15.41 13.73 14.43L14 14.71V15.5L19 20.49L20.49 19L15.5 14ZM9.5 14C7.01 14 5 11.99 5 9.5C5 7.01 7.01 5 9.5 5C11.99 5 14 7.01 14 9.5C14 11.99 11.99 14 9.5 14Z" 
+                  fill="#C9A66B"
+                />
+              </svg>
+              <h2>{getNoResultsMessage()}</h2>
+              <p>{getNoResultsDescription()}</p>
+              <button 
+                className="clear-filters-btn"
+                onClick={clearAllFilters}
+              >
+                {getClearText()}
               </button>
             </div>
-            <div className="product-details">
-              <h3 className="product-brand">{product.brand}</h3>
-              <p className="product-name">{product.name}</p>
-              <p className="product-price">{product.price}</p>
-              <p className="product-availability">{product.availability}</p>
+          )}
+
+          {/* Load more button - Updated styling */}
+          {nextProductsPage && products.length > 0 && (
+            <div className="load-more-container">
+              <button 
+                className="load-more-button" 
+                onClick={loadMoreProducts}
+                disabled={isLoadingMore}
+              >
+                {isLoadingMore ? 
+                  (i18n.language === 'uz' ? "Yuklanmoqda..." : "Загрузка...") : 
+                  (i18n.language === 'uz' ? "Ko'proq ko'rsatish" : "Показать еще")}
+              </button>
             </div>
-          </div>
-        ))}
-      </div>
+          )}
+        </>
+      )}
 
       {/* Add Confirmation Modal */}
       {showConfirmation && (
         <ConfirmationModal 
-        messageRu="Товар успешно добавлен в корзину"
-        messageUz="Mahsulot muvaffaqiyatli savatga qo'shildi"
+          messageRu="Товар успешно добавлен в корзину"
+          messageUz="Mahsulot muvaffaqiyatli savatga qo'shildi"
           onClose={() => setShowConfirmation(false)}
         />
       )}
@@ -499,6 +1088,187 @@ const formatPrice = (price: string | number) => {
         .product-availability {
           font-size: 14px;
           color: #666;
+        }
+
+        /* Active filters */
+        .active-filters {
+          margin-bottom: 20px;
+          padding: 10px 15px;
+          background-color: #f5f5f5;
+          border-radius: 4px;
+          display: flex;
+          align-items: center;
+          flex-wrap: wrap;
+          gap: 8px;
+        }
+
+        .filter-tag {
+          display: inline-flex;
+          align-items: center;
+          background-color: #e0e0e0;
+          padding: 4px 10px;
+          border-radius: 16px;
+          font-size: 12px;
+          margin-right: 8px;
+        }
+
+        .remove-filter {
+          background: none;
+          border: none;
+          color: #666;
+          cursor: pointer;
+          margin-left: 5px;
+          font-size: 14px;
+          font-weight: bold;
+          padding: 0 4px;
+        }
+
+        .remove-filter:hover {
+          color: #000;
+        }
+
+        .clear-filters {
+          background: none;
+          border: none;
+          color: #666;
+          text-decoration: underline;
+          cursor: pointer;
+          font-size: 12px;
+        }
+
+        .clear-filters:hover {
+          color: #000;
+        }
+
+        .active-category {
+          border-bottom: 2px solid #000;
+        }
+
+        /* Loading indicator */
+        .loading-container {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          padding: 20px;
+          min-height: 200px; /* Add minimum height */
+        }
+
+        .loading-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background-color: rgba(255, 255, 255, 0.8);
+          z-index: 1000;
+          backdrop-filter: blur(2px); /* Add subtle blur effect */
+        }
+
+        .loading-spinner {
+          width: 40px;
+          height: 40px;
+          border: 4px solid #f3f3f3;
+          border-top: 4px solid #000;
+          border-radius: 50%;
+          animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+
+        .load-more-container {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          margin: 30px 0;
+        }
+
+        .load-more-button {
+          background-color: #fff;
+          border: 1px solid #000;
+          color: #000;
+          padding: 12px 24px;
+          border-radius: 4px;
+          font-size: 14px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .load-more-button:hover {
+          background-color: #000;
+          color: #fff;
+        }
+
+        .load-more-button:disabled {
+          background-color: #f5f5f5;
+          border-color: #ddd;
+          color: #999;
+          cursor: not-allowed;
+        }
+
+        .no-results {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          padding: 60px 20px;
+          text-align: center;
+          background-color: #f8f8f6;
+          border-radius: 8px;
+          margin: 40px 0;
+        }
+
+        .no-results svg {
+          margin-bottom: 24px;
+          opacity: 0.8;
+        }
+
+        .no-results h2 {
+          color: #333333;
+          font-size: 24px;
+          font-weight: 500;
+          margin-bottom: 12px;
+          font-family: var(--font-plus-jakarta);
+        }
+
+        .no-results p {
+          color: #666666;
+          font-size: 16px;
+          margin-bottom: 24px;
+          font-family: var(--font-plus-jakarta);
+        }
+
+        .clear-filters-btn {
+          background-color: #C9A66B;
+          color: white;
+          border: none;
+          padding: 12px 24px;
+          border-radius: 4px;
+          font-size: 14px;
+          cursor: pointer;
+          transition: background-color 0.2s ease;
+          font-family: var(--font-plus-jakarta);
+        }
+
+        .clear-filters-btn:hover {
+          background-color: #B89559;
+        }
+
+        @media (max-width: 768px) {
+          .no-results {
+            padding: 40px 16px;
+          }
+
+          .no-results h2 {
+            font-size: 20px;
+          }
+
+          .no-results p {
+            font-size: 14px;
+          }
         }
       `}</style>
     </div>
