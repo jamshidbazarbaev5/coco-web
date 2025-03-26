@@ -304,6 +304,13 @@ export default function FilterModal({ onClose, onApply, initialFilters }: {
     return i18n.language === 'ru' ? availableColors.ru : availableColors.uz;
   };
 
+  // Add this helper function near formatSelectedBrands
+  const formatColorsList = (colors: string[], limit: number = 3) => {
+    if (colors.length === 0) return "";
+    if (colors.length <= limit) return colors.join(", ");
+    return `${colors.slice(0, limit).join(", ")}...`;
+  };
+
   if (!showModal) return null;
 
   return (
@@ -532,9 +539,9 @@ export default function FilterModal({ onClose, onApply, initialFilters }: {
             >
               <span className="filter-title">
                 {selectedColors.length > 0 ? (
-                  <span>{t('filters.colors')} : {selectedColors.join(", ")}</span>
+                  <span>{t('filters.colors')} : {formatColorsList(selectedColors)}</span>
                 ) : (
-                  <span>{t('filters.colors')} {getDisplayColors().join(", ")}</span>
+                  <span>{t('filters.colors')} {formatColorsList(getDisplayColors())}</span>
                 )}
               </span>
               <span className={`arrow ${colorsOpen ? "up" : "down"}`}>

@@ -284,7 +284,9 @@ export default function CatalogPage() {
         name: getTranslatedTitle(product),
         price: formatPrice(product.price),
         availability: getAvailabilityText(product.quantity),
-        image: product.product_attributes[0]?.image || "/placeholder.svg",
+        image: product.product_attributes && product.product_attributes.length > 0 
+          ? product.product_attributes[0].image 
+          : null,
         on_sale: product.on_sale,
         new_price: product.new_price
       }));
@@ -374,7 +376,9 @@ export default function CatalogPage() {
         name: getTranslatedTitle(product),
         price: formatPrice(product.price),
         availability: getAvailabilityText(product.quantity),
-        image: product.product_attributes[0]?.image || "/placeholder.svg",
+        image: product.product_attributes && product.product_attributes.length > 0 
+          ? product.product_attributes[0].image 
+          : null,
         on_sale: product.on_sale,
         new_price: product.new_price
       }));
@@ -730,6 +734,11 @@ export default function CatalogPage() {
     };
   }, [lastScrollY]);
 
+  // Add these translation helpers
+  const getNoImageText = () => {
+    return i18n.language === 'uz' ? "Rasm yo'q" : "Нет фото";
+  };
+
   return (
     <div className="catalog-container">
       <h1 className="catalog-title">{getCatalogTitle()}</h1>
@@ -786,13 +795,17 @@ export default function CatalogPage() {
             style={{ cursor: 'pointer' }}
           >
             <div className="category-image-container">
-              <Image
-                src={category.image || "/placeholder.svg"}
-                alt={category.name}
-                width={150}
-                height={150}
-                className="category-image"
-              />
+              {category.image ? (
+                <Image
+                  src={category.image}
+                  alt={category.name}
+                  width={150}
+                  height={150}
+                  className="category-image"
+                />
+              ) : (
+                <div className="no-image">{getNoImageText()}</div>
+              )}
             </div>
             <p className="category-name">{category.name}</p>
           </div>
@@ -818,13 +831,17 @@ export default function CatalogPage() {
                   style={{ cursor: 'pointer' }}
                 >
                   <div className="product-image-container">
-                    <Image
-                      src={product.image || "/placeholder.svg"}
-                      alt={product.name}
-                      width={300}
-                      height={300}
-                      className="product-image"
-                    />
+                    {product.image ? (
+                      <Image
+                        src={product.image}
+                        alt={product.name}
+                        width={300}
+                        height={300}
+                        className="product-image"
+                      />
+                    ) : (
+                      <div className="no-image">{getNoImageText()}</div>
+                    )}
                     <button 
                       className="cart-button"
                       onClick={(e) => {
@@ -1454,6 +1471,18 @@ export default function CatalogPage() {
           .floating-cart-button {
             display: none;
           }
+        }
+
+        .no-image {
+          width: 100%;
+          height: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background-color: #f5f5f5;
+          color: #666;
+          font-size: 14px;
+          text-align: center;
         }
       `}</style>
     </div>

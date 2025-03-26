@@ -12,6 +12,7 @@ export default function Header() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [cartItemsCount, setCartItemsCount] = useState(0);
+  const [phoneNumber, setPhoneNumber] = useState("");
   const router = useRouter();
   const pathname = usePathname();
   const { t } = useTranslation();
@@ -48,6 +49,23 @@ export default function Header() {
     };
   }, []);
 
+  // Add effect to fetch contact details
+  useEffect(() => {
+    const fetchContactDetails = async () => {
+      try {
+        const response = await fetch('https://coco20.uz/api/v1/contact_detail/crud/');
+        const data = await response.json();
+        if (data.results && data.results.length > 0) {
+          setPhoneNumber(data.results[0].phone);
+        }
+      } catch (error) {
+        console.error('Error fetching contact details:', error);
+      }
+    };
+
+    fetchContactDetails();
+  }, []);
+
   const handleRedirect = (path: string) => {
     // setIsSearchOpen(false);
     router.push(path);
@@ -55,11 +73,15 @@ export default function Header() {
 
   const isActive = (path: string) => {
     if (path === '/') {
-      // Home is active only when we're at the root or language root
       return pathname === '/' || pathname === `/${i18n.language}`;
     }
-    // For other paths, check if the pathname includes the specified path
     return pathname.includes(path);
+  };
+
+  const handlePhoneClick = () => {
+    if (phoneNumber) {
+      window.location.href = `tel:${phoneNumber}`;
+    }
   };
 
   return (
@@ -150,7 +172,7 @@ export default function Header() {
               />
             </svg>
           </button>
-          <button className="icon-button phone">
+          <button className="icon-button phone" onClick={handlePhoneClick}>
             <svg
               width="24"
               height="24"
