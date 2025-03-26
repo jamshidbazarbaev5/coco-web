@@ -2,9 +2,15 @@ import Image from "next/image"
 import styles from  '../styles/feature.module.css'
 import { motion } from "framer-motion"
 import { useTranslation } from 'react-i18next'
+import { useRouter } from 'next/navigation'
 
 export default function Home() {
   const { t } = useTranslation()
+  const router = useRouter()
+  const { i18n } = useTranslation();
+  const handleGetInTouch = () => {
+    router.push(`/${i18n.language}/about#contact-form`)
+  }
 
   return (
     <main className={styles.main}>
@@ -90,6 +96,7 @@ export default function Home() {
             transition={{ delay: 1.4 }}
             whileHover={{ scale: 1.05 }}
             viewport={{ once: true }}
+            onClick={handleGetInTouch}
           >
             {t('contact.get_in_touch')}
           </motion.button>

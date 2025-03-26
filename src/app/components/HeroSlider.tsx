@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
+import i18n from "../i18/config";
 
 interface ProductAttribute {
   color: string;
@@ -47,6 +49,7 @@ interface Slide {
   title: string;
   description: string[];
   image: string;
+  product_details?: ProductDetails;
 }
 
 // Keeping the fallback slides in case API fails
@@ -72,6 +75,7 @@ const fallbackSlides: Slide[] = [
 ];
 
 export default function HeroSlider() {
+  const router = useRouter();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
   const [slides, setSlides] = useState<Slide[]>(fallbackSlides);
@@ -87,8 +91,9 @@ export default function HeroSlider() {
           const apiSlides = data.results.map(collection => ({
             label: collection.title_ru,
             title: `"${collection.caption_ru}"`,
-            description: [collection.description_ru], // Converting to array as our component expects string[]
-            image: collection.product_details.product_attributes[0]?.image || "/main-image.png"
+            description: [collection.description_ru],
+            image: collection.product_details.product_attributes[0]?.image || "/main-image.png",
+            product_details: collection.product_details
           }));
           
           setSlides(apiSlides);
@@ -123,6 +128,24 @@ export default function HeroSlider() {
     return () => clearInterval(timer);
   }, []);
 
+  const handleDetailsClick = () => {
+    const currentSlideData = slides[currentSlide];
+    console.log('Current slide data:', currentSlideData);
+    console.log('Current language:', i18n.language);
+    
+    if (currentSlideData?.product_details?.id) {
+      const url = `/${i18n.language}/details/${currentSlideData.product_details.id}`;
+      console.log('Navigating to:', url);
+      try {
+        router.push(url);
+      } catch (error) {
+        console.error('Navigation error:', error);
+      }
+    } else {
+      console.warn('No product details available for this slide');
+    }
+  };
+
   if (isLoading) {
     return <div className="hero loading">Loading...</div>;
   }
@@ -141,7 +164,13 @@ export default function HeroSlider() {
               <p key={index}>{text}</p>
             ))}
           </div>
-          <button className="details-button">Подробнее</button>
+          <button 
+            className="details-button" 
+            onClick={handleDetailsClick}
+            data-product-id={slides[currentSlide]?.product_details?.id}
+          >
+            {i18n.language === 'uz' ? 'Batafsil' : 'Подробнее'}
+          </button>
         </div>
       </div>
      

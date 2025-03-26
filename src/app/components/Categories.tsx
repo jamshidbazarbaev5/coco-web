@@ -143,11 +143,9 @@ export default function CatalogPage() {
     return i18n.language === 'uz' ? "Tozalash" : "Очистить";
   };
 
-  // Update the active filters display section
   const ActiveFilters = () => {
     const activeFilters = getActiveFiltersDisplay();
     
-    // Return null if no active filters
     if (activeFilters.length === 0) {
       return null;
     }
@@ -158,7 +156,7 @@ export default function CatalogPage() {
         
         {activeFilters.map((filter, index) => (
           <span key={`${filter.type}-${index}`} className="filter-tag">
-            {filter.type === 'color' ? t(`filters.colors_list.${filter.label}`) : filter.label}
+            {filter.type === 'color' ? t(`${filter.label}`) : filter.label}
             <button
               className="remove-filter"
               onClick={() => removeFilter(filter.type)}
@@ -168,7 +166,6 @@ export default function CatalogPage() {
           </span>
         ))}
 
-        {/* Clear all filters button */}
         <button
           className="clear-filters"
           onClick={clearAllFilters}
@@ -179,7 +176,6 @@ export default function CatalogPage() {
     );
   };
 
-  // Modify useEffect for fetching brands
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -205,7 +201,6 @@ export default function CatalogPage() {
           }
         });
         
-        // Apply URL filters to state
         if (Object.keys(urlFilters).length > 0) {
           setFilters(prevFilters => ({
             ...prevFilters,
@@ -213,7 +208,6 @@ export default function CatalogPage() {
           }));
         }
         
-        // Fetch brands and categories in parallel
         const [brandsResponse, categoriesData] = await Promise.all([
           fetch('https://coco20.uz/api/v1/brands/crud/brand/'),
           fetchAllCategories()
@@ -221,12 +215,10 @@ export default function CatalogPage() {
         
         const brandsData = await brandsResponse.json();
         
-        // Remove the "All" option from the API results and add it as the first option
         const filteredBrands = brandsData.results.filter((brand: any) => 
           brand.name !== "Все" && brand.name !== "Hammasi"
         );
         
-        // Add single "All" option at the beginning
         const formattedBrands = [
           { id: 0, name: getAllFilterText() },
           ...filteredBrands
@@ -234,12 +226,10 @@ export default function CatalogPage() {
         
         setBrands(formattedBrands);
         
-        // Only set activeFilter to default if it's not already set
         if (!activeFilter || activeFilter === "Все" || activeFilter === "Hammasi") {
           setActiveFilter(getAllFilterText());
         }
 
-        // Transform categories data with translations
         const formattedCategories: Category[] = categoriesData.map((category: any, index: number) => ({
           id: category.id,
           name: getTranslatedCategoryName(category),
@@ -248,7 +238,6 @@ export default function CatalogPage() {
         
         setCategories(formattedCategories);
         
-        // Fetch initial products with proper typing
         await fetchProducts(urlFilters);
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -260,7 +249,6 @@ export default function CatalogPage() {
     fetchData();
   }, [i18n.language]);
 
-  // Helper function to fetch all categories
   const fetchAllCategories = async () => {
     let allCategories: any = [];
     let nextUrl = 'https://coco20.uz/api/v1/brands/crud/category/?page=1';
@@ -275,10 +263,8 @@ export default function CatalogPage() {
     return allCategories;
   };
 
-  // Update the fetchProducts function with proper typing
   const fetchProducts = async (currentFilters: Filters) => {
     try {
-      // Build query string for products with filters
       let queryParams = new URLSearchParams();
       Object.entries(currentFilters).forEach(([key, value]) => {
         if (value) {
@@ -286,15 +272,12 @@ export default function CatalogPage() {
         }
       });
       
-      // Fetch products with filters
       const productsUrl = `https://coco20.uz/api/v1/products/crud/product/?${queryParams.toString()}`;
       const productsResponse = await fetch(productsUrl);
       const productsData = await productsResponse.json();
       
-      // Save next page URL for pagination
       setNextProductsPage(productsData.next);
       
-      // Transform products data with translations
       const formattedProducts: Product[] = productsData.results.map((product: any) => ({
         id: product.id,
         brand: product.brand === 1 ? "Apple" : "Gucci",
@@ -312,9 +295,8 @@ export default function CatalogPage() {
     }
   };
 
-  // Update useEffect for URL params to sync with filter modal
   useEffect(() => {
-    if (brands.length === 0) return; // Skip if brands aren't loaded yet
+    if (brands.length === 0) return;
     
     const urlParams = new URLSearchParams(window.location.search);
     const urlFilters: any = {};
@@ -326,11 +308,9 @@ export default function CatalogPage() {
       priceRange: { min: '0', max: '1000000' }
     };
     
-    // Process URL parameters
     urlParams.forEach((value, key) => {
       urlFilters[key] = value;
       
-      // Update filter modal data based on URL params
       switch(key) {
         case 'brand':
           const selectedBrand = brands.find(b => b.id.toString() === value);
@@ -340,7 +320,6 @@ export default function CatalogPage() {
           }
           break;
         case 'size':
-          // We'll handle this when sizes are loaded
           break;
         case 'color':
           newFilterData.selectedColors = [value];
@@ -358,13 +337,11 @@ export default function CatalogPage() {
       }
     });
 
-    // Update filters state
     setFilters(prevFilters => ({
       ...prevFilters,
       ...urlFilters
     }));
 
-    // Update current filter data for filter modal
     setCurrentFilterData(newFilterData);
 
   }, [i18n.language, brands]);

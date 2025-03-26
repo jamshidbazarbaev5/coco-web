@@ -15,6 +15,16 @@ interface Size {
   name: string;
 }
 
+// Update interface to include color names
+interface ProductAttribute {
+  color_name_ru: string;
+  color_name_uz: string;
+}
+
+interface Product {
+  product_attributes: ProductAttribute[];
+}
+
 export default function FilterModal({ onClose, onApply, initialFilters }: { 
   onClose: () => void, 
   onApply?: (filterData: any) => void,
@@ -58,8 +68,11 @@ export default function FilterModal({ onClose, onApply, initialFilters }: {
   // Add new state for selected colors - initialize with values from props if available
   const [selectedColors, setSelectedColors] = useState<string[]>(initialFilters?.selectedColors || []);
 
-  // Available brands, sizes, and colors
-  const colors = ["black", "blue", "yellow", "red", "white", "green"];
+  // Replace hardcoded colors with state from API
+  const [availableColors, setAvailableColors] = useState<{ru: string[], uz: string[]}>({
+    ru: [],
+    uz: []
+  });
 
   // Fetch brands and sizes from API
   useEffect(() => {
@@ -102,6 +115,41 @@ export default function FilterModal({ onClose, onApply, initialFilters }: {
     
     fetchBrands();
     fetchSizes();
+  }, []);
+
+  // Update useEffect to fetch products and extract colors
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        let allColors = new Set<string>();
+        let allColorsUz = new Set<string>();
+        let nextUrl = "https://coco20.uz/api/v1/products/crud/product/?page=1";
+        
+        while (nextUrl) {
+          const response = await fetch(nextUrl);
+          const data = await response.json();
+          
+          // Extract colors from each product's attributes
+          data.results.forEach((product: Product) => {
+            product.product_attributes.forEach(attr => {
+              if (attr.color_name_ru) allColors.add(attr.color_name_ru);
+              if (attr.color_name_uz) allColorsUz.add(attr.color_name_uz);
+            });
+          });
+          
+          nextUrl = data.next;
+        }
+        
+        setAvailableColors({
+          ru: Array.from(allColors),
+          uz: Array.from(allColorsUz)
+        });
+      } catch (error) {
+        console.error("Error fetching products:", error);
+      }
+    };
+
+    fetchProducts();
   }, []);
 
   const toggleBrand = (brand: Brand) => {
@@ -249,6 +297,11 @@ export default function FilterModal({ onClose, onApply, initialFilters }: {
   // Modify the close button handler
   const handleClose = () => {
     onClose();
+  };
+
+  // Update the colors section to use API colors
+  const getDisplayColors = () => {
+    return i18n.language === 'ru' ? availableColors.ru : availableColors.uz;
   };
 
   if (!showModal) return null;
@@ -479,9 +532,9 @@ export default function FilterModal({ onClose, onApply, initialFilters }: {
             >
               <span className="filter-title">
                 {selectedColors.length > 0 ? (
-                  <span>{t('filters.colors')} : {selectedColors.map(c => t(`filters.colors_list.${c}`)).join(", ")}</span>
+                  <span>{t('filters.colors')} : {selectedColors.join(", ")}</span>
                 ) : (
-                  <span>{t('filters.colors')} {colors.map(c => t(`filters.colors_list.${c}`)).join(", ")}</span>
+                  <span>{t('filters.colors')} {getDisplayColors().join(", ")}</span>
                 )}
               </span>
               <span className={`arrow ${colorsOpen ? "up" : "down"}`}>
@@ -516,7 +569,7 @@ export default function FilterModal({ onClose, onApply, initialFilters }: {
           {colorsOpen && (
             <div className="filter-content">
               <div className="options-list">
-                {colors.map((color) => (
+                {getDisplayColors().map((color) => (
                   <div
                     key={color}
                     className={`option-item ${
@@ -524,7 +577,7 @@ export default function FilterModal({ onClose, onApply, initialFilters }: {
                     }`}
                     onClick={() => toggleColor(color)}
                   >
-                    <span>{t(`filters.colors_list.${color}`)}</span>
+                    <span>{color}</span>
                     {selectedColors.includes(color) && (
                       <span className="checkmark">
                         {" "}

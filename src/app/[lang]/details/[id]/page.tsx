@@ -11,6 +11,8 @@ interface ProductAttribute {
   color: string;
   image: string;
   sizes: number[];
+  color_name_ru?: string;
+  color_name_uz?: string;
 }
 
 interface Product {
@@ -162,7 +164,14 @@ export default function ProductPage() {
     return `${formattedPrice} uzs`;
   }
 
-  const getColorName = (hex: string) => {
+  const getColorName = (hex: string, colorNameRu: string | null, colorNameUz: string | null) => {
+    // If color names are provided, use them based on current language
+    if (colorNameRu || colorNameUz) {
+      const currentLang = params.lang as string;
+      return currentLang === 'ru' ? (colorNameRu || hex) : (colorNameUz || hex);
+    }
+
+    // Fallback to the existing color mapping if no custom names provided
     const colorMap: { [key: string]: string } = {
       '#ef2525': 'filters.colors_list.red',
       '#ff0000': 'filters.colors_list.red',
@@ -266,7 +275,13 @@ export default function ProductPage() {
               <tbody>
                 <tr>
                   <td className="info-label">{t('product_details.table.color')}</td>
-                  <td className="info-value">{getColorName(selectedColor)}</td>
+                  <td className="info-value">
+                    {getColorName(
+                      selectedColor,
+                      product.product_attributes[selectedColorIndex]?.color_name_ru || null,
+                      product.product_attributes[selectedColorIndex]?.color_name_uz || null
+                    )}
+                  </td>
                 </tr>
                 <tr>
                   <td className="info-label">{t('product_details.table.material')}</td>
