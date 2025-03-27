@@ -20,11 +20,24 @@ export default function CategorySection() {
   const router = useRouter()
 
   useEffect(() => {
-    const fetchCategories = async () => {
+    const fetchAllCategories = async () => {
       try {
-        const response = await fetch('https://coco20.uz/api/v1/brands/crud/category/?page=1&page_size=10')
-        const data = await response.json()
-        setCategories(data.results)
+        // First fetch to get total count
+        const initialResponse = await fetch('https://coco20.uz/api/v1/brands/crud/category/?page=1&page_size=10')
+        const initialData = await initialResponse.json()
+        const totalItems = initialData.count
+        const pageSize = 10
+        const totalPages = Math.ceil(totalItems / pageSize)
+
+        // Fetch all pages
+        const promises = Array.from({ length: totalPages }, (_, i) =>
+          fetch(`https://coco20.uz/api/v1/brands/crud/category/?page=${i + 1}&page_size=${pageSize}`)
+            .then(res => res.json())
+        )
+
+        const results = await Promise.all(promises)
+        const allCategories = results.flatMap(data => data.results)
+        setCategories(allCategories)
       } catch (error) {
         console.error('Error fetching categories:', error)
       } finally {
@@ -32,7 +45,7 @@ export default function CategorySection() {
       }
     }
 
-    fetchCategories()
+    fetchAllCategories()
   }, [])
 
   const containerVariants = {
@@ -84,13 +97,26 @@ export default function CategorySection() {
       <motion.div 
         className="category-grid"
         variants={containerVariants}
+        style={{
+          display: 'flex',
+          overflowX: 'auto',
+          gap: '1rem',
+          padding: '1rem',
+          WebkitOverflowScrolling: 'touch',
+          scrollbarWidth: 'none',  // Firefox
+          msOverflowStyle: 'none',  // IE/Edge
+        }}
       >
         {categories.map((category) => (
           <motion.div
             key={category.id}
             variants={itemVariants}
             onClick={() => handleCategoryClick(category)}
-            style={{ cursor: 'pointer' }}
+            style={{ 
+              cursor: 'pointer',
+              flex: '0 0 auto',  // Prevent items from shrinking
+              width: '158px',    // Match the image width
+            }}
           >
             <div className="category-item">
               <div className="category-image">

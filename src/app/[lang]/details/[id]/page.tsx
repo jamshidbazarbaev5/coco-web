@@ -8,7 +8,7 @@ import { useTranslation } from 'react-i18next'
 
 // Define interfaces for the data
 interface ProductAttribute {
-  color: string;
+  color_code: string;
   image: string;
   sizes: number[];
   color_name_ru?: string;
@@ -102,7 +102,7 @@ export default function ProductPage() {
         setBrands(brandsData.results)
         
         if (productData.product_attributes.length > 0) {
-          setSelectedColor(productData.product_attributes[0].color)
+          setSelectedColor(productData.product_attributes[0].color_code)
         }
         
         setLoading(false)
@@ -256,14 +256,14 @@ export default function ProductPage() {
             <div className="color-options">
               {product?.product_attributes.map((attr, index) => (
                 <button
-                  key={attr.color}
-                  className={`color-option ${selectedColor === attr.color ? "selected" : ""}`}
+                  key={attr.color_code}
+                  className={`color-option ${selectedColor === attr.color_code ? "selected" : ""}`}
                   onClick={() => {
-                    setSelectedColor(attr.color)
+                    setSelectedColor(attr.color_code)
                     setSelectedColorIndex(index)
                   }}
-                  aria-label={`Color ${attr.color}`}
-                  style={{ backgroundColor: attr.color }}
+                  aria-label={`Color ${attr.color_code}`}
+                  style={{ backgroundColor: attr.color_code }}
                 ></button>
               ))}
             </div>
