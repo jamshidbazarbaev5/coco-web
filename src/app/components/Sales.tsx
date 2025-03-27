@@ -6,19 +6,41 @@ import ConfirmationModal from "./ConfirmationModal";
 import { useRouter } from "next/navigation";
 import i18n from "../i18/config";
 
+interface ProductAttribute {
+  id: number;
+  color_code: string;
+  image: string;
+  sizes: number[];
+  color_name_ru: string;
+  color_name_uz: string;
+  price: string;
+  new_price: string | null;
+  quantity: number;
+  created_at: string;
+  on_sale: boolean;
+}
+
 interface Product {
   id: number;
-  brand: string;
-  name: string;
-  price: string;
-  availability: string;
+  brand: number;
   image: string;
-  on_sale: boolean;
-  new_price: number;
+  name: string;
+  price: string;  
+  new_price: string;
+  availability: string;
+  category: number;
+  title_uz: string;
+  title_ru: string;
+  description_uz: string;
+  description_ru: string;
+  material: number;
+  product_attributes: ProductAttribute[];
 }
 
 interface CartItem {
   product: number;
+  product_variant: number;
+  size: number;
   quantity: number;
   name: string;
   description: string;
@@ -31,7 +53,7 @@ export default function SalesPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
-  
+
   const getTranslatedTitle = (product: any) => {
     return i18n.language === 'uz' ? product.title_uz : product.title_ru;
   };
@@ -43,47 +65,46 @@ export default function SalesPage() {
     return quantity > 0 ? `В наличии: ${quantity}` : "На заказ";
   };
 
-  // Modify the sales title based on language
   const getSalesTitle = () => {
     return i18n.language === 'uz' ? "Chegirmalar" : "Скидки";
   };
+
   const formatPrice = (price: any) => {
-    // Convert price to string if it's a number
     const priceStr = typeof price === 'number' ? price.toString() : price;
-    
-    // Convert price string to number, removing any non-digit characters except decimal point
     const numPrice = Number(priceStr.replace(/[^\d.]/g, ''));
-    
-    // Format with spaces between thousands
     const formattedPrice = Math.floor(numPrice)
       .toString()
       .replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
-    
-    // Return formatted price with 'uzs' suffix
     return `${formattedPrice} uzs`;
-  }
+  };
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch all products
         const productsResponse = await fetch('https://coco20.uz/api/v1/products/crud/product/');
         const productsData = await productsResponse.json();
-        
-        // Filter and transform only products that are on sale
-        const formattedProducts: Product[] = productsData.results
-          .filter((product: any) => product.on_sale)
-          .map((product: any) => ({
-            id: product.id,
-            brand: product.brand === 1 ? "Apple" : "Gucci",
-            name: getTranslatedTitle(product),
-            price: `${Math.floor(product.price)} uzs`,
-            availability: getAvailabilityText(product.quantity),
-            image: product.product_attributes[0]?.image || "/placeholder.svg",
-            on_sale: product.on_sale,
-            new_price: Math.floor(product.new_price)
-          }));
-        
+
+        const formattedProducts = productsData.results
+          .filter((product: Product) =>
+            product.product_attributes.some(attr => attr.on_sale)
+          )
+          .map((product: Product) => {
+            const saleVariant = product.product_attributes.find(attr => attr.on_sale);
+
+            return {
+              id: product.id,
+              brand: product.brand,
+              name: getTranslatedTitle(product),
+              price: saleVariant?.price || "0",
+              new_price: saleVariant?.new_price || "0",
+              availability: getAvailabilityText(saleVariant?.quantity || 0),
+              image: saleVariant?.image || "/placeholder.svg",
+              on_sale: true,
+              product_variant: saleVariant?.id || 0,
+              sizes: saleVariant?.sizes || []
+            };
+          });
+
         setProducts(formattedProducts);
         setLoading(false);
       } catch (error) {
@@ -91,34 +112,40 @@ export default function SalesPage() {
         setLoading(false);
       }
     };
-    
+
     fetchData();
   }, [i18n.language]);
-  
+
   const [showConfirmation, setShowConfirmation] = useState(false);
 
-  const handleAddToCart = (product: Product) => {
+  const handleAddToCart = (product: any) => {
     const cartItem: CartItem = {
       product: product.id,
+      product_variant: product.product_variant,
+      size: product.sizes[0],
       quantity: 1,
-      name: product.brand,
+      name: product.brand.toString(),
       description: product.name,
-      price: product.price,
-      stock: parseInt(product.availability.match(/\d+/) ? product.availability.match(/\d+/)?.[0] || "0" : "0"),
+      price: formatPrice(product.new_price || product.price),
+      stock: parseInt(product.availability.match(/\d+/)?.[0] || "0"),
       image: product.image
     };
-    
+
     const existingCart = JSON.parse(localStorage.getItem('cart') || '[]');
-    const existingItemIndex = existingCart.findIndex((item: CartItem) => item.product === product.id);
-    
+    const existingItemIndex = existingCart.findIndex((item: CartItem) =>
+      item.product === product.id &&
+      item.product_variant === product.product_variant &&
+      item.size === product.sizes[0]
+    );
+
     if (existingItemIndex >= 0) {
       existingCart[existingItemIndex].quantity += 1;
-      window.dispatchEvent(new Event('cartUpdated'));
     } else {
       existingCart.push(cartItem);
     }
-    
+
     localStorage.setItem('cart', JSON.stringify(existingCart));
+    window.dispatchEvent(new Event('cartUpdated'));
     setShowConfirmation(true);
   };
 
@@ -130,11 +157,10 @@ export default function SalesPage() {
     <div className="catalog-container">
       <h1 className="catalog-title">{getSalesTitle()}</h1>
 
-      {/* Products grid */}
       <div className="products-grid">
         {products.map((product) => (
-          <div 
-            className="product-card" 
+          <div
+            className="product-card"
             key={product.id}
             onClick={() => handleProductClick(product.id)}
             style={{ cursor: 'pointer' }}
@@ -147,7 +173,7 @@ export default function SalesPage() {
                 height={300}
                 className="product-image"
               />
-              <button 
+              <button
                 className="cart-button"
                 onClick={(e) => {
                   e.stopPropagation();
@@ -182,7 +208,7 @@ export default function SalesPage() {
       </div>
 
       {showConfirmation && (
-        <ConfirmationModal 
+        <ConfirmationModal
           onClose={() => setShowConfirmation(false)}
         />
       )}
@@ -192,7 +218,7 @@ export default function SalesPage() {
           margin: 0;
           padding: 0;
           box-sizing: border-box;
-         font-family: var(--font-plus-jakarta);
+          font-family: var(--font-plus-jakarta);
         }
 
         body {
@@ -212,7 +238,6 @@ export default function SalesPage() {
           color: #000;
         }
 
-        /* Products grid */
         .products-grid {
           display: grid;
           grid-template-columns: repeat(1, 1fr);
@@ -258,7 +283,6 @@ export default function SalesPage() {
           height: 36px;
           border-radius: 50%;
           background-color: rgba(255, 255, 255, 0.6);
-          
           border: none;
           display: flex;
           align-items: center;

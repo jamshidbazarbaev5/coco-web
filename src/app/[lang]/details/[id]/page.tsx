@@ -8,31 +8,35 @@ import { useTranslation } from 'react-i18next'
 
 // Define interfaces for the data
 interface ProductAttribute {
+  id: number;
   color_code: string;
   image: string;
   sizes: number[];
-  color_name_ru?: string;
-  color_name_uz?: string;
+  color_name_ru: string;
+  color_name_uz: string;
+  price: string;
+  new_price: string | null;
+  quantity: number;
+  created_at: string;
+  on_sale: boolean;
 }
 
 interface Product {
   id: number;
   brand: number;
   category: number;
-  title_ru: string;
   title_uz: string;
-  description_ru: string;
+  title_ru: string;
   description_uz: string;
+  description_ru: string;
   material: number;
-  price: string;
-  new_price: string;
-  quantity: number;
   product_attributes: ProductAttribute[];
-  on_sale: boolean;
 }
 
 interface CartItem {
   product: number;
+  product_variant: number;
+  size: number | null;
   quantity: number;
   name: string;
   description: string;
@@ -61,6 +65,7 @@ interface Brand {
 export default function ProductPage() {
   const [selectedColor, setSelectedColor] = useState<string>("")
   const [selectedColorIndex, setSelectedColorIndex] = useState(0)
+  const [selectedSize, setSelectedSize] = useState<number | null>(null)
   const [product, setProduct] = useState<Product | null>(null)
   const [materials, setMaterials] = useState<Material[]>([])
   const [sizes, setSizes] = useState<Size[]>([])
@@ -116,68 +121,66 @@ export default function ProductPage() {
   }, [productId, router])
   
   const handleAddToCart = () => {
-    if (!product) return
+    if (!product || !product.product_attributes[selectedColorIndex]) return
+    
+    if (!selectedSize) {
+      alert(t('product_details.select_size'));
+      return;
+    }
     
     const brandName = brands.find(b => b.id === product.brand)?.name || "Unknown Brand"
+    const currentVariant = product.product_attributes[selectedColorIndex];
     
     const cartItem: CartItem = {
       product: product.id,
+      product_variant: currentVariant.id,
+      size: selectedSize,
       quantity: 1,
       name: brandName,
       description: product.title_ru,
-      price: `${product.price} uzs`,
-      stock: product.quantity,
-      image: product.product_attributes[selectedColorIndex]?.image || "/placeholder.svg"
+      price: formatPrice(currentVariant.price),
+      stock: currentVariant.quantity,
+      image: currentVariant.image || "/placeholder.svg"
     }
     
-    // Get existing cart from localStorage or initialize empty array
     const existingCart = JSON.parse(localStorage.getItem('cart') || '[]')
     
-    // Check if product already exists in cart
-    const existingItemIndex = existingCart.findIndex((item: CartItem) => item.product === product.id)
+    const existingItemIndex = existingCart.findIndex((item: CartItem) => 
+      item.product === product.id && 
+      item.product_variant === currentVariant.id && 
+      item.size === selectedSize
+    )
     
     if (existingItemIndex >= 0) {
-      // Update quantity if product already in cart
       existingCart[existingItemIndex].quantity += 1
     } else {
-      // Add new item to cart
       existingCart.push(cartItem)
     }
     
-    // Save updated cart to localStorage
     localStorage.setItem('cart', JSON.stringify(existingCart))
     
-    // Dispatch custom event with cart data
     const event = new CustomEvent('cartUpdated', { 
       detail: { cart: existingCart }
     });
     window.dispatchEvent(event);
     
-    // Show confirmation modal
     setShowConfirmation(true)
   }
 
   const formatPrice = (price: string) => {
-    // Convert price string to number, removing any non-digit characters except decimal point
     const numPrice = Number(price.replace(/[^\d.]/g, ''));
-    
-    // Format with spaces between thousands
     const formattedPrice = Math.floor(numPrice)
       .toString()
       .replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
-    
-    // Return formatted price with 'uzs' suffix
     return `${formattedPrice} uzs`;
   }
 
   const getColorName = (hex: string, colorNameRu: string | null, colorNameUz: string | null) => {
-    // If color names are provided, use them based on current language
     if (colorNameRu || colorNameUz) {
       const currentLang = params.lang as string;
       return currentLang === 'ru' ? (colorNameRu || hex) : (colorNameUz || hex);
     }
 
-    // Fallback to the existing color mapping if no custom names provided
     const colorMap: { [key: string]: string } = {
       '#ef2525': 'filters.colors_list.red',
       '#ff0000': 'filters.colors_list.red',
@@ -246,16 +249,22 @@ export default function ProductPage() {
           </h1>
           <p className="product-name">{product.title_ru}</p>
           <p className="product-price">
-            {product.on_sale ? (
+            {product.product_attributes[selectedColorIndex].on_sale ? (
               <>
-                <span className="original-price">{formatPrice(product.price)}</span>
-                <span className="sale-price">{formatPrice(product.new_price)}</span>
+                <span className="original-price">
+                  {formatPrice(product.product_attributes[selectedColorIndex].price)}
+                </span>
+                <span className="sale-price">
+                  {formatPrice(product.product_attributes[selectedColorIndex].new_price || '')}
+                </span>
               </>
             ) : (
-              formatPrice(product.price)
+              formatPrice(product.product_attributes[selectedColorIndex].price)
             )}
           </p>
-          <p className="product-availability">{t('product_details.in_stock')} {product.quantity}</p>
+          <p className="product-availability">
+            {t('product_details.in_stock')} {product.product_attributes[selectedColorIndex].quantity}
+          </p>
 
           <div className="color-section">
             <p className="color-title">{t('product_details.colors')}</p>
@@ -272,6 +281,24 @@ export default function ProductPage() {
                   style={{ backgroundColor: attr.color_code }}
                 ></button>
               ))}
+            </div>
+          </div>
+
+          <div className="size-section">
+            <p className="size-title">{t('product_details.sizes')}</p>
+            <div className="size-options">
+              {product?.product_attributes[selectedColorIndex]?.sizes.map(sizeId => {
+                const size = sizes.find(s => s.id === sizeId);
+                return (
+                  <button
+                    key={sizeId}
+                    className={`size-option ${selectedSize === sizeId ? "selected" : ""}`}
+                    onClick={() => setSelectedSize(sizeId)}
+                  >
+                    {size?.name || sizeId}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
@@ -419,6 +446,37 @@ export default function ProductPage() {
         }
         
         .color-option.selected {
+          border: 2px solid #333;
+        }
+
+        .size-section {
+          margin-top: 10px;
+        }
+
+        .size-title {
+          font-size: 14px;
+          color: #666;
+          margin-bottom: 10px;
+          font-family: var(--font-plus-jakarta);
+        }
+
+        .size-options {
+          display: flex;
+          gap: 10px;
+        }
+
+        .size-option {
+          padding: 5px 10px;
+          border: 1px solid #ddd;
+          cursor: pointer;
+          transition: transform 0.2s;
+        }
+
+        .size-option:hover {
+          transform: scale(1.1);
+        }
+
+        .size-option.selected {
           border: 2px solid #333;
         }
         

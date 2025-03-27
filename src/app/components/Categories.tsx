@@ -15,20 +15,41 @@ interface Category {
   image: string;
 }
 
+// Update the Product interface to match new structure
 interface Product {
   id: number;
-  brand: string;
+  image: string;
   name: string;
   price: string;
   availability: string;
-  image: string;
-  on_sale: boolean;
-  new_price: number;
+  brand: number; // Changed from string to number
+  title_uz: string;
+  title_ru: string;
+  description_uz: string;
+  description_ru: string;
+  product_attributes: ProductAttribute[];
 }
 
-// Add a new interface for cart items
+// Add new interface for product attributes
+interface ProductAttribute {
+  id: number;
+  color_code: string;
+  image: string;
+  sizes: number[];
+  color_name_ru: string;
+  color_name_uz: string;
+  price: string;
+  new_price: string | null;
+  quantity: number;
+  created_at: string;
+  on_sale: boolean;
+}
+
+// Update CartItem interface
 interface CartItem {
   product: number;
+  product_variant: number; // Added this field
+  size: number;
   quantity: number;
   name: string;
   description: string;
@@ -52,39 +73,39 @@ interface Filters {
 
 export default function CatalogPage() {
   // Add state for brands
-  const [brands, setBrands] = useState<{id: number, name: string}[]>([]);
+  const [brands, setBrands] = useState<{ id: number; name: string }[]>([]);
   const [activeFilter, setActiveFilter] = useState("Все");
 
   // Add state for filter modal
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
-  
+
   // Add state for API data with proper typing
   const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [nextProductsPage, setNextProductsPage] = useState<string | null>(null);
-  
+
   const router = useRouter();
-  
+
   // Add translation based on current language
   const getTranslatedTitle = (product: any) => {
-    return i18n.language === 'uz' ? product.title_uz : product.title_ru;
+    return i18n.language === "uz" ? product.title_uz : product.title_ru;
   };
 
   const getTranslatedDescription = (product: any) => {
-    return i18n.language === 'uz' ? product.description_uz : product.description_ru;
+    return i18n.language === "uz" ? product.description_uz : product.description_ru;
   };
 
   // Modify the catalog title based on language
   const getCatalogTitle = () => {
-    return i18n.language === 'uz' ? "Bizning katalog" : "Наш каталог";
+    return i18n.language === "uz" ? "Bizning katalog" : "Наш каталог";
   };
 
   // Modify the availability text based on language
   const getAvailabilityText = (quantity: number) => {
-    if (i18n.language === 'uz') {
+    if (i18n.language === "uz") {
       return quantity > 0 ? `Mavjud: ${quantity}` : "Buyurtma asosida";
     }
     return quantity > 0 ? `В наличии: ${quantity}` : "На заказ";
@@ -92,60 +113,60 @@ export default function CatalogPage() {
 
   // Modify the "All" filter text based on language
   const getAllFilterText = () => {
-    return i18n.language === 'uz' ? "Hammasi" : "Все";
+    return i18n.language === "uz" ? "Hammasi" : "Все";
   };
 
   // Add translation helper for category names
   const getTranslatedCategoryName = (category: any) => {
-    return i18n.language === 'uz' ? category.name_uz : category.name_ru;
+    return i18n.language === "uz" ? category.name_uz : category.name_ru;
   };
   // Add this helper function at the top level of your component
   const formatPrice = (price: string) => {
     // Convert price string to number, removing any non-digit characters except decimal point
-    const numPrice = Number(price.replace(/[^\d.]/g, ''));
-    
+    const numPrice = Number(price.replace(/[^\d.]/g, ""));
+
     // Format with spaces between thousands
     const formattedPrice = Math.floor(numPrice)
       .toString()
-      .replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
-    
+      .replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+
     // Return formatted price with 'uzs' suffix
     return `${formattedPrice} uzs`;
-  }
+  };
 
   // Update state for filters to include size ID
   const [filters, setFilters] = useState({
-    title_ru__icontains: '',
-    title_uz__icontains: '',
-    price__lt: '',
-    price__gt: '',
-    brand: '',
-    color: '',
-    size: '',
-    category: ''
+    title_ru__icontains: "",
+    title_uz__icontains: "",
+    price__lt: "",
+    price__gt: "",
+    brand: "",
+    color: "",
+    size: "",
+    category: "",
   });
-  
+
   // Update state to track all filter selections
   const [currentFilterData, setCurrentFilterData] = useState({
-    searchQuery: '',
-    selectedBrands: [] as {id: number, name: string}[],
-    selectedSizes: [] as {id: number, name: string}[],
+    searchQuery: "",
+    selectedBrands: [] as { id: number; name: string }[],
+    selectedSizes: [] as { id: number; name: string }[],
     selectedColors: [] as string[],
-    priceRange: { min: '0', max: '1000000' }
+    priceRange: { min: "0", max: "1000000" },
   });
-  
+
   // Add these helper functions at the top of your component
   const getActiveFiltersText = () => {
-    return i18n.language === 'uz' ? "Faol filtrlar:" : "Активные фильтры:";
+    return i18n.language === "uz" ? "Faol filtrlar:" : "Активные фильтры:";
   };
 
   const getClearText = () => {
-    return i18n.language === 'uz' ? "Tozalash" : "Очистить";
+    return i18n.language === "uz" ? "Tozalash" : "Очистить";
   };
 
   const ActiveFilters = () => {
     const activeFilters = getActiveFiltersDisplay();
-    
+
     if (activeFilters.length === 0) {
       return null;
     }
@@ -153,23 +174,17 @@ export default function CatalogPage() {
     return (
       <div className="active-filters">
         <span>{getActiveFiltersText()}</span>
-        
+
         {activeFilters.map((filter, index) => (
           <span key={`${filter.type}-${index}`} className="filter-tag">
-            {filter.type === 'color' ? t(`${filter.label}`) : filter.label}
-            <button
-              className="remove-filter"
-              onClick={() => removeFilter(filter.type)}
-            >
+            {filter.type === "color" ? t(`${filter.label}`) : filter.label}
+            <button className="remove-filter" onClick={() => removeFilter(filter.type)}>
               ×
             </button>
           </span>
         ))}
 
-        <button
-          className="clear-filters"
-          onClick={clearAllFilters}
-        >
+        <button className="clear-filters" onClick={clearAllFilters}>
           {getClearText()}
         </button>
       </div>
@@ -180,64 +195,63 @@ export default function CatalogPage() {
     const fetchData = async () => {
       try {
         setLoading(true);
-        
+
         // Get URL parameters when component mounts
         const urlParams = new URLSearchParams(window.location.search);
         const urlFilters: Filters = {
-          title_ru__icontains: '',
-          title_uz__icontains: '',
-          price__lt: '',
-          price__gt: '',
-          brand: '',
-          color: '',
-          size: '',
-          category: ''
+          title_ru__icontains: "",
+          title_uz__icontains: "",
+          price__lt: "",
+          price__gt: "",
+          brand: "",
+          color: "",
+          size: "",
+          category: "",
         };
-        
+
         // Convert URL parameters to filters
         urlParams.forEach((value, key) => {
           if (key in urlFilters) {
             urlFilters[key] = value;
           }
         });
-        
+
         if (Object.keys(urlFilters).length > 0) {
-          setFilters(prevFilters => ({
+          setFilters((prevFilters) => ({
             ...prevFilters,
-            ...urlFilters
+            ...urlFilters,
           }));
         }
-        
+
         const [brandsResponse, categoriesData] = await Promise.all([
-          fetch('https://coco20.uz/api/v1/brands/crud/brand/'),
-          fetchAllCategories()
+          fetch("https://coco20.uz/api/v1/brands/crud/brand/"),
+          fetchAllCategories(),
         ]);
-        
+
         const brandsData = await brandsResponse.json();
-        
-        const filteredBrands = brandsData.results.filter((brand: any) => 
-          brand.name !== "Все" && brand.name !== "Hammasi"
+
+        const filteredBrands = brandsData.results.filter(
+          (brand: any) => brand.name !== "Все" && brand.name !== "Hammasi"
         );
-        
-        const formattedBrands = [
-          { id: 0, name: getAllFilterText() },
-          ...filteredBrands
-        ];
-        
+
+        const formattedBrands = [{ id: 0, name: getAllFilterText() }, ...filteredBrands];
+
         setBrands(formattedBrands);
-        
+
         if (!activeFilter || activeFilter === "Все" || activeFilter === "Hammasi") {
           setActiveFilter(getAllFilterText());
         }
 
-        const formattedCategories: Category[] = categoriesData.map((category: any, index: number) => ({
-          id: category.id,
-          name: getTranslatedCategoryName(category),
-          image: "/cart-" + ((index % 4) + 1) + ".jpg",
-        }));
-        
+        const formattedCategories: Category[] = categoriesData.map(
+          (category: any, index: number) => ({
+            id: category.id,
+            name: getTranslatedCategoryName(category),
+            image: "/cart-" + ((index % 4) + 1) + ".jpg",
+          })
+        );
+
         setCategories(formattedCategories);
-        
+
         await fetchProducts(urlFilters);
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -245,24 +259,25 @@ export default function CatalogPage() {
         setLoading(false);
       }
     };
-    
+
     fetchData();
   }, [i18n.language]);
 
   const fetchAllCategories = async () => {
     let allCategories: any = [];
-    let nextUrl = 'https://coco20.uz/api/v1/brands/crud/category/?page=1';
-    
+    let nextUrl = "https://coco20.uz/api/v1/brands/crud/category/?page=1";
+
     while (nextUrl) {
       const categoriesResponse = await fetch(nextUrl);
       const categoriesData = await categoriesResponse.json();
       allCategories = [...allCategories, ...categoriesData.results];
       nextUrl = categoriesData.next;
     }
-    
+
     return allCategories;
   };
 
+  // Update fetchProducts function
   const fetchProducts = async (currentFilters: Filters) => {
     try {
       let queryParams = new URLSearchParams();
@@ -271,26 +286,30 @@ export default function CatalogPage() {
           queryParams.append(key, value);
         }
       });
-      
+
       const productsUrl = `https://coco20.uz/api/v1/products/crud/product/?${queryParams.toString()}`;
       const productsResponse = await fetch(productsUrl);
       const productsData = await productsResponse.json();
-      
+
       setNextProductsPage(productsData.next);
-      
-      const formattedProducts: Product[] = productsData.results.map((product: any) => ({
-        id: product.id,
-        brand: product.brand === 1 ? "Apple" : "Gucci",
-        name: getTranslatedTitle(product),
-        price: formatPrice(product.price),
-        availability: getAvailabilityText(product.quantity),
-        image: product.product_attributes && product.product_attributes.length > 0 
-          ? product.product_attributes[0].image 
-          : null,
-        on_sale: product.on_sale,
-        new_price: product.new_price
-      }));
-      
+
+      const formattedProducts = productsData.results.map((product: Product) => {
+        const firstVariant = product.product_attributes[0] || {};
+        return {
+          id: product.id,
+          brand: product.brand,
+          name: i18n.language === "uz" ? product.title_uz : product.title_ru,
+          description: i18n.language === "uz" ? product.description_uz : product.description_ru,
+          price: formatPrice(firstVariant.price || "0"),
+          availability: getAvailabilityText(firstVariant.quantity || 0),
+          image: firstVariant.image || null,
+          on_sale: firstVariant.on_sale || false,
+          new_price: firstVariant.new_price,
+          product_variant: firstVariant.id,
+          sizes: firstVariant.sizes,
+        };
+      });
+
       setProducts(formattedProducts);
     } catch (error) {
       console.error("Error fetching products:", error);
@@ -299,59 +318,58 @@ export default function CatalogPage() {
 
   useEffect(() => {
     if (brands.length === 0) return;
-    
+
     const urlParams = new URLSearchParams(window.location.search);
     const urlFilters: any = {};
     const newFilterData = {
-      searchQuery: '',
-      selectedBrands: [] as {id: number, name: string}[],
-      selectedSizes: [] as {id: number, name: string}[],
+      searchQuery: "",
+      selectedBrands: [] as { id: number; name: string }[],
+      selectedSizes: [] as { id: number; name: string }[],
       selectedColors: [] as string[],
-      priceRange: { min: '0', max: '1000000' }
+      priceRange: { min: "0", max: "1000000" },
     };
-    
+
     urlParams.forEach((value, key) => {
       urlFilters[key] = value;
-      
-      switch(key) {
-        case 'brand':
-          const selectedBrand = brands.find(b => b.id.toString() === value);
+
+      switch (key) {
+        case "brand":
+          const selectedBrand = brands.find((b) => b.id.toString() === value);
           if (selectedBrand) {
             setActiveFilter(selectedBrand.name);
             newFilterData.selectedBrands = [selectedBrand];
           }
           break;
-        case 'size':
+        case "size":
           break;
-        case 'color':
+        case "color":
           newFilterData.selectedColors = [value];
           break;
-        case 'price__gt':
+        case "price__gt":
           newFilterData.priceRange.min = value;
           break;
-        case 'price__lt':
+        case "price__lt":
           newFilterData.priceRange.max = value;
           break;
-        case 'title_ru__icontains':
-        case 'title_uz__icontains':
+        case "title_ru__icontains":
+        case "title_uz__icontains":
           newFilterData.searchQuery = value;
           break;
       }
     });
 
-    setFilters(prevFilters => ({
+    setFilters((prevFilters) => ({
       ...prevFilters,
-      ...urlFilters
+      ...urlFilters,
     }));
 
     setCurrentFilterData(newFilterData);
-
   }, [i18n.language, brands]);
 
   // Modify useEffect for handling filter changes
   useEffect(() => {
     if (!brands.length) return; // Skip if initial data isn't loaded yet
-    
+
     setLoading(true);
     fetchProducts(filters).finally(() => setLoading(false));
   }, [filters, i18n.language]);
@@ -359,32 +377,36 @@ export default function CatalogPage() {
   // Add function to load more products
   const loadMoreProducts = async () => {
     if (!nextProductsPage || isLoadingMore) return;
-    
+
     try {
       setIsLoadingMore(true);
-      
+
       const response = await fetch(nextProductsPage);
       const data = await response.json();
-      
+
       // Save next page URL for pagination
       setNextProductsPage(data.next);
-      
+
       // Transform and add new products
-      const newProducts: Product[] = data.results.map((product: any) => ({
-        id: product.id,
-        brand: product.brand === 1 ? "Apple" : "Gucci",
-        name: getTranslatedTitle(product),
-        price: formatPrice(product.price),
-        availability: getAvailabilityText(product.quantity),
-        image: product.product_attributes && product.product_attributes.length > 0 
-          ? product.product_attributes[0].image 
-          : null,
-        on_sale: product.on_sale,
-        new_price: product.new_price
-      }));
-      
+      const newProducts: Product[] = data.results.map((product: Product) => {
+        const firstVariant = product.product_attributes[0] || {};
+        return {
+          id: product.id,
+          brand: product.brand,
+          name: i18n.language === "uz" ? product.title_uz : product.title_ru,
+          description: i18n.language === "uz" ? product.description_uz : product.description_ru,
+          price: formatPrice(firstVariant.price || "0"),
+          availability: getAvailabilityText(firstVariant.quantity || 0),
+          image: firstVariant.image || null,
+          on_sale: firstVariant.on_sale || false,
+          new_price: firstVariant.new_price,
+          product_variant: firstVariant.id,
+          sizes: firstVariant.sizes,
+        };
+      });
+
       // Append new products to existing ones
-      setProducts(prevProducts => [...prevProducts, ...newProducts]);
+      setProducts((prevProducts) => [...prevProducts, ...newProducts]);
     } catch (error) {
       console.error("Error loading more products:", error);
     } finally {
@@ -397,44 +419,53 @@ export default function CatalogPage() {
   // Add new state for mobile cart notification
   const [showMobileCart, setShowMobileCart] = useState(false);
 
-  const handleAddToCart = (product: Product) => {
+  // Update handleAddToCart function
+  const handleAddToCart = (product: any) => {
     // Create a cart item from the product
     const cartItem: CartItem = {
       product: product.id,
+      product_variant: product.product_variant, // Add variant ID
+      size: product.sizes[0], // Default to first size, you might want to add size selection
       quantity: 1,
-      name: product.brand,
+      name: brandNameFromId(product.brand), // New helper function needed
       description: product.name,
       price: product.price,
-      stock: parseInt(product.availability.match(/\d+/) ? product.availability.match(/\d+/)?.[0] || "0" : "0"),
-      image: product.image
+      stock: parseInt(product.availability.match(/\d+/)?.[0] || "0"),
+      image: product.image || "/placeholder.svg",
     };
-    
+
     // Get existing cart from localStorage or initialize empty array
-    const existingCart = JSON.parse(localStorage.getItem('cart') || '[]');
-    
-    // Check if product already exists in cart
-    const existingItemIndex = existingCart.findIndex((item: CartItem) => item.product === product.id);
-    
+    const existingCart = JSON.parse(localStorage.getItem("cart") || "[]");
+
+    // Check if product already exists in cart with same variant and size
+    const existingItemIndex = existingCart.findIndex(
+      (item: CartItem) =>
+        item.product === product.id &&
+        item.product_variant === product.product_variant &&
+        item.size === product.sizes[0]
+    );
+
     if (existingItemIndex >= 0) {
-      // Update quantity if product already in cart
       existingCart[existingItemIndex].quantity += 1;
     } else {
-      // Add new item to cart
       existingCart.push(cartItem);
     }
-    
-    // Save updated cart to localStorage
-    localStorage.setItem('cart', JSON.stringify(existingCart));
-    window.dispatchEvent(new Event('cartUpdated'));
-    
-    // Show confirmation modal on desktop and mobile cart notification on mobile
+
+    localStorage.setItem("cart", JSON.stringify(existingCart));
+    window.dispatchEvent(new Event("cartUpdated"));
+
     if (window.innerWidth > 768) {
       setShowConfirmation(true);
     } else {
       setShowMobileCart(true);
-      // Hide mobile cart notification after 5 seconds
       setTimeout(() => setShowMobileCart(false), 5000);
     }
+  };
+
+  // Add helper function to get brand name from ID
+  const brandNameFromId = (brandId: number): string => {
+    const brand = brands.find((b) => b.id === brandId);
+    return brand ? brand.name : "Unknown Brand";
   };
 
   const handleProductClick = (productId: number) => {
@@ -445,22 +476,22 @@ export default function CatalogPage() {
   const handleFilterApply = (filterData: any) => {
     // Save current filter data for next modal open
     setCurrentFilterData(filterData);
-    
+
     // Convert filter data to API query parameters
     const newFilters = {
-      ...filters,  // Keep existing filters (like category)
-      title_ru__icontains: '',
-      title_uz__icontains: '',
-      price__lt: '',
-      price__gt: '',
-      brand: '',
-      color: '',
-      size: ''
+      ...filters, // Keep existing filters (like category)
+      title_ru__icontains: "",
+      title_uz__icontains: "",
+      price__lt: "",
+      price__gt: "",
+      brand: "",
+      color: "",
+      size: "",
     };
 
     // Only add non-empty filters
     if (filterData.searchQuery) {
-      if (i18n.language === 'ru') {
+      if (i18n.language === "ru") {
         newFilters.title_ru__icontains = filterData.searchQuery;
       } else {
         newFilters.title_uz__icontains = filterData.searchQuery;
@@ -482,48 +513,47 @@ export default function CatalogPage() {
       newFilters.color = filterData.selectedColors[0];
     }
 
-    if (filterData.priceRange?.min !== '0') {
+    if (filterData.priceRange?.min !== "0") {
       newFilters.price__gt = filterData.priceRange.min;
     }
 
-    if (filterData.priceRange?.max !== '1000000') {
+    if (filterData.priceRange?.max !== "1000000") {
       newFilters.price__lt = filterData.priceRange.max;
     }
 
     // Update filters state
     setFilters(newFilters);
-    
+
     // Close the modal
     setShowFilterModal(false);
-    
+
     // Update URL
     updateURL(newFilters);
   };
 
   // Update handleBrandFilterClick to sync with filter modal state
-  const handleBrandFilterClick = (brand: {id: number, name: string}) => {
+  const handleBrandFilterClick = (brand: { id: number; name: string }) => {
     setActiveFilter(brand.name);
-    
+
     if (brand.id === 0) {
-      setFilters({...filters, brand: ''});
+      setFilters({ ...filters, brand: "" });
       // Sync with filter modal state
       setCurrentFilterData({
         ...currentFilterData,
-        selectedBrands: []
+        selectedBrands: [],
       });
     } else {
-      setFilters({...filters, brand: brand.id.toString()});
+      setFilters({ ...filters, brand: brand.id.toString() });
       // Sync with filter modal state
       setCurrentFilterData({
         ...currentFilterData,
-        selectedBrands: [brand]
+        selectedBrands: [brand],
       });
     }
-    
+
     // Update URL
-    const newFilters = brand.id === 0 
-      ? {...filters, brand: ''} 
-      : {...filters, brand: brand.id.toString()};
+    const newFilters =
+      brand.id === 0 ? { ...filters, brand: "" } : { ...filters, brand: brand.id.toString() };
     updateURL(newFilters);
   };
 
@@ -543,119 +573,123 @@ export default function CatalogPage() {
   // Update getActiveFiltersDisplay function
   const getActiveFiltersDisplay = () => {
     const activeFilters = [];
-    
+
     // Add search query if active
     if (currentFilterData.searchQuery) {
       activeFilters.push({
-        type: 'search',
-        label: `"${currentFilterData.searchQuery}"`
+        type: "search",
+        label: `"${currentFilterData.searchQuery}"`,
       });
     }
-    
+
     // Add brand filters
     if (currentFilterData.selectedBrands.length > 0) {
-      currentFilterData.selectedBrands.forEach(brand => {
+      currentFilterData.selectedBrands.forEach((brand) => {
         activeFilters.push({
-          type: 'brand',
-          label: brand.name
+          type: "brand",
+          label: brand.name,
         });
       });
     }
-    
+
     // Add size filters
     if (currentFilterData.selectedSizes.length > 0) {
-      currentFilterData.selectedSizes.forEach(size => {
+      currentFilterData.selectedSizes.forEach((size) => {
         activeFilters.push({
-          type: 'size',
-          label: size.name
+          type: "size",
+          label: size.name,
         });
       });
     }
-    
+
     // Add color filters
     if (currentFilterData.selectedColors.length > 0) {
-      currentFilterData.selectedColors.forEach(color => {
+      currentFilterData.selectedColors.forEach((color) => {
         activeFilters.push({
-          type: 'color',
-          label: color
+          type: "color",
+          label: color,
         });
       });
     }
-    
+
     // Add price range if different from default
-    if (currentFilterData.priceRange.min !== '0' || 
-        currentFilterData.priceRange.max !== '1000000') {
+    if (
+      currentFilterData.priceRange.min !== "0" ||
+      currentFilterData.priceRange.max !== "1000000"
+    ) {
       activeFilters.push({
-        type: 'price',
-        label: `${formatPrice(currentFilterData.priceRange.min)} - ${formatPrice(currentFilterData.priceRange.max)}`
+        type: "price",
+        label: `${formatPrice(currentFilterData.priceRange.min)} - ${formatPrice(
+          currentFilterData.priceRange.max
+        )}`,
       });
     }
-    
+
     // Add category if active
     if (filters.category) {
       activeFilters.push({
-        type: 'category',
-        label: filters.category
+        type: "category",
+        label: filters.category,
       });
     }
-    
+
     return activeFilters;
   };
 
   const clearAllFilters = () => {
     setActiveFilter(getAllFilterText());
     setFilters({
-      title_ru__icontains: '',
-      title_uz__icontains: '',
-      price__lt: '',
-      price__gt: '',
-      brand: '',
-      color: '',
-      size: '',
-      category: ''
+      title_ru__icontains: "",
+      title_uz__icontains: "",
+      price__lt: "",
+      price__gt: "",
+      brand: "",
+      color: "",
+      size: "",
+      category: "",
     });
     setCurrentFilterData({
-      searchQuery: '',
+      searchQuery: "",
       selectedBrands: [],
       selectedSizes: [],
       selectedColors: [],
-      priceRange: { min: '0', max: '1000000' }
+      priceRange: { min: "0", max: "1000000" },
     });
     router.push(`/${i18n.language}/categories`);
   };
 
   const removeFilter = (filterType: string) => {
     const newFilters = { ...filters };
-    
+
     switch (filterType) {
-      case 'brand':
+      case "brand":
         setActiveFilter(getAllFilterText());
-        newFilters.brand = '';
-        setCurrentFilterData({...currentFilterData, selectedBrands: []});
+        newFilters.brand = "";
+        setCurrentFilterData({ ...currentFilterData, selectedBrands: [] });
         break;
-      case 'category':
-        newFilters.category = '';
+      case "category":
+        newFilters.category = "";
         break;
-      case 'search':
-        newFilters.title_ru__icontains = '';
-        newFilters.title_uz__icontains = '';
-        setCurrentFilterData({...currentFilterData, searchQuery: ''});
+      case "search":
+        newFilters.title_ru__icontains = "";
+        newFilters.title_uz__icontains = "";
+        setCurrentFilterData({ ...currentFilterData, searchQuery: "" });
         break;
-      case 'price':
-        newFilters.price__gt = '0';
-        newFilters.price__lt = '1000000';
+      case "price":
+        newFilters.price__gt = "0";
+        newFilters.price__lt = "1000000";
         setCurrentFilterData({
-          ...currentFilterData, 
-          priceRange: {min: '0', max: '1000000'}
+          ...currentFilterData,
+          priceRange: { min: "0", max: "1000000" },
         });
         break;
-      case 'color':
-        newFilters.color = '';
-        setCurrentFilterData({...currentFilterData, selectedColors: []});
+      case "color":
+        newFilters.color = "";
+        setCurrentFilterData({ ...currentFilterData, selectedColors: [] });
         break;
-      case 'size':
-        newFilters.size = '';
-        setCurrentFilterData({...currentFilterData, selectedSizes: []});
+      case "size":
+        newFilters.size = "";
+        setCurrentFilterData({ ...currentFilterData, selectedSizes: [] });
         break;
     }
 
@@ -686,23 +720,21 @@ export default function CatalogPage() {
       }
     });
 
-    const newPath = queryParams.toString() 
+    const newPath = queryParams.toString()
       ? `/${i18n.language}/categories?${queryParams.toString()}`
       : `/${i18n.language}/categories`;
-      
+
     router.push(newPath);
   };
 
   // Add translation helper for no results message
   const getNoResultsMessage = () => {
-    return i18n.language === 'uz' 
-      ? "Hech qanday mahsulot topilmadi" 
-      : "Товары не найдены";
+    return i18n.language === "uz" ? "Hech qanday mahsulot topilmadi" : "Товары не найдены";
   };
 
   // Add translation helper for no results description
   const getNoResultsDescription = () => {
-    return i18n.language === 'uz'
+    return i18n.language === "uz"
       ? "Boshqa parametrlar bilan qidirishga harakat qiling"
       : "Попробуйте поиск с другими параметрами";
   };
@@ -715,7 +747,7 @@ export default function CatalogPage() {
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
-      
+
       if (currentScrollY > lastScrollY && currentScrollY > 200) {
         // Scrolling down & past 200px
         setShowFloatingCart(true);
@@ -723,20 +755,20 @@ export default function CatalogPage() {
         // Scrolling up or near top
         setShowFloatingCart(false);
       }
-      
+
       setLastScrollY(currentScrollY);
     };
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener("scroll", handleScroll, { passive: true });
 
     return () => {
-      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener("scroll", handleScroll);
     };
   }, [lastScrollY]);
 
   // Add these translation helpers
   const getNoImageText = () => {
-    return i18n.language === 'uz' ? "Rasm yo'q" : "Нет фото";
+    return i18n.language === "uz" ? "Rasm yo'q" : "Нет фото";
   };
 
   return (
@@ -751,7 +783,7 @@ export default function CatalogPage() {
         {brands.map((brand) => (
           <button
             key={brand.id}
-            className={`brand-filter ${activeFilter === brand.name ? 'active' : ''}`}
+            className={`brand-filter ${activeFilter === brand.name ? "active" : ""}`}
             onClick={() => handleBrandFilterClick(brand)}
           >
             {brand.name}
@@ -778,8 +810,8 @@ export default function CatalogPage() {
 
       {/* Add Filter Modal with onApply handler and initialFilters */}
       {showFilterModal && (
-        <FilterModal 
-          onClose={() => setShowFilterModal(false)} 
+        <FilterModal
+          onClose={() => setShowFilterModal(false)}
           onApply={handleFilterApply}
           initialFilters={currentFilterData}
         />
@@ -788,11 +820,13 @@ export default function CatalogPage() {
       {/* Categories - Updated to pass the entire category object */}
       <div className="categories-container">
         {categories.map((category) => (
-          <div 
-            className={`category-item ${filters.category === category.name ? 'active-category' : ''}`}
+          <div
+            className={`category-item ${
+              filters.category === category.name ? "active-category" : ""
+            }`}
             key={category.id}
             onClick={() => handleCategoryClick(category)}
-            style={{ cursor: 'pointer' }}
+            style={{ cursor: "pointer" }}
           >
             <div className="category-image-container">
               {category.image ? (
@@ -814,9 +848,9 @@ export default function CatalogPage() {
 
       {/* Loading indicator - only show when loading and no products */}
       {loading ? (
-        <div className={`loading-container ${products.length > 0 ? 'loading-overlay' : ''}`}>
+        <div className={`loading-container ${products.length > 0 ? "loading-overlay" : ""}`}>
           <div className="loading-spinner"></div>
-          <p>{i18n.language === 'uz' ? "Yuklanmoqda..." : "Загрузка..."}</p>
+          <p>{i18n.language === "uz" ? "Yuklanmoqda..." : "Загрузка..."}</p>
         </div>
       ) : (
         <>
@@ -824,11 +858,11 @@ export default function CatalogPage() {
             // Products grid
             <div className="products-grid">
               {products.map((product) => (
-                <div 
-                  className="product-card" 
+                <div
+                  className="product-card"
                   key={product.id}
                   onClick={() => handleProductClick(product.id)}
-                  style={{ cursor: 'pointer' }}
+                  style={{ cursor: "pointer" }}
                 >
                   <div className="product-image-container">
                     {product.image ? (
@@ -842,7 +876,7 @@ export default function CatalogPage() {
                     ) : (
                       <div className="no-image">{getNoImageText()}</div>
                     )}
-                    <button 
+                    <button
                       className="cart-button"
                       onClick={(e) => {
                         e.stopPropagation();
@@ -864,7 +898,7 @@ export default function CatalogPage() {
                     </button>
                   </div>
                   <div className="product-details">
-                    <h3 className="product-brand">{product.brand}</h3>
+                    <h3 className="product-brand">{brandNameFromId(product.brand)}</h3>
                     <p className="product-name">{product.name}</p>
                     <p className="product-price">{product.price}</p>
                     <p className="product-availability">{product.availability}</p>
@@ -875,24 +909,21 @@ export default function CatalogPage() {
           ) : (
             // No results message
             <div className="no-results">
-              <svg 
-                width="64" 
-                height="64" 
-                viewBox="0 0 24 24" 
-                fill="none" 
+              <svg
+                width="64"
+                height="64"
+                viewBox="0 0 24 24"
+                fill="none"
                 xmlns="http://www.w3.org/2000/svg"
               >
-                <path 
-                  d="M15.5 14H14.71L14.43 13.73C15.41 12.59 16 11.11 16 9.5C16 5.91 13.09 3 9.5 3C5.91 3 3 5.91 3 9.5C3 13.09 5.91 16 9.5 16C11.11 16 12.59 15.41 13.73 14.43L14 14.71V15.5L19 20.49L20.49 19L15.5 14ZM9.5 14C7.01 14 5 11.99 5 9.5C5 7.01 7.01 5 9.5 5C11.99 5 14 7.01 14 9.5C14 11.99 11.99 14 9.5 14Z" 
+                <path
+                  d="M15.5 14H14.71L14.43 13.73C15.41 12.59 16 11.11 16 9.5C16 5.91 13.09 3 9.5 3C5.91 3 3 5.91 3 9.5C3 13.09 5.91 16 9.5 16C11.11 16 12.59 15.41 13.73 14.43L14 14.71V15.5L19 20.49L20.49 19L15.5 14ZM9.5 14C7.01 14 5 11.99 5 9.5C5 7.01 7.01 5 9.5 5C11.99 5 14 7.01 14 9.5C14 11.99 11.99 14 9.5 14Z"
                   fill="#C9A66B"
                 />
               </svg>
               <h2>{getNoResultsMessage()}</h2>
               <p>{getNoResultsDescription()}</p>
-              <button 
-                className="clear-filters-btn"
-                onClick={clearAllFilters}
-              >
+              <button className="clear-filters-btn" onClick={clearAllFilters}>
                 {getClearText()}
               </button>
             </div>
@@ -901,14 +932,18 @@ export default function CatalogPage() {
           {/* Load more button - Updated styling */}
           {nextProductsPage && products.length > 0 && (
             <div className="load-more-container">
-              <button 
-                className="load-more-button" 
+              <button
+                className="load-more-button"
                 onClick={loadMoreProducts}
                 disabled={isLoadingMore}
               >
-                {isLoadingMore ? 
-                  (i18n.language === 'uz' ? "Yuklanmoqda..." : "Загрузка...") : 
-                  (i18n.language === 'uz' ? "Ko'proq ko'rsatish" : "Показать еще")}
+                {isLoadingMore
+                  ? i18n.language === "uz"
+                    ? "Yuklanmoqda..."
+                    : "Загрузка..."
+                  : i18n.language === "uz"
+                  ? "Ko'proq ko'rsatish"
+                  : "Показать еще"}
               </button>
             </div>
           )}
@@ -917,7 +952,7 @@ export default function CatalogPage() {
 
       {/* Add Confirmation Modal */}
       {showConfirmation && (
-        <ConfirmationModal 
+        <ConfirmationModal
           messageRu="Товар успешно добавлен в корзину"
           messageUz="Mahsulot muvaffaqiyatli savatga qo'shildi"
           onClose={() => setShowConfirmation(false)}
@@ -941,23 +976,23 @@ export default function CatalogPage() {
               />
             </svg>
             <span>
-              {i18n.language === 'uz' 
+              {i18n.language === "uz"
                 ? "Mahsulot savatga qo'shildi"
                 : "Товар добавлен в корзину"}
             </span>
           </div>
-          <button 
+          <button
             className="view-cart-button"
             onClick={() => router.push(`/${i18n.language}/cart`)}
           >
-            {i18n.language === 'uz' ? "Savatni ko'rish" : "Перейти в корзину"}
+            {i18n.language === "uz" ? "Savatni ko'rish" : "Перейти в корзину"}
           </button>
         </div>
       )}
 
       {/* Add Floating Cart Button */}
       {showFloatingCart && (
-        <button 
+        <button
           className="floating-cart-button"
           onClick={() => router.push(`/${i18n.language}/cart`)}
         >
@@ -975,9 +1010,7 @@ export default function CatalogPage() {
               />
             </svg>
           </div>
-          <span>
-            {i18n.language === 'uz' ? "Savat" : "Корзина"}
-          </span>
+          <span>{i18n.language === "uz" ? "Savat" : "Корзина"}</span>
         </button>
       )}
 
@@ -986,7 +1019,7 @@ export default function CatalogPage() {
           margin: 0;
           padding: 0;
           box-sizing: border-box;
-         font-family: var(--font-plus-jakarta);
+          font-family: var(--font-plus-jakarta);
         }
 
         body {
@@ -1133,7 +1166,7 @@ export default function CatalogPage() {
           height: 36px;
           border-radius: 50%;
           background-color: rgba(255, 255, 255, 0.6);
-          
+
           border: none;
           display: flex;
           align-items: center;
@@ -1261,8 +1294,12 @@ export default function CatalogPage() {
         }
 
         @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
+          0% {
+            transform: rotate(0deg);
+          }
+          100% {
+            transform: rotate(360deg);
+          }
         }
 
         .load-more-container {
@@ -1328,7 +1365,7 @@ export default function CatalogPage() {
         }
 
         .clear-filters-btn {
-          background-color: #C9A66B;
+          background-color: #c9a66b;
           color: white;
           border: none;
           padding: 12px 24px;
@@ -1340,7 +1377,7 @@ export default function CatalogPage() {
         }
 
         .clear-filters-btn:hover {
-          background-color: #B89559;
+          background-color: #b89559;
         }
 
         @media (max-width: 768px) {
@@ -1392,7 +1429,7 @@ export default function CatalogPage() {
 
         .view-cart-button {
           width: 100%;
-          background-color: #C9A66B;
+          background-color: #c9a66b;
           color: white;
           border: none;
           padding: 12px;
@@ -1404,7 +1441,7 @@ export default function CatalogPage() {
         }
 
         .view-cart-button:hover {
-          background-color: #B89559;
+          background-color: #b89559;
         }
 
         @keyframes slideUp {
@@ -1427,7 +1464,7 @@ export default function CatalogPage() {
           display: flex;
           align-items: center;
           gap: 8px;
-          background-color: #C9A66B;
+          background-color: #c9a66b;
           color: white;
           padding: 12px 24px;
           border-radius: 50px;
@@ -1440,7 +1477,7 @@ export default function CatalogPage() {
         }
 
         .floating-cart-button:hover {
-          background-color: #B89559;
+          background-color: #b89559;
           transform: translateX(-50%) scale(1.05);
         }
 

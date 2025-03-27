@@ -10,6 +10,8 @@ import { useTranslation } from 'react-i18next'
 // Define interface for cart items
 interface CartItem {
   product: number;
+  product_variant: number; // Add this
+  size: number; // Add this
   quantity: number;
   name: string;
   description: string;
@@ -133,18 +135,18 @@ export default function CartPage() {
     }
     
     try {
-      // Prepare order data with cleaned phone number
+      // Prepare order data with the new structure
       const orderData = {
         customer_name: formData.name,
-        customer_phone: formData.phone.replace(/[^\d+]/g, ''), // Remove all non-digit characters except +
+        customer_phone: formData.phone.replace(/[^\d+]/g, ''),
         customer_preferences: formData.message,
         order_items: cartItems.map(item => ({
-          product: item.product,
+          product_variant: item.product_variant, // Send variant ID
+          size: item.size, // Send size
           quantity: item.quantity
         }))
       };
       
-      // Send order to API
       const response = await fetch('https://coco20.uz/api/v1/orders/crud/order/', {
         method: 'POST',
         headers: {
