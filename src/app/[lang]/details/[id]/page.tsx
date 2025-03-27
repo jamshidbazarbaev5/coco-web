@@ -147,6 +147,12 @@ export default function ProductPage() {
     // Save updated cart to localStorage
     localStorage.setItem('cart', JSON.stringify(existingCart))
     
+    // Dispatch custom event with cart data
+    const event = new CustomEvent('cartUpdated', { 
+      detail: { cart: existingCart }
+    });
+    window.dispatchEvent(event);
+    
     // Show confirmation modal
     setShowConfirmation(true)
   }

@@ -558,7 +558,7 @@ export default function CartPage() {
           justify-content: space-between;
           align-items: center;
           flex-wrap: wrap;
-          gap: 20px;
+          gap: 15px;
         }
 
         .submit-button {
@@ -576,6 +576,26 @@ export default function CartPage() {
 
         .submit-button:hover {
           background-color: #a08a54;
+        }
+
+        .consent-checkbox {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          font-size: 14px;
+          color: #666;
+        }
+
+        .consent-checkbox input[type="checkbox"] {
+          width: 16px;
+          height: 16px;
+          margin: 0;
+          cursor: pointer;
+        }
+
+        .consent-checkbox label {
+          cursor: pointer;
+          user-select: none;
         }
 
         @media (max-width: 768px) {

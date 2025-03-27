@@ -113,6 +113,7 @@ export default function SalesPage() {
     
     if (existingItemIndex >= 0) {
       existingCart[existingItemIndex].quantity += 1;
+      window.dispatchEvent(new Event('cartUpdated'));
     } else {
       existingCart.push(cartItem);
     }
