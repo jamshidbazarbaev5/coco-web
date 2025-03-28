@@ -898,8 +898,8 @@ export default function CatalogPage() {
                     </button>
                   </div>
                   <div className="product-details">
-                    <h3 className="product-brand">{brandNameFromId(product.brand)}</h3>
-                    <p className="product-name">{product.name}</p>
+                    <h3 className="product-brand">{product.name}</h3>
+                    <p className="product-name">{brandNameFromId(product.brand)}</p>
                     <p className="product-price">{product.price}</p>
                     <p className="product-availability">{product.availability}</p>
                   </div>
@@ -1240,6 +1240,7 @@ export default function CatalogPage() {
           font-size: 14px;
           font-weight: bold;
           padding: 0 4px;
+          margin-top: -3px;
         }
 
         .remove-filter:hover {

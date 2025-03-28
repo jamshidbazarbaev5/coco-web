@@ -25,25 +25,35 @@ interface Product {
   product_attributes: ProductAttribute[];
 }
 
-export default function FilterModal({ onClose, onApply, initialFilters }: { 
-  onClose: () => void, 
-  onApply?: (filterData: any) => void,
+export default function FilterModal({
+  onClose,
+  onApply,
+  initialFilters,
+}: {
+  onClose: () => void;
+  onApply?: (filterData: any) => void;
   initialFilters?: {
-    searchQuery?: string,
-    selectedBrands?: Brand[],
-    selectedSizes?: {id: number, name: string}[],
-    selectedColors?: string[],
-    priceRange?: { min: string, max: string }
-  }
+    searchQuery?: string;
+    selectedBrands?: Brand[];
+    selectedSizes?: { id: number; name: string }[];
+    selectedColors?: string[];
+    priceRange?: { min: string; max: string };
+  };
 }) {
   const router = useRouter();
   const { t, i18n } = useTranslation();
 
   // State for form inputs - initialize with values from props if available
-  const [searchQuery, setSearchQuery] = useState(initialFilters?.searchQuery || "");
+  const [searchQuery, setSearchQuery] = useState(
+    initialFilters?.searchQuery || ""
+  );
   const [brandInput, setBrandInput] = useState("");
-  const [minPrice, setMinPrice] = useState(initialFilters?.priceRange?.min || "0");
-  const [maxPrice, setMaxPrice] = useState(initialFilters?.priceRange?.max || "1000000");
+  const [minPrice, setMinPrice] = useState(
+    initialFilters?.priceRange?.min || "0"
+  );
+  const [maxPrice, setMaxPrice] = useState(
+    initialFilters?.priceRange?.max || "1000000"
+  );
   const [showModal, setShowModal] = useState(true);
 
   // State for dropdowns
@@ -58,20 +68,27 @@ export default function FilterModal({ onClose, onApply, initialFilters }: {
   const [isLoadingSizes, setIsLoadingSizes] = useState(true);
 
   // Selected brands - initialize with values from props if available
-  const [selectedBrands, setSelectedBrands] = useState<Brand[]>(initialFilters?.selectedBrands || []);
-
-  // Update selected sizes state to store objects with id and name
-  const [selectedSizes, setSelectedSizes] = useState<{id: number, name: string}[]>(
-    initialFilters?.selectedSizes || []
+  const [selectedBrands, setSelectedBrands] = useState<Brand[]>(
+    initialFilters?.selectedBrands || []
   );
 
+  // Update selected sizes state to store objects with id and name
+  const [selectedSizes, setSelectedSizes] = useState<
+    { id: number; name: string }[]
+  >(initialFilters?.selectedSizes || []);
+
   // Add new state for selected colors - initialize with values from props if available
-  const [selectedColors, setSelectedColors] = useState<string[]>(initialFilters?.selectedColors || []);
+  const [selectedColors, setSelectedColors] = useState<string[]>(
+    initialFilters?.selectedColors || []
+  );
 
   // Replace hardcoded colors with state from API
-  const [availableColors, setAvailableColors] = useState<{ru: string[], uz: string[]}>({
+  const [availableColors, setAvailableColors] = useState<{
+    ru: string[];
+    uz: string[];
+  }>({
     ru: [],
-    uz: []
+    uz: [],
   });
 
   // Fetch brands and sizes from API
@@ -80,18 +97,19 @@ export default function FilterModal({ onClose, onApply, initialFilters }: {
       setIsLoadingBrands(true);
       try {
         let allBrands: Brand[] = [];
-        let nextUrl = "https://coco20.uz/api/v1/brands/crud/brand/?page=1&page_size=10";
-        
+        let nextUrl =
+          "https://coco20.uz/api/v1/brands/crud/brand/?page=1&page_size=10";
+
         while (nextUrl) {
           const response = await fetch(nextUrl);
           const data = await response.json();
-          const filteredResults = data.results.filter((brand: Brand) => 
-            brand.name !== "Все" && brand.name !== "Hammasi"
+          const filteredResults = data.results.filter(
+            (brand: Brand) => brand.name !== "Все" && brand.name !== "Hammasi"
           );
           allBrands = [...allBrands, ...filteredResults];
           nextUrl = data.next;
         }
-        
+
         setBrands(allBrands);
       } catch (error) {
         console.error("Error fetching brands:", error);
@@ -99,11 +117,13 @@ export default function FilterModal({ onClose, onApply, initialFilters }: {
         setIsLoadingBrands(false);
       }
     };
-    
+
     const fetchSizes = async () => {
       setIsLoadingSizes(true);
       try {
-        const response = await fetch("https://coco20.uz/api/v1/products/crud/size/?page=1&page_size=10");
+        const response = await fetch(
+          "https://coco20.uz/api/v1/products/crud/size/?page=1&page_size=10"
+        );
         const data = await response.json();
         setSizes(data.results);
       } catch (error) {
@@ -112,7 +132,7 @@ export default function FilterModal({ onClose, onApply, initialFilters }: {
         setIsLoadingSizes(false);
       }
     };
-    
+
     fetchBrands();
     fetchSizes();
   }, []);
@@ -124,25 +144,25 @@ export default function FilterModal({ onClose, onApply, initialFilters }: {
         let allColors = new Set<string>();
         let allColorsUz = new Set<string>();
         let nextUrl = "https://coco20.uz/api/v1/products/crud/product/?page=1";
-        
+
         while (nextUrl) {
           const response = await fetch(nextUrl);
           const data = await response.json();
-          
+
           // Extract colors from each product's attributes
           data.results.forEach((product: Product) => {
-            product.product_attributes.forEach(attr => {
+            product.product_attributes.forEach((attr) => {
               if (attr.color_name_ru) allColors.add(attr.color_name_ru);
               if (attr.color_name_uz) allColorsUz.add(attr.color_name_uz);
             });
           });
-          
+
           nextUrl = data.next;
         }
-        
+
         setAvailableColors({
           ru: Array.from(allColors),
-          uz: Array.from(allColorsUz)
+          uz: Array.from(allColorsUz),
         });
       } catch (error) {
         console.error("Error fetching products:", error);
@@ -153,16 +173,16 @@ export default function FilterModal({ onClose, onApply, initialFilters }: {
   }, []);
 
   const toggleBrand = (brand: Brand) => {
-    if (selectedBrands.some(b => b.id === brand.id)) {
-      setSelectedBrands(selectedBrands.filter(b => b.id !== brand.id));
+    if (selectedBrands.some((b) => b.id === brand.id)) {
+      setSelectedBrands(selectedBrands.filter((b) => b.id !== brand.id));
     } else {
       setSelectedBrands([...selectedBrands, brand]);
     }
   };
 
   const toggleSize = (size: Size) => {
-    if (selectedSizes.some(s => s.id === size.id)) {
-      setSelectedSizes(selectedSizes.filter(s => s.id !== size.id));
+    if (selectedSizes.some((s) => s.id === size.id)) {
+      setSelectedSizes(selectedSizes.filter((s) => s.id !== size.id));
     } else {
       setSelectedSizes([...selectedSizes, size]);
     }
@@ -186,6 +206,7 @@ export default function FilterModal({ onClose, onApply, initialFilters }: {
     setSelectedColors([]);
   };
 
+  // Update the applyFilters function
   const applyFilters = () => {
     const filterData = {
       searchQuery,
@@ -194,40 +215,40 @@ export default function FilterModal({ onClose, onApply, initialFilters }: {
       selectedColors,
       priceRange: { min: minPrice, max: maxPrice },
     };
-    
+
     // Build query parameters
     const queryParams = new URLSearchParams();
 
-    // Add search query
+    // Add search query - Fix the search query handling
     if (searchQuery) {
-      if (i18n.language === 'ru') {
-        queryParams.append('title_ru__icontains', searchQuery);
+      if (i18n.language === "ru") {
+        queryParams.append("title_ru__icontains", searchQuery);
       } else {
-        queryParams.append('title_uz__icontains', searchQuery);
+        queryParams.append("title_uz__icontains", searchQuery);
       }
     }
 
     // Add brand filter
     if (selectedBrands.length > 0) {
-      queryParams.append('brand', selectedBrands[0].id.toString());
+      queryParams.append("brand", selectedBrands[0].id.toString());
     }
 
     // Add size filter
     if (selectedSizes.length > 0) {
-      queryParams.append('size', selectedSizes[0].id.toString());
+      queryParams.append("size", selectedSizes[0].id.toString());
     }
 
     // Add color filter
     if (selectedColors.length > 0) {
-      queryParams.append('color', selectedColors[0]);
+      queryParams.append("color", selectedColors[0]);
     }
 
     // Add price range
-    if (minPrice !== '0') {
-      queryParams.append('price__gt', minPrice);
+    if (minPrice !== "0") {
+      queryParams.append("price__gt", minPrice);
     }
-    if (maxPrice !== '1000000') {
-      queryParams.append('price__lt', maxPrice);
+    if (maxPrice !== "1000000") {
+      queryParams.append("price__lt", maxPrice);
     }
 
     // Call the onApply callback if provided
@@ -238,7 +259,7 @@ export default function FilterModal({ onClose, onApply, initialFilters }: {
     // Close the modal
     onClose();
 
-    // Redirect to categories page with filters
+    // Update URL with the search query and other filters
     const queryString = queryParams.toString();
     if (queryString) {
       router.push(`/${i18n.language}/categories?${queryString}`);
@@ -254,22 +275,31 @@ export default function FilterModal({ onClose, onApply, initialFilters }: {
       if (initialFilters.searchQuery) {
         setSearchQuery(initialFilters.searchQuery);
       }
-      
+
       // Initialize selected brands
-      if (initialFilters.selectedBrands && initialFilters.selectedBrands.length > 0) {
+      if (
+        initialFilters.selectedBrands &&
+        initialFilters.selectedBrands.length > 0
+      ) {
         setSelectedBrands(initialFilters.selectedBrands);
       }
-      
+
       // Initialize selected sizes
-      if (initialFilters.selectedSizes && initialFilters.selectedSizes.length > 0) {
+      if (
+        initialFilters.selectedSizes &&
+        initialFilters.selectedSizes.length > 0
+      ) {
         setSelectedSizes(initialFilters.selectedSizes);
       }
-      
+
       // Initialize selected colors
-      if (initialFilters.selectedColors && initialFilters.selectedColors.length > 0) {
+      if (
+        initialFilters.selectedColors &&
+        initialFilters.selectedColors.length > 0
+      ) {
         setSelectedColors(initialFilters.selectedColors);
       }
-      
+
       // Initialize price range
       if (initialFilters.priceRange) {
         setMinPrice(initialFilters.priceRange.min);
@@ -280,15 +310,19 @@ export default function FilterModal({ onClose, onApply, initialFilters }: {
 
   const formatSelectedBrands = (items: Brand[], limit: number = 2) => {
     if (items.length === 0) return "";
-    if (items.length <= limit) return `: ${items.map(item => item.name).join(", ")}`;
-    return `: ${items.slice(0, limit).map(item => item.name).join(", ")} +${items.length - limit}`;
+    if (items.length <= limit)
+      return `: ${items.map((item) => item.name).join(", ")}`;
+    return `: ${items
+      .slice(0, limit)
+      .map((item) => item.name)
+      .join(", ")} +${items.length - limit}`;
   };
 
   // Modified dropdown state handling
-  const handleDropdownClick = (dropdown: 'brands' | 'sizes' | 'colors') => {
-    setBrandsOpen(dropdown === 'brands' ? !brandsOpen : false);
-    setSizesOpen(dropdown === 'sizes' ? !sizesOpen : false);
-    setColorsOpen(dropdown === 'colors' ? !colorsOpen : false);
+  const handleDropdownClick = (dropdown: "brands" | "sizes" | "colors") => {
+    setBrandsOpen(dropdown === "brands" ? !brandsOpen : false);
+    setSizesOpen(dropdown === "sizes" ? !sizesOpen : false);
+    setColorsOpen(dropdown === "colors" ? !colorsOpen : false);
   };
 
   // Calculate if any dropdown is open
@@ -301,7 +335,7 @@ export default function FilterModal({ onClose, onApply, initialFilters }: {
 
   // Update the colors section to use API colors
   const getDisplayColors = () => {
-    return i18n.language === 'ru' ? availableColors.ru : availableColors.uz;
+    return i18n.language === "ru" ? availableColors.ru : availableColors.uz;
   };
 
   // Add this helper function near formatSelectedBrands
@@ -341,7 +375,7 @@ export default function FilterModal({ onClose, onApply, initialFilters }: {
             </span>
             <input
               type="text"
-              placeholder={t('filters.enter_name')}
+              placeholder={t("filters.enter_name")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -352,10 +386,11 @@ export default function FilterModal({ onClose, onApply, initialFilters }: {
           <div className="filter-header-container">
             <div
               className="filter-header"
-              onClick={() => handleDropdownClick('brands')}
+              onClick={() => handleDropdownClick("brands")}
             >
               <span className="filter-title">
-                {t('filters.brands')}{formatSelectedBrands(selectedBrands)}
+                {t("filters.brands")}
+                {formatSelectedBrands(selectedBrands)}
               </span>
               <span className={`arrow ${brandsOpen ? "up" : "down"}`}>
                 <svg
@@ -364,23 +399,15 @@ export default function FilterModal({ onClose, onApply, initialFilters }: {
                   viewBox="0 0 22 11"
                   fill="none"
                   xmlns="http://www.w3.org/2000/svg"
+                  style={{
+                    transform: `rotate(${brandsOpen ? "-180deg" : "0deg"})`,
+                    transition: "transform 0.3s ease",
+                  }}
                 >
-                  <g clip-path="url(#clip0_23_1715)">
-                    <path
-                      d="M6.03172 8.75235L5.06005 7.77976L10.3556 2.48235C10.4405 2.39695 10.5414 2.32919 10.6525 2.28294C10.7637 2.2367 10.8829 2.21289 11.0033 2.21289C11.1236 2.21289 11.2428 2.2367 11.354 2.28294C11.4651 2.32919 11.566 2.39695 11.6509 2.48235L16.9492 7.77976L15.9776 8.75143L11.0046 3.77943L6.03172 8.75235Z"
-                      fill="black"
-                    />
-                  </g>
-                  <defs>
-                    <clipPath id="clip0_23_1715">
-                      <rect
-                        width="11"
-                        height="22"
-                        fill="white"
-                        transform="matrix(0 -1 1 0 0 11)"
-                      />
-                    </clipPath>
-                  </defs>
+                  <path
+                    d="M6.03172 8.75235L5.06005 7.77976L10.3556 2.48235C10.4405 2.39695 10.5414 2.32919 10.6525 2.28294C10.7637 2.2367 10.8829 2.21289 11.0033 2.21289C11.1236 2.21289 11.2428 2.2367 11.354 2.28294C11.4651 2.32919 11.566 2.39695 11.6509 2.48235L16.9492 7.77976L15.9776 8.75143L11.0046 3.77943L6.03172 8.75235Z"
+                    fill="black"
+                  />
                 </svg>
               </span>
             </div>
@@ -394,18 +421,22 @@ export default function FilterModal({ onClose, onApply, initialFilters }: {
                 ) : (
                   brands
                     .filter((brand) =>
-                      brand.name.toLowerCase().includes(brandInput.toLowerCase())
+                      brand.name
+                        .toLowerCase()
+                        .includes(brandInput.toLowerCase())
                     )
                     .map((brand) => (
                       <div
                         key={brand.id}
                         className={`brand-item ${
-                          selectedBrands.some(b => b.id === brand.id) ? "selected" : ""
+                          selectedBrands.some((b) => b.id === brand.id)
+                            ? "selected"
+                            : ""
                         }`}
                         onClick={() => toggleBrand(brand)}
                       >
                         <span>{brand.name}</span>
-                        {selectedBrands.some(b => b.id === brand.id) && (
+                        {selectedBrands.some((b) => b.id === brand.id) && (
                           <span className="checkmark">
                             <svg
                               width="17"
@@ -433,13 +464,21 @@ export default function FilterModal({ onClose, onApply, initialFilters }: {
           <div className="filter-header-container">
             <div
               className="filter-header"
-              onClick={() => handleDropdownClick('sizes')}
+              onClick={() => handleDropdownClick("sizes")}
             >
               <span className="filter-title">
                 {selectedSizes.length > 0 ? (
-                  <span>{t('filters.sizes')} : {selectedSizes.map(s => s.name).join(", ")}</span>
+                  <span>
+                    {t("filters.sizes")} :{" "}
+                    {selectedSizes.map((s) => s.name).join(", ")}
+                  </span>
                 ) : (
-                  <span>{t('filters.sizes')} {isLoadingSizes ? t('filters.loading') : sizes.map(s => s.name).join(", ")}</span>
+                  <span>
+                    {t("filters.sizes")}{" "}
+                    {isLoadingSizes
+                      ? t("filters.loading")
+                      : sizes.map((s) => s.name).join(", ")}
+                  </span>
                 )}
               </span>
               <span className={`arrow ${sizesOpen ? "up" : "down"}`}>
@@ -449,23 +488,15 @@ export default function FilterModal({ onClose, onApply, initialFilters }: {
                   viewBox="0 0 22 11"
                   fill="none"
                   xmlns="http://www.w3.org/2000/svg"
+                  style={{
+                    transform: `rotate(${sizesOpen ? "-180deg" : "0deg"})`,
+                    transition: "transform 0.3s ease",
+                  }}
                 >
-                  <g clip-path="url(#clip0_23_1715)">
-                    <path
-                      d="M6.03172 8.75235L5.06005 7.77976L10.3556 2.48235C10.4405 2.39695 10.5414 2.32919 10.6525 2.28294C10.7637 2.2367 10.8829 2.21289 11.0033 2.21289C11.1236 2.21289 11.2428 2.2367 11.354 2.28294C11.4651 2.32919 11.566 2.39695 11.6509 2.48235L16.9492 7.77976L15.9776 8.75143L11.0046 3.77943L6.03172 8.75235Z"
-                      fill="black"
-                    />
-                  </g>
-                  <defs>
-                    <clipPath id="clip0_23_1715">
-                      <rect
-                        width="11"
-                        height="22"
-                        fill="white"
-                        transform="matrix(0 -1 1 0 0 11)"
-                      />
-                    </clipPath>
-                  </defs>
+                  <path
+                    d="M6.03172 8.75235L5.06005 7.77976L10.3556 2.48235C10.4405 2.39695 10.5414 2.32919 10.6525 2.28294C10.7637 2.2367 10.8829 2.21289 11.0033 2.21289C11.1236 2.21289 11.2428 2.2367 11.354 2.28294C11.4651 2.32919 11.566 2.39695 11.6509 2.48235L16.9492 7.77976L15.9776 8.75143L11.0046 3.77943L6.03172 8.75235Z"
+                    fill="black"
+                  />
                 </svg>
               </span>
             </div>
@@ -478,12 +509,14 @@ export default function FilterModal({ onClose, onApply, initialFilters }: {
                   <div
                     key={size.id}
                     className={`option-item ${
-                      selectedSizes.some(s => s.id === size.id) ? "selected" : ""
+                      selectedSizes.some((s) => s.id === size.id)
+                        ? "selected"
+                        : ""
                     }`}
                     onClick={() => toggleSize(size)}
                   >
                     <span>{size.name}</span>
-                    {selectedSizes.some(s => s.id === size.id) && (
+                    {selectedSizes.some((s) => s.id === size.id) && (
                       <span className="checkmark">
                         {" "}
                         <svg
@@ -508,7 +541,7 @@ export default function FilterModal({ onClose, onApply, initialFilters }: {
         </div>
 
         <div className="filter-section price-filter">
-          <div className="filter-title">{t('filters.price.from')}</div>
+          <div className="filter-title">{t("filters.price.from")}</div>
           <div className="price-inputs">
             <input
               type="text"
@@ -516,10 +549,12 @@ export default function FilterModal({ onClose, onApply, initialFilters }: {
               onChange={(e) => setMinPrice(e.target.value)}
               className="price-input"
             />
-            <span className="price-currency">{t('filters.price.currency')}</span>
+            <span className="price-currency">
+              {t("filters.price.currency")}
+            </span>
           </div>
 
-          <div className="filter-title price-to">{t('filters.price.to')}</div>
+          <div className="filter-title price-to">{t("filters.price.to")}</div>
           <div className="price-inputs">
             <input
               type="text"
@@ -527,7 +562,9 @@ export default function FilterModal({ onClose, onApply, initialFilters }: {
               onChange={(e) => setMaxPrice(e.target.value)}
               className="price-input"
             />
-            <span className="price-currency">{t('filters.price.currency')}</span>
+            <span className="price-currency">
+              {t("filters.price.currency")}
+            </span>
           </div>
         </div>
 
@@ -535,13 +572,17 @@ export default function FilterModal({ onClose, onApply, initialFilters }: {
           <div className="filter-header-container">
             <div
               className="filter-header"
-              onClick={() => handleDropdownClick('colors')}
+              onClick={() => handleDropdownClick("colors")}
             >
               <span className="filter-title">
                 {selectedColors.length > 0 ? (
-                  <span>{t('filters.colors')} : {formatColorsList(selectedColors)}</span>
+                  <span>
+                    {t("filters.colors")} : {formatColorsList(selectedColors)}
+                  </span>
                 ) : (
-                  <span>{t('filters.colors')} {formatColorsList(getDisplayColors())}</span>
+                  <span>
+                    {t("filters.colors")} {formatColorsList(getDisplayColors())}
+                  </span>
                 )}
               </span>
               <span className={`arrow ${colorsOpen ? "up" : "down"}`}>
@@ -551,23 +592,15 @@ export default function FilterModal({ onClose, onApply, initialFilters }: {
                   viewBox="0 0 22 11"
                   fill="none"
                   xmlns="http://www.w3.org/2000/svg"
+                  style={{
+                    transform: `rotate(${colorsOpen ? "-180deg" : "0deg"})`,
+                    transition: "transform 0.3s ease",
+                  }}
                 >
-                  <g clip-path="url(#clip0_23_1715)">
-                    <path
-                      d="M6.03172 8.75235L5.06005 7.77976L10.3556 2.48235C10.4405 2.39695 10.5414 2.32919 10.6525 2.28294C10.7637 2.2367 10.8829 2.21289 11.0033 2.21289C11.1236 2.21289 11.2428 2.2367 11.354 2.28294C11.4651 2.32919 11.566 2.39695 11.6509 2.48235L16.9492 7.77976L15.9776 8.75143L11.0046 3.77943L6.03172 8.75235Z"
-                      fill="black"
-                    />
-                  </g>
-                  <defs>
-                    <clipPath id="clip0_23_1715">
-                      <rect
-                        width="11"
-                        height="22"
-                        fill="white"
-                        transform="matrix(0 -1 1 0 0 11)"
-                      />
-                    </clipPath>
-                  </defs>
+                  <path
+                    d="M6.03172 8.75235L5.06005 7.77976L10.3556 2.48235C10.4405 2.39695 10.5414 2.32919 10.6525 2.28294C10.7637 2.2367 10.8829 2.21289 11.0033 2.21289C11.1236 2.21289 11.2428 2.2367 11.354 2.28294C11.4651 2.32919 11.566 2.39695 11.6509 2.48235L16.9492 7.77976L15.9776 8.75143L11.0046 3.77943L6.03172 8.75235Z"
+                    fill="black"
+                  />
                 </svg>
               </span>
             </div>
@@ -611,10 +644,10 @@ export default function FilterModal({ onClose, onApply, initialFilters }: {
 
         <div className="filter-actions">
           <button className="apply-button" onClick={applyFilters}>
-            {t('filters.apply')}
+            {t("filters.apply")}
           </button>
           <button className="reset-button" onClick={resetFilters}>
-            {t('filters.reset')}
+            {t("filters.reset")}
           </button>
         </div>
       </div>
@@ -643,11 +676,11 @@ export default function FilterModal({ onClose, onApply, initialFilters }: {
           box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
           padding: 20px;
           position: relative;
-          height: ${isAnyDropdownOpen ? '560px' : 'auto'};
+          height: ${isAnyDropdownOpen ? "560px" : "auto"};
           min-height: 300px;
           transition: height 0.3s ease;
           overflow-y: auto;
-          
+
           @media (max-width: 768px) {
             width: 100%;
             height: 100%;
@@ -722,15 +755,18 @@ export default function FilterModal({ onClose, onApply, initialFilters }: {
           flex: 1;
           margin-right: 10px;
           font-family: var(--font-plus-jakarta);
+          display:flex;
+          justify-content:space-between;
         }
 
         .arrow {
-          font-size: 12px;
-          transition: transform 0.3s;
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
 
-        .arrow.up {
-          transform: rotate(180deg);
+        .arrow svg {
+          display: block;
         }
 
         .filter-content {
@@ -800,15 +836,15 @@ export default function FilterModal({ onClose, onApply, initialFilters }: {
           @media (max-width: 480px) {
             flex-direction: column;
             align-items: flex-start;
-            
+
             .price-inputs {
               width: 100%;
             }
-            
+
             .price-input {
               width: 100%;
             }
-            
+
             .price-to {
               margin-left: 0;
               margin-top: 10px;
