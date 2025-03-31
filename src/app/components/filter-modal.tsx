@@ -12,7 +12,8 @@ interface Brand {
 
 interface Size {
   id: number;
-  name: string;
+  name_uz: string;
+  name_ru: string;
 }
 
 // Update interface to include color names
@@ -35,7 +36,7 @@ export default function FilterModal({
   initialFilters?: {
     searchQuery?: string;
     selectedBrands?: Brand[];
-    selectedSizes?: { id: number; name: string }[];
+    selectedSizes?: { id: number; name_uz: string; name_ru: string }[];
     selectedColors?: string[];
     priceRange?: { min: string; max: string };
   };
@@ -72,9 +73,9 @@ export default function FilterModal({
     initialFilters?.selectedBrands || []
   );
 
-  // Update selected sizes state to store objects with id and name
+  // Update selected sizes state to store objects with id and name_uz/name_ru
   const [selectedSizes, setSelectedSizes] = useState<
-    { id: number; name: string }[]
+    { id: number; name_uz: string; name_ru: string }[]
   >(initialFilters?.selectedSizes || []);
 
   // Add new state for selected colors - initialize with values from props if available
@@ -184,7 +185,10 @@ export default function FilterModal({
     if (selectedSizes.some((s) => s.id === size.id)) {
       setSelectedSizes(selectedSizes.filter((s) => s.id !== size.id));
     } else {
-      setSelectedSizes([...selectedSizes, size]);
+      setSelectedSizes([
+        ...selectedSizes,
+        { id: size.id, name_uz: size.name_uz, name_ru: size.name_ru },
+      ]);
     }
   };
 
@@ -316,6 +320,19 @@ export default function FilterModal({
       .slice(0, limit)
       .map((item) => item.name)
       .join(", ")} +${items.length - limit}`;
+  };
+
+  // Add this helper function near formatSelectedBrands and formatColorsList
+  const formatSizesList = (
+    sizes: { id: number; name_uz: string; name_ru: string }[],
+    limit: number = 3
+  ) => {
+    if (sizes.length === 0) return "";
+    const sizeNames = sizes.map((s) =>
+      i18n.language === "uz" ? s.name_uz : s.name_ru
+    );
+    if (sizes.length <= limit) return sizeNames.join(", ");
+    return `${sizeNames.slice(0, limit).join(", ")}...`;
   };
 
   // Modified dropdown state handling
@@ -469,15 +486,14 @@ export default function FilterModal({
               <span className="filter-title">
                 {selectedSizes.length > 0 ? (
                   <span>
-                    {t("filters.sizes")} :{" "}
-                    {selectedSizes.map((s) => s.name).join(", ")}
+                    {t("filters.sizes")} : {formatSizesList(selectedSizes)}
                   </span>
                 ) : (
                   <span>
                     {t("filters.sizes")}{" "}
                     {isLoadingSizes
                       ? t("filters.loading")
-                      : sizes.map((s) => s.name).join(", ")}
+                      : formatSizesList(sizes)}
                   </span>
                 )}
               </span>
@@ -508,30 +524,18 @@ export default function FilterModal({
                 {sizes.map((size) => (
                   <div
                     key={size.id}
-                    className={`option-item ${
+                    className={`size-item ${
                       selectedSizes.some((s) => s.id === size.id)
                         ? "selected"
                         : ""
                     }`}
                     onClick={() => toggleSize(size)}
                   >
-                    <span>{size.name}</span>
+                    <span>
+                      {i18n.language === "uz" ? size.name_uz : size.name_ru}
+                    </span>
                     {selectedSizes.some((s) => s.id === size.id) && (
-                      <span className="checkmark">
-                        {" "}
-                        <svg
-                          width="17"
-                          height="16"
-                          viewBox="0 0 17 16"
-                          fill="none"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path
-                            d="M14.2631 4.69818L6.33894 12.6223L2.70703 8.99044L3.63812 8.05935L6.33894 10.7536L13.332 3.76709L14.2631 4.69818Z"
-                            fill="black"
-                          />
-                        </svg>
-                      </span>
+                      <span className="checkmark"></span>
                     )}
                   </div>
                 ))}

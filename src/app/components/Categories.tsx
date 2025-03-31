@@ -15,6 +15,13 @@ interface Category {
   image: string;
 }
 
+// Add interface for Size
+interface Size {
+  id: number;
+  name_uz: string;
+  name_ru: string;
+}
+
 // Update the Product interface to match new structure
 interface Product {
   id: number;
@@ -75,6 +82,9 @@ export default function CatalogPage() {
   // Add state for brands
   const [brands, setBrands] = useState<{ id: number; name: string }[]>([]);
   const [activeFilter, setActiveFilter] = useState("Все");
+
+  // Add state for sizes
+  const [sizes, setSizes] = useState<Size[]>([]);
 
   // Add state for filter modal
   const [showFilterModal, setShowFilterModal] = useState(false);
@@ -151,7 +161,7 @@ export default function CatalogPage() {
   const [currentFilterData, setCurrentFilterData] = useState({
     searchQuery: "",
     selectedBrands: [] as { id: number; name: string }[],
-    selectedSizes: [] as { id: number; name: string }[],
+    selectedSizes: [] as Size[],
     selectedColors: [] as string[],
     priceRange: { min: "0", max: "1000000" },
   });
@@ -224,12 +234,32 @@ export default function CatalogPage() {
           }));
         }
 
-        const [brandsResponse, categoriesData] = await Promise.all([
+        const [brandsResponse, categoriesData, sizesResponse] = await Promise.all([
           fetch("https://coco20.uz/api/v1/brands/crud/brand/"),
           fetchAllCategories(),
+          fetch("https://coco20.uz/api/v1/products/crud/size/"),
         ]);
 
-        const brandsData = await brandsResponse.json();
+        const [brandsData, sizesData] = await Promise.all([
+          brandsResponse.json(),
+          sizesResponse.json(),
+        ]);
+
+        // Handle sizes data and initialize selected size from URL
+        const allSizes = sizesData.results as Size[];
+        setSizes(allSizes);
+
+        // Initialize filter data with size if present in URL
+        const sizeId = urlFilters.size;
+        if (sizeId) {
+          const selectedSize = allSizes.find((s: Size) => s.id.toString() === sizeId);
+          if (selectedSize) {
+            setCurrentFilterData((prev) => ({
+              ...prev,
+              selectedSizes: [selectedSize],
+            }));
+          }
+        }
 
         const filteredBrands = brandsData.results.filter(
           (brand: any) => brand.name !== "Все" && brand.name !== "Hammasi"
@@ -294,22 +324,28 @@ export default function CatalogPage() {
 
       setNextProductsPage(productsData.next);
 
-      const formattedProducts = productsData.results.map((product: Product) => {
-        const firstVariant = product.product_attributes[0] || {};
-        return {
-          id: product.id,
-          brand: product.brand,
-          name: i18n.language === "uz" ? product.title_uz : product.title_ru,
-          description: i18n.language === "uz" ? product.description_uz : product.description_ru,
-          price: formatPrice(firstVariant.price || "0"),
-          availability: getAvailabilityText(firstVariant.quantity || 0),
-          image: firstVariant.image || null,
-          on_sale: firstVariant.on_sale || false,
-          new_price: firstVariant.new_price,
-          product_variant: firstVariant.id,
-          sizes: firstVariant.sizes,
-        };
-      });
+      const formattedProducts = productsData.results
+        .filter((product: Product) => {
+          // Check if any variant has quantity > 0
+          return product.product_attributes.some(variant => variant.quantity > 0);
+        })
+        .map((product: Product) => {
+          // Find the first variant with quantity > 0
+          const firstAvailableVariant = product.product_attributes.find(variant => variant.quantity > 0) || product.product_attributes[0];
+          return {
+            id: product.id,
+            brand: product.brand,
+            name: i18n.language === "uz" ? product.title_uz : product.title_ru,
+            description: i18n.language === "uz" ? product.description_uz : product.description_ru,
+            price: formatPrice(firstAvailableVariant.price || "0"),
+            availability: getAvailabilityText(firstAvailableVariant.quantity || 0),
+            image: firstAvailableVariant.image || null,
+            on_sale: firstAvailableVariant.on_sale || false,
+            new_price: firstAvailableVariant.new_price,
+            product_variant: firstAvailableVariant.id,
+            sizes: firstAvailableVariant.sizes,
+          };
+        });
 
       setProducts(formattedProducts);
     } catch (error) {
@@ -318,14 +354,14 @@ export default function CatalogPage() {
   };
 
   useEffect(() => {
-    if (brands.length === 0) return;
+    if (!brands.length || !sizes.length) return; // Skip if initial data isn't loaded yet
 
     const urlParams = new URLSearchParams(window.location.search);
     const urlFilters: any = {};
     const newFilterData = {
       searchQuery: "",
       selectedBrands: [] as { id: number; name: string }[],
-      selectedSizes: [] as { id: number; name: string }[],
+      selectedSizes: [] as Size[],
       selectedColors: [] as string[],
       priceRange: { min: "0", max: "1000000" },
     };
@@ -342,6 +378,10 @@ export default function CatalogPage() {
           }
           break;
         case "size":
+          const selectedSize = sizes.find((s) => s.id.toString() === value);
+          if (selectedSize) {
+            newFilterData.selectedSizes = [selectedSize];
+          }
           break;
         case "color":
           newFilterData.selectedColors = [value];
@@ -365,7 +405,7 @@ export default function CatalogPage() {
     }));
 
     setCurrentFilterData(newFilterData);
-  }, [i18n.language, brands]);
+  }, [i18n.language, brands, sizes]);
 
   // Modify useEffect for handling filter changes
   useEffect(() => {
@@ -598,7 +638,7 @@ export default function CatalogPage() {
       currentFilterData.selectedSizes.forEach((size) => {
         activeFilters.push({
           type: "size",
-          label: size.name,
+          label: i18n.language === "uz" ? size.name_uz : size.name_ru,
         });
       });
     }

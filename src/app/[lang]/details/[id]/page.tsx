@@ -54,7 +54,8 @@ interface Material {
 
 interface Size {
   id: number;
-  name: string;
+  name_uz: string;
+  name_ru: string;
 }
 
 interface Brand {
@@ -289,13 +290,15 @@ export default function ProductPage() {
             <div className="size-options">
               {product?.product_attributes[selectedColorIndex]?.sizes.map(sizeId => {
                 const size = sizes.find(s => s.id === sizeId);
+                if (!size) return null;
+                const sizeName = params.lang === 'uz' ? size.name_uz : size.name_ru;
                 return (
                   <button
                     key={sizeId}
                     className={`size-option ${selectedSize === sizeId ? "selected" : ""}`}
                     onClick={() => setSelectedSize(sizeId)}
                   >
-                    {size?.name || sizeId}
+                    {sizeName}
                   </button>
                 );
               })}
@@ -326,12 +329,14 @@ export default function ProductPage() {
                   <td className="info-label">{t('product_details.table.sizes')}</td>
                   <td className="info-value">
                     {product?.product_attributes[selectedColorIndex]?.sizes
-                      .map(sizeId => sizes.find(s => s.id === sizeId)?.name)
+                      .map(sizeId => {
+                        const size = sizes.find(s => s.id === sizeId);
+                        return params.lang === 'uz' ? size?.name_uz : size?.name_ru;
+                      })
                       .filter(Boolean)
-                      .join(', ') || 'Не указаны'}
+                      .join(', ') || t('product_details.no_sizes')}
                   </td>
                 </tr>
-               
               </tbody>
             </table>
           </div>
