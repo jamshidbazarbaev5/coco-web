@@ -89,29 +89,6 @@ export default function CatalogPage() {
 
   const router = useRouter();
 
-  // Add state for grid layout
-  const [gridLayout, setGridLayout] = useState("single"); // 'single' or 'double'
-
-  // Replace getGridToggleText with grid icons
-  const getGridToggleIcon = () => {
-    if (gridLayout === "single") {
-      return (
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect x="4" y="4" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="1.5"/>
-          <rect x="4" y="13" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="1.5"/>
-          <rect x="13" y="4" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="1.5"/>
-          <rect x="13" y="13" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="1.5"/>
-        </svg>
-      );
-    }
-    return (
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect x="3" y="3" width="18" height="7" rx="1" stroke="currentColor" strokeWidth="1.5"/>
-        <rect x="3" y="14" width="18" height="7" rx="1" stroke="currentColor" strokeWidth="1.5"/>
-      </svg>
-    );
-  };
-
   // Add translation based on current language
   const getTranslatedTitle = (product: any) => {
     return i18n.language === "uz" ? product.title_uz : product.title_ru;
@@ -790,7 +767,7 @@ export default function CatalogPage() {
     };
   }, [lastScrollY]);
 
-  // Add these translation helpers
+  // Add translation helper for no image text
   const getNoImageText = () => {
     return i18n.language === "uz" ? "Rasm yo'q" : "Нет фото";
   };
@@ -798,13 +775,6 @@ export default function CatalogPage() {
   return (
     <div className="catalog-container">
       <h1 className="catalog-title">{getCatalogTitle()}</h1>
-
-      {/* Add grid toggle button for mobile */}
-      <div className="mobile-grid-toggle">
-        <button onClick={() => setGridLayout(gridLayout === "single" ? "double" : "single")}>
-          {getGridToggleIcon()}
-        </button>
-      </div>
 
       {/* Active filters display */}
       <ActiveFilters />
@@ -887,7 +857,7 @@ export default function CatalogPage() {
         <>
           {products.length > 0 ? (
             // Products grid
-            <div className={`products-grid ${gridLayout}-column-mobile`}>
+            <div className="products-grid">
               {products.map((product) => (
                 <div
                   className="product-card"
@@ -1151,19 +1121,15 @@ export default function CatalogPage() {
           color: #333;
         }
 
-        /* Products grid - Updated for mobile toggle */
+        /* Products grid - Updated for mobile */
         .products-grid {
           display: grid;
           gap: 20px;
         }
 
-        /* Mobile styles for grid layout */
+        /* Mobile styles */
         @media (max-width: 575px) {
-          .single-column-mobile {
-            grid-template-columns: 1fr;
-          }
-
-          .double-column-mobile {
+          .products-grid {
             grid-template-columns: repeat(2, 1fr);
           }
         }
@@ -1549,41 +1515,6 @@ export default function CatalogPage() {
         @media (min-width: 769px) {
           .floating-cart-button {
             display: none;
-          }
-        }
-
-        /* Mobile grid toggle button styles */
-        .mobile-grid-toggle {
-          display: none;
-          margin-bottom: 20px;
-          text-align: right;
-        }
-
-        @media (max-width: 575px) {
-          .mobile-grid-toggle {
-            display: block;
-          }
-
-          .mobile-grid-toggle button {
-            background-color: #f8f8f6;
-            border: 1px solid #ddd;
-            padding: 8px;
-            border-radius: 4px;
-            color: #333;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-          }
-
-          .mobile-grid-toggle button:hover {
-            background-color: #eee;
-          }
-
-          .mobile-grid-toggle button svg {
-            width: 20px;
-            height: 20px;
           }
         }
 
