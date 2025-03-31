@@ -89,6 +89,9 @@ export default function CatalogPage() {
 
   const router = useRouter();
 
+  // Add state for grid layout
+  const [gridLayout, setGridLayout] = useState("single"); // 'single' or 'double'
+
   // Add translation based on current language
   const getTranslatedTitle = (product: any) => {
     return i18n.language === "uz" ? product.title_uz : product.title_ru;
@@ -120,6 +123,15 @@ export default function CatalogPage() {
   const getTranslatedCategoryName = (category: any) => {
     return i18n.language === "uz" ? category.name_uz : category.name_ru;
   };
+
+  // Add translation helper for grid toggle button
+  const getGridToggleText = () => {
+    if (gridLayout === "single") {
+      return i18n.language === "uz" ? "2 ustunda ko'rish" : "Смотреть в 2 колонки";
+    }
+    return i18n.language === "uz" ? "1 ustunda ko'rish" : "Смотреть в 1 колонку";
+  };
+
   // Add this helper function at the top level of your component
   const formatPrice = (price: string) => {
     // Convert price string to number, removing any non-digit characters except decimal point
@@ -775,6 +787,13 @@ export default function CatalogPage() {
     <div className="catalog-container">
       <h1 className="catalog-title">{getCatalogTitle()}</h1>
 
+      {/* Add grid toggle button for mobile */}
+      <div className="mobile-grid-toggle">
+        <button onClick={() => setGridLayout(gridLayout === "single" ? "double" : "single")}>
+          {getGridToggleText()}
+        </button>
+      </div>
+
       {/* Active filters display */}
       <ActiveFilters />
 
@@ -856,7 +875,7 @@ export default function CatalogPage() {
         <>
           {products.length > 0 ? (
             // Products grid
-            <div className="products-grid">
+            <div className={`products-grid ${gridLayout}-column-mobile`}>
               {products.map((product) => (
                 <div
                   className="product-card"
@@ -1120,14 +1139,24 @@ export default function CatalogPage() {
           color: #333;
         }
 
-        /* Products grid */
+        /* Products grid - Updated for mobile toggle */
         .products-grid {
           display: grid;
-          grid-template-columns: repeat(1, 1fr);
           gap: 20px;
         }
 
-        @media (min-width: 576px) {
+        /* Mobile styles for grid layout */
+        @media (max-width: 575px) {
+          .single-column-mobile {
+            grid-template-columns: 1fr;
+          }
+
+          .double-column-mobile {
+            grid-template-columns: repeat(2, 1fr);
+          }
+        }
+
+        @media (min-width: 576px) and (max-width: 991px) {
           .products-grid {
             grid-template-columns: repeat(2, 1fr);
           }
@@ -1508,6 +1537,34 @@ export default function CatalogPage() {
         @media (min-width: 769px) {
           .floating-cart-button {
             display: none;
+          }
+        }
+
+        /* Mobile grid toggle button styles */
+        .mobile-grid-toggle {
+          display: none;
+          margin-bottom: 20px;
+          text-align: right;
+        }
+
+        @media (max-width: 575px) {
+          .mobile-grid-toggle {
+            display: block;
+          }
+
+          .mobile-grid-toggle button {
+            background-color: #f8f8f6;
+            border: 1px solid #ddd;
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #333;
+            cursor: pointer;
+            transition: all 0.2s ease;
+          }
+
+          .mobile-grid-toggle button:hover {
+            background-color: #eee;
           }
         }
 

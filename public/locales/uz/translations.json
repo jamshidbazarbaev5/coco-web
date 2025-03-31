@@ -14,6 +14,7 @@
     },
     "form": {
       "name": "Ism",
+      "sendOrder":"Buyurtma qilish",
       "phone": "Telefon",
       "feedback": "Sizning taklif/istaklaringiz",
       "sending": "Yuborilmoqda...",
@@ -25,6 +26,7 @@
         "send_failed": "Xabar yuborilmadi. Qaytadan urinib ko'ring.",
         "error": "Xatolik yuz berdi. Iltimos, keyinroq qayta urinib ko'ring."
       }
+
     },
     "cart": {
       "title": "Savatcha",
@@ -60,7 +62,7 @@
       "home": "Asosiy",
       "catalog": "Katalog",
       "about": "Biz haqimizda",
-      "sale": "Chegirmalar"
+      "sale": "Outlet"
     },
     "contact_page": {
       "brand_tagline": "Biz zamonaviy sumkalarni\nishlab chiqaramiz va yaratamiz",

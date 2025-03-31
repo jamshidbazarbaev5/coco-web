@@ -305,7 +305,7 @@ export default function CartPage() {
                 <div className="form-footer">
                   <button type="submit" className="submit-button">
                     <Send size={16} />
-                    <span>{t('form.send')}</span>
+                    <span>{t('form.sendOrder')}</span>
                   </button>
 
                   <div className="consent-checkbox">
