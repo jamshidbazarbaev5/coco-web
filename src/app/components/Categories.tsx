@@ -92,6 +92,26 @@ export default function CatalogPage() {
   // Add state for grid layout
   const [gridLayout, setGridLayout] = useState("single"); // 'single' or 'double'
 
+  // Replace getGridToggleText with grid icons
+  const getGridToggleIcon = () => {
+    if (gridLayout === "single") {
+      return (
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="4" y="4" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="1.5"/>
+          <rect x="4" y="13" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="1.5"/>
+          <rect x="13" y="4" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="1.5"/>
+          <rect x="13" y="13" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="1.5"/>
+        </svg>
+      );
+    }
+    return (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="3" y="3" width="18" height="7" rx="1" stroke="currentColor" strokeWidth="1.5"/>
+        <rect x="3" y="14" width="18" height="7" rx="1" stroke="currentColor" strokeWidth="1.5"/>
+      </svg>
+    );
+  };
+
   // Add translation based on current language
   const getTranslatedTitle = (product: any) => {
     return i18n.language === "uz" ? product.title_uz : product.title_ru;
@@ -122,14 +142,6 @@ export default function CatalogPage() {
   // Add translation helper for category names
   const getTranslatedCategoryName = (category: any) => {
     return i18n.language === "uz" ? category.name_uz : category.name_ru;
-  };
-
-  // Add translation helper for grid toggle button
-  const getGridToggleText = () => {
-    if (gridLayout === "single") {
-      return i18n.language === "uz" ? "2 ustunda ko'rish" : "Смотреть в 2 колонки";
-    }
-    return i18n.language === "uz" ? "1 ustunda ko'rish" : "Смотреть в 1 колонку";
   };
 
   // Add this helper function at the top level of your component
@@ -790,7 +802,7 @@ export default function CatalogPage() {
       {/* Add grid toggle button for mobile */}
       <div className="mobile-grid-toggle">
         <button onClick={() => setGridLayout(gridLayout === "single" ? "double" : "single")}>
-          {getGridToggleText()}
+          {getGridToggleIcon()}
         </button>
       </div>
 
@@ -1555,16 +1567,23 @@ export default function CatalogPage() {
           .mobile-grid-toggle button {
             background-color: #f8f8f6;
             border: 1px solid #ddd;
-            padding: 8px 16px;
+            padding: 8px;
             border-radius: 4px;
-            font-size: 13px;
             color: #333;
             cursor: pointer;
             transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
           }
 
           .mobile-grid-toggle button:hover {
             background-color: #eee;
+          }
+
+          .mobile-grid-toggle button svg {
+            width: 20px;
+            height: 20px;
           }
         }
 
