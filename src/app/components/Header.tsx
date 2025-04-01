@@ -98,7 +98,7 @@ export default function Header() {
         {isSearchOpen && <FilterModal onClose={() => setIsSearchOpen(false)} />}
         <div className="logo">
           <Link href={`/${i18n.language}`}>
-              <Image src={'/logo-2.png'} width={130} height={50} alt={'logo'} style={{background:"none"}}/>
+            <Image src="/logo-3.svg" alt="logo" width={100} height={100} />
           </Link>
         </div>
         <nav className="nav">

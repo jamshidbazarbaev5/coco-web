@@ -684,6 +684,7 @@ body {
     flex-grow: 1;
     text-align: center;
   }
+  
 
   .header-actions {
     gap: 10px;
@@ -705,10 +706,7 @@ body {
     padding: 15x 15px;
   }
 
-  .logo svg {
-    width: 90px;
-    height: auto;
-  }
+ 
 
   .header-actions .search,
   .header-actions .language-selector {
