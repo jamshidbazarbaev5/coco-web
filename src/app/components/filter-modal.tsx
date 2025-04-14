@@ -489,12 +489,7 @@ export default function FilterModal({
                     {t("filters.sizes")} : {formatSizesList(selectedSizes)}
                   </span>
                 ) : (
-                  <span>
-                    {t("filters.sizes")}{" "}
-                    {isLoadingSizes
-                      ? t("filters.loading")
-                      : formatSizesList(sizes)}
-                  </span>
+                  <span>{t("filters.sizes")}</span>
                 )}
               </span>
               <span className={`arrow ${sizesOpen ? "up" : "down"}`}>
@@ -584,9 +579,7 @@ export default function FilterModal({
                     {t("filters.colors")} : {formatColorsList(selectedColors)}
                   </span>
                 ) : (
-                  <span>
-                    {t("filters.colors")} {formatColorsList(getDisplayColors())}
-                  </span>
+                  <span>{t("filters.colors")}</span>
                 )}
               </span>
               <span className={`arrow ${colorsOpen ? "up" : "down"}`}>
@@ -674,7 +667,7 @@ export default function FilterModal({
         }
 
         .filter-modal {
-          background-color: #f9f5eb;
+          background-color: white;
           width: 475px;
           max-width: 90%;
           box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
@@ -781,6 +774,7 @@ export default function FilterModal({
           height: 179px;
           position: relative;
           left: 140px;
+          background-color: white;
 
           @media (max-width: 768px) {
             width: 100%;
@@ -806,6 +800,7 @@ export default function FilterModal({
         .brand-list {
           max-height: 150px;
           overflow-y: auto;
+          background-color: white;
           @media (max-width: 768px) {
             max-height: 200px;
           }
@@ -820,11 +815,11 @@ export default function FilterModal({
         }
 
         .brand-item:hover {
-          background-color: #f0e9d8;
+          background-color: #f9f9f9;
         }
 
         .brand-item.selected {
-          background-color: rgba(193, 154, 91, 0.5);
+          background-color: rgba(193, 154, 91, 0.2);
         }
 
         .checkmark {
@@ -890,7 +885,6 @@ export default function FilterModal({
           @media (max-width: 768px) {
             position: sticky;
             bottom: 0;
-            background: #f9f5eb;
             padding: 15px 0;
             margin-top: 10px;
           }
@@ -940,6 +934,7 @@ export default function FilterModal({
         .options-list {
           max-height: 150px;
           overflow-y: auto;
+          background-color: white;
           @media (max-width: 768px) {
             max-height: 200px;
           }
@@ -955,11 +950,11 @@ export default function FilterModal({
         }
 
         .option-item:hover {
-          background-color: #f0e9d8;
+          background-color: #f9f9f9;
         }
 
         .option-item.selected {
-          background-color: #e8dfc0;
+          background-color: rgba(193, 154, 91, 0.2);
         }
       `}</style>
     </div>

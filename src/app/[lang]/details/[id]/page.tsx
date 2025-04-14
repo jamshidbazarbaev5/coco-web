@@ -248,7 +248,12 @@ export default function ProductPage() {
           <h1 className="brand-name">
             {brands.find(b => b.id === product?.brand)?.name || "Unknown Brand"}
           </h1>
-          <p className="product-name">{product.title_ru}</p>
+          <p className="product-name">
+            {params.lang === 'uz' ? product.title_uz : product.title_ru}
+          </p>
+          <p className="product-description">
+            {params.lang === 'uz' ? product.description_uz : product.description_ru}
+          </p>
           <p className="product-price">
             {product.product_attributes[selectedColorIndex].on_sale ? (
               <>
@@ -405,6 +410,14 @@ export default function ProductPage() {
           font-size: 16px;
           color: #666;
           margin-bottom: 10px;
+        }
+
+        .product-description {
+          font-size: 14px;
+          color: #666;
+          margin-bottom: 15px;
+          line-height: 1.5;
+          font-family: var(--font-plus-jakarta);
         }
         
         .product-price {
