@@ -11,7 +11,7 @@ const initI18n = async () => {
     .use(LanguageDetector)
     .use(initReactI18next)
     .init({
-      fallbackLng: 'uz',
+      fallbackLng: 'ru',
       supportedLngs: ['uz', 'ru'],
       debug: process.env.NODE_ENV === 'development',
       interpolation: {

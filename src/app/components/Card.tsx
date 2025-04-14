@@ -46,13 +46,9 @@ export default function CartPage() {
 
   // Function to update item quantity
   const updateQuantity = (id: number, newQuantity: number) => {
-    if (newQuantity < 1) return
-
     const updatedItems = cartItems.map((item) => {
       if (item.product === id) {
-        // Don't allow quantity to exceed stock
-        const quantity = Math.min(newQuantity, item.stock)
-        return { ...item, quantity }
+        return { ...item, quantity: newQuantity }
       }
       return item
     })
@@ -135,18 +131,17 @@ export default function CartPage() {
     }
     
     try {
-      // Prepare order data with the new structure
       const orderData = {
         customer_name: formData.name,
         customer_phone: formData.phone.replace(/[^\d+]/g, ''),
         customer_preferences: formData.message,
         order_items: cartItems.map(item => ({
-          product_variant: item.product_variant, // Send variant ID
-          size: item.size, // Send size
-          quantity: item.quantity
+          product_variant: item.product_variant,
+          size: item.size,
+          quantity: item.stock === 0 ? 0 : item.quantity // Send 0 if stock is 0
         }))
       };
-      
+
       const response = await fetch('https://coco20.uz/api/v1/orders/crud/order/', {
         method: 'POST',
         headers: {
@@ -154,9 +149,10 @@ export default function CartPage() {
         },
         body: JSON.stringify(orderData),
       });
-      
+
       if (!response.ok) {
-        throw new Error('Failed to place order');
+        const errorData = await response.json();
+        throw new Error(errorData.order_items?.[0]?.non_field_errors?.[0] || 'Failed to place order');
       }
       
       // Clear cart and show success message
@@ -172,7 +168,7 @@ export default function CartPage() {
       window.dispatchEvent(new Event('cartUpdated'));
     } catch (error) {
       console.error('Error placing order:', error);
-      setOrderError("Failed to place order. Please try again.");
+      setOrderError(error instanceof Error ? error.message : "Failed to place order. Please try again.");
     }
   };
 
@@ -243,7 +239,6 @@ export default function CartPage() {
                   <button
                     className="quantity-button"
                     onClick={() => updateQuantity(item.product, item.quantity - 1)}
-                    disabled={item.quantity <= 1}
                     aria-label={t('cart.quantity.decrease')}
                   >
                     -
@@ -252,7 +247,6 @@ export default function CartPage() {
                   <button
                     className="quantity-button"
                     onClick={() => updateQuantity(item.product, item.quantity + 1)}
-                    disabled={item.quantity >= item.stock}
                   >
                     +
                   </button>

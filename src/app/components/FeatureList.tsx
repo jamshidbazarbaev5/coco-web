@@ -1,16 +1,38 @@
 import Image from "next/image"
-import styles from  '../styles/feature.module.css'
+import styles from '../styles/feature.module.css'
 import { motion } from "framer-motion"
 import { useTranslation } from 'react-i18next'
 import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
 
 export default function Home() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const router = useRouter()
-  const { i18n } = useTranslation();
+  const currentLang = i18n.language
+  const [data, setData] = useState<any>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState(null)
+
+  useEffect(() => {
+    fetch('https://coco20.uz/api/v1/abouts/crud/service/?page=1&page_size=10')
+      .then(res => res.json())
+      .then(data => {
+        setData(data.results[0])
+        setIsLoading(false)
+      })
+      .catch(err => {
+        setError(err)
+        setIsLoading(false)
+      })
+  }, [])
+
   const handleGetInTouch = () => {
     router.push(`/${i18n.language}/about#contact-form`)
   }
+
+  if (isLoading) return <div>Loading...</div>
+  if (error) return <div>Error loading data</div>
+  if (!data) return null
 
   return (
     <main className={styles.main}>
@@ -24,8 +46,8 @@ export default function Home() {
         >
           <div className={styles.backpackImage}>
             <Image
-              src="/feature-1.jpeg"
-              alt="Black backpack with brown leather accents"
+              src={data.image_first}
+              alt="Feature image 1"
               fill
               sizes="(max-width: 480px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 425px, 33vw"
               priority
@@ -34,8 +56,8 @@ export default function Home() {
           </div>
           <div className={styles.handbagImage}>
             <Image
-              src="/feature-2.jpeg"
-              alt="Collection of luxury handbags"
+              src={data.image_second}
+              alt="Feature image 2"
               fill
               sizes="(max-width: 480px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 425px, 33vw"
               priority
@@ -57,11 +79,11 @@ export default function Home() {
             whileInView={{ opacity: 1 }}
             transition={{ delay: 0.4 }}
           >
-            {t('beauty_comfort')}
+            {data[`title_${currentLang}`]}
           </motion.span>
-          <h2 className={styles.heading}>{t('features.company_features')}</h2>
+          <h2 className={styles.heading}>{data[`subtitles_${currentLang}`].subtitle_1}</h2>
           <p className={styles.description}>
-            {t('features.wide_range')}
+            {data[`subtitles_${currentLang}`].subtitle_2}
           </p>
 
           <motion.ul 
@@ -71,9 +93,9 @@ export default function Home() {
             transition={{ delay: 0.6 }}
           >
             {[
-              t('benefits.exclusive_offers'),
-              t('benefits.expert_tips'),
-              t('benefits.inspiration')
+              data[`services_${currentLang}`].service_1,
+              data[`services_${currentLang}`].service_2,
+              data[`services_${currentLang}`].service_3
             ].map((feature, index) => (
               <motion.li 
                 key={index}

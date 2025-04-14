@@ -18,6 +18,7 @@
   /* Brand Section */
   .brandSection {
     flex: 1;
+    margin-top: -50px;
   }
   
   .brandName {

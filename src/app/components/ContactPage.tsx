@@ -147,7 +147,7 @@ const cartConfirmationMessage = {
       
       <div className={styles.container}>
         <div className={styles.brandSection}>
-          <Image src="/coco.png" alt="COCO" width={112} height={27} unoptimized={true} />
+          <Image src="/logo-3.svg" alt="COCO" width={150} height={150} unoptimized={true} />
           <p className={styles.brandTagline}>
             {t('contact_page.brand_tagline')}
           </p>
@@ -159,12 +159,12 @@ const cartConfirmationMessage = {
               <Send size={18} />
             </div>
             <a 
-              href={`https://t.me/${contactDetails?.social_media_urls?.telegram?.replace('@', '')}`} 
+              href={contactDetails?.social_media_urls?.telegram || '#'} 
               target="_blank" 
               rel="noopener noreferrer"
               className={styles.socialLink}
             >
-              <span>coco.uz</span>
+              <span>{contactDetails?.social_media_urls?.telegram_name || 'Telegram'}</span>
             </a>
           </div>
           <div className={styles.socialLink}>
@@ -177,12 +177,12 @@ const cartConfirmationMessage = {
               </svg>
             </div>
             <a 
-              href={`https://instagram.com/${contactDetails?.social_media_urls?.instagram?.replace('@', '')}`}
+              href={contactDetails?.social_media_urls?.instagram || '#'}
               target="_blank" 
               rel="noopener noreferrer"
               className={styles.socialLink}
             >
-              <span>coco.uz</span>
+              <span>{contactDetails?.social_media_urls?.instagram_name || 'Instagram'}</span>
             </a>
           </div>
           <div className={styles.socialLink}>
@@ -195,12 +195,12 @@ const cartConfirmationMessage = {
               </svg>
             </div>
             <a 
-              href={`https://facebook.com/${contactDetails?.social_media_urls?.facebook?.replace('@', '')}`}
+              href={contactDetails?.social_media_urls?.facebook || '#'}
               target="_blank" 
               rel="noopener noreferrer"
               className={styles.socialLink}
             >
-              <span>coco.uz</span>
+              <span>{contactDetails?.social_media_urls?.facebook_name || 'Facebook'}</span>
             </a>
           </div>
           

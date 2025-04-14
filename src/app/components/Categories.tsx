@@ -115,10 +115,10 @@ export default function CatalogPage() {
 
   // Modify the availability text based on language
   const getAvailabilityText = (quantity: number) => {
-    if (i18n.language === "uz") {
-      return quantity > 0 ? `Mavjud: ${quantity}` : "Buyurtma asosida";
+    if (quantity > 0) {
+      return i18n.language === "uz" ? `Mavjud: ${quantity}` : `В наличии: ${quantity}`;
     }
-    return quantity > 0 ? `В наличии: ${quantity}` : "На заказ";
+    return i18n.language === "uz" ? "Oldindan buyurtma" : "Предзаказ";
   };
 
   // Modify the "All" filter text based on language
@@ -325,12 +325,8 @@ export default function CatalogPage() {
       setNextProductsPage(productsData.next);
 
       const formattedProducts = productsData.results
-        .filter((product: Product) => {
-          // Check if any variant has quantity > 0
-          return product.product_attributes.some(variant => variant.quantity > 0);
-        })
         .map((product: Product) => {
-          // Find the first variant with quantity > 0
+          // Find the first variant with quantity > 0, or get the first variant if none have quantity
           const firstAvailableVariant = product.product_attributes.find(variant => variant.quantity > 0) || product.product_attributes[0];
           return {
             id: product.id,

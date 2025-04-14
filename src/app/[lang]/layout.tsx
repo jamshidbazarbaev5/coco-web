@@ -103,7 +103,7 @@ export default function RootLayout({
         suppressHydrationWarning={true}
         className={`${geistSans.variable} ${geistMono.variable} ${plusJakarta.variable} ${cormorant.variable} antialiased`}
       >
-        <link rel="icon" href="/logo-2  .png" />
+        <link rel="icon" href="/logo-3.svg" />
         <I18nProvider>
           <Header />
           {children}

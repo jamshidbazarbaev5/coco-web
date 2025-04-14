@@ -26,15 +26,21 @@ interface ProductDetails {
   on_sale: boolean;
 }
 
+interface CollectionImage {
+  id: number;
+  image: string;
+}
+
 interface Collection {
   id: number;
-  product_details: ProductDetails;
+  products_details: ProductDetails[]; // Changed to array
   title_uz: string;
   title_ru: string;
   caption_uz: string;
   caption_ru: string;
   description_uz: string;
   description_ru: string;
+  collection_images: CollectionImage[];
 }
 
 interface ApiResponse {
@@ -76,31 +82,27 @@ const fallbackSlides: Slide[] = [
 
 export default function HeroSlider() {
   const router = useRouter();
-  const [currentSlide, setCurrentSlide] = useState(0);
+  const [currentCollection, setCurrentCollection] = useState(0);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
-  const [slides, setSlides] = useState<Slide[]>(fallbackSlides);
+  const [collections, setCollections] = useState<Collection[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchCollections = async () => {
       try {
+        console.log('Fetching collections...');
         const response = await fetch('https://coco20.uz/api/v1/collections/crud/collection/?page=1');
         const data: ApiResponse = await response.json();
+        console.log('Received collections data:', data);
         
         if (data.results && data.results.length > 0) {
-          const apiSlides = data.results.map(collection => ({
-            label: collection.title_ru,
-            title: `"${collection.caption_ru}"`,
-            description: [collection.description_ru],
-            image: collection.product_details.product_attributes[0]?.image || "/main-image.png",
-            product_details: collection.product_details
-          }));
-          
-          setSlides(apiSlides);
+          setCollections(data.results);
+          setCurrentCollection(0); // Reset to first collection
+          setCurrentImageIndex(0); // Reset image index
         }
       } catch (error) {
         console.error("Failed to fetch collections:", error);
-        // Fallback to hardcoded slides
       } finally {
         setIsLoading(false);
       }
@@ -109,32 +111,69 @@ export default function HeroSlider() {
     fetchCollections();
   }, []);
 
+  const getCurrentImage = () => {
+    if (collections.length === 0 || currentCollection < 0 || currentCollection >= collections.length) {
+      return fallbackSlides[0].image;
+    }
+
+    const collection = collections[currentCollection];
+    if (!collection || !collection.collection_images.length) {
+      return fallbackSlides[0].image;
+    }
+
+    const imageIndex = Math.min(currentImageIndex, collection.collection_images.length - 1);
+    return collection.collection_images[imageIndex].image;
+  };
+
   const nextSlide = () => {
-    if (isAnimating) return;
+    if (isAnimating || collections.length === 0) return;
+    
     setIsAnimating(true);
-    setCurrentSlide((prev) => (prev + 1) % slides.length);
+    const maxCollectionIndex = collections.length - 1;
+    const currentCollectionImages = collections[currentCollection]?.collection_images || [];
+    
+    if (currentImageIndex < currentCollectionImages.length - 1) {
+      setCurrentImageIndex(prev => prev + 1);
+    } else {
+      setCurrentImageIndex(0);
+      setCurrentCollection(prev => (prev >= maxCollectionIndex ? 0 : prev + 1));
+    }
+
     setTimeout(() => setIsAnimating(false), 500);
   };
 
   const prevSlide = () => {
-    if (isAnimating) return;
+    if (isAnimating || collections.length === 0) return;
+    
     setIsAnimating(true);
-    setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
+    const currentCollectionImages = collections[currentCollection]?.collection_images || [];
+    
+    if (currentImageIndex > 0) {
+      setCurrentImageIndex(prev => prev - 1);
+    } else {
+      const prevCollectionIndex = currentCollection - 1 < 0 ? collections.length - 1 : currentCollection - 1;
+      setCurrentCollection(prevCollectionIndex);
+      const prevCollectionImages = collections[prevCollectionIndex]?.collection_images || [];
+      setCurrentImageIndex(prevCollectionImages.length - 1);
+    }
+
     setTimeout(() => setIsAnimating(false), 500);
   };
 
   useEffect(() => {
-    const timer = setInterval(nextSlide, 5000); 
+    if (collections.length === 0) return;
+    
+    const timer = setInterval(nextSlide, 5000);
     return () => clearInterval(timer);
-  }, []);
+  }, [collections.length, currentCollection, currentImageIndex]);
 
   const handleDetailsClick = () => {
-    const currentSlideData = slides[currentSlide];
+    const currentSlideData = collections[currentCollection];
     console.log('Current slide data:', currentSlideData);
     console.log('Current language:', i18n.language);
     
-    if (currentSlideData?.product_details?.id) {
-      const url = `/${i18n.language}/details/${currentSlideData.product_details.id}`;
+    if (currentSlideData?.products_details?.[0]?.id) {
+      const url = `/${i18n.language}/details/${currentSlideData.products_details[0].id}`;
       console.log('Navigating to:', url);
       try {
         router.push(url);
@@ -154,20 +193,22 @@ export default function HeroSlider() {
     <section className="hero">
       <div className="hero-content">
         <div className="hero-content-top">
-          <h2 className="collection-label">{slides[currentSlide]?.label}</h2>
-          <h1 className="collection-title">{slides[currentSlide]?.title}</h1>
+          <h2 className="collection-label">
+            {collections[currentCollection]?.[i18n.language === 'uz' ? 'title_uz' : 'title_ru']}
+          </h2>
+          <h1 className="collection-title">
+            {collections[currentCollection]?.[i18n.language === 'uz' ? 'caption_uz' : 'caption_ru']}
+          </h1>
         </div>
         
         <div className="hero-content-bottom">
           <div className="collection-description">
-            {slides[currentSlide]?.description.map((text, index) => (
-              <p key={index}>{text}</p>
-            ))}
+            <p>{collections[currentCollection]?.[i18n.language === 'uz' ? 'description_uz' : 'description_ru']}</p>
           </div>
           <button 
             className="details-button" 
             onClick={handleDetailsClick}
-            data-product-id={slides[currentSlide]?.product_details?.id}
+            data-product-id={collections[currentCollection]?.products_details?.[0]?.id}
           >
             {i18n.language === 'uz' ? 'Batafsil' : 'Подробнее'}
           </button>
@@ -176,7 +217,7 @@ export default function HeroSlider() {
      
       <div className="hero-image">
         <Image
-          src={slides[currentSlide]?.image}
+          src={getCurrentImage()}
           alt="Collection image"
           fill
           priority
@@ -219,11 +260,14 @@ export default function HeroSlider() {
       </button>
 
       <div className="slide-dots">
-        {slides.map((_, index) => (
+        {collections.map((collection, index) => (
           <span
             key={index}
-            className={`dot ${currentSlide === index ? 'active' : ''}`}
-            onClick={() => setCurrentSlide(index)}
+            className={`dot ${currentCollection === index ? 'active' : ''}`}
+            onClick={() => {
+              setCurrentCollection(index);
+              setCurrentImageIndex(0);
+            }}
           ></span>
         ))}
       </div>

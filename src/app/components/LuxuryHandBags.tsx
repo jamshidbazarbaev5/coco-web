@@ -8,7 +8,9 @@ import ConfirmationModal from "./ConfirmationModal";
 import { useTranslation } from "react-i18next";
 
 export default function LuxuryHandbags() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const currentLang = i18n.language;
+  
   const [formData, setFormData] = useState({
     name: "",
     phone_number: "+998 ", // Initialize with +998 prefix
@@ -22,10 +24,14 @@ export default function LuxuryHandbags() {
     socialMedia: {
       facebook: "",
       instagram: "",
-      telegram: ""
+      telegram: "",
+      facebook_name: "",
+      instagram_name: "",
+      telegram_name: ""     
     }
   });
 
+  const [serviceData, setServiceData] = useState<any>(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -49,6 +55,22 @@ export default function LuxuryHandbags() {
     };
 
     fetchContactDetails();
+  }, []);
+
+  useEffect(() => {
+    const fetchServiceData = async () => {
+      try {
+        const response = await fetch('https://coco20.uz/api/v1/abouts/crud/service/?page=1&page_size=10');
+        const data = await response.json();
+        if (data.results && data.results[0]) {
+          setServiceData(data.results[0]);
+        }
+      } catch (error) {
+        console.error('Error fetching service data:', error);
+      }
+    };
+
+    fetchServiceData();
   }, []);
 
   const handlePhoneChange = (value: string) => {
@@ -155,8 +177,8 @@ export default function LuxuryHandbags() {
         <div className="content-wrapper">
           <div className="image-section">
             <Image
-              src="/image.png"
-              alt="Luxury handbags collection with white, brown and gray bags arranged among tropical plants"
+              src={serviceData?.[`image_first`] || "/image.png"}
+              alt="Luxury handbags collection"
               className="main-image"
               width={802}
               height={206}
@@ -165,9 +187,9 @@ export default function LuxuryHandbags() {
           </div>
 
           <div className="info-section">
-            <h3 className="info-title">{t("beauty_comfort")}</h3>
+            <h3 className="info-title">{serviceData?.[`title_${currentLang}`] || t("beauty_comfort")}</h3>
 
-            <p className="info-text">{t("info_text")}</p>
+            <p className="info-text">{serviceData?.[`subtitles_${currentLang}`]?.subtitle_1 || t("info_text")}</p>
 
             <div className="benefits">
               <div className="benefit-item">
@@ -197,7 +219,7 @@ export default function LuxuryHandbags() {
                     </defs>
                   </svg>
                 </span>
-                <span>{t("benefits.exclusive_offers")}</span>
+                <span>{serviceData?.[`services_${currentLang}`]?.service_1 || t("benefits.exclusive_offers")}</span>
               </div>
 
               <div className="benefit-item">
@@ -227,7 +249,7 @@ export default function LuxuryHandbags() {
                     </defs>
                   </svg>
                 </span>
-                <span>{t("benefits.expert_tips")}</span>
+                <span>{serviceData?.[`services_${currentLang}`]?.service_2 || t("benefits.expert_tips")}</span>
               </div>
 
               <div className="benefit-item">
@@ -257,8 +279,11 @@ export default function LuxuryHandbags() {
                     </defs>
                   </svg>
                 </span>
-                <span>{t("benefits.inspiration")}</span>
+                <span>{serviceData?.[`services_${currentLang}`]?.service_3 || t("benefits.expert_tips")}</span>
               </div>
+
+            
+              
             </div>
           </div>
         </div>
@@ -285,13 +310,13 @@ export default function LuxuryHandbags() {
               </div>
 
               <div className="contact-detail-item">
-                <AtSign className="contact-icon" size={20} />
+                <Image src='/tg.svg' alt="tg" width={20} height={20}/>
                 <a 
-                  href="https://t.me/cocouz" 
+                  href={contactDetails.socialMedia.telegram} 
                   target="_blank" 
                   rel="noopener noreferrer"
                 >
-                  @cocouz
+                  @{contactDetails.socialMedia.telegram_name}
                 </a>
               </div>
 
@@ -302,7 +327,7 @@ export default function LuxuryHandbags() {
                   target="_blank" 
                   rel="noopener noreferrer"
                 >
-                  @coco.uz
+                  @{contactDetails.socialMedia.instagram_name}
                 </a>
               </div>
 
@@ -313,7 +338,7 @@ export default function LuxuryHandbags() {
                   target="_blank" 
                   rel="noopener noreferrer"
                 >
-                  @coco.uz
+                  @{contactDetails.socialMedia.facebook_name}
                 </a>
               </div>
             </div>
@@ -399,13 +424,16 @@ export default function LuxuryHandbags() {
       {contactDetails.mapUrl && (
         <div className="map-container">
           <iframe
-            src={contactDetails.mapUrl}
+            src={contactDetails.mapUrl.replace(
+              'yandex.uz/maps/-/',
+              'yandex.uz/map-widget/v1/-/'
+            )}
             width="100%"
             height="600"
+            frameBorder="0"
             style={{ border: 0, marginBottom: "120px" }}
             allowFullScreen
             loading="lazy"
-            referrerPolicy="no-referrer-when-downgrade"
           ></iframe>
         </div>
       )}

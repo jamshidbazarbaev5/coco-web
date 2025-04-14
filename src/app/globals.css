@@ -32,11 +32,12 @@ body {
 .header {
   display: flex;
   align-items: center;
-  padding: 20px 130px;
+  padding: 0 130px;
   background-color: var(--cream);
   position: relative;
   z-index: 10;
   gap: 130px;
+  height: 100px;
 }
 
 .logo a {

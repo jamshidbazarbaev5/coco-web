@@ -4,9 +4,28 @@ import '../styles/feature.css'
 import Image from 'next/image'
 import { motion } from "framer-motion"
 import { useTranslation } from 'react-i18next'
+import { useEffect, useState } from 'react'
 
 export default function CompanyFeatures() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const [data, setData] = useState<any>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState(null)
+
+  const currentLang = i18n.language
+
+  useEffect(() => {
+    fetch('https://coco20.uz/api/v1/abouts/crud/profile/?page=1&page_size=10')
+      .then(res => res.json())
+      .then(data => {
+        setData(data.results[0])
+        setIsLoading(false)
+      })
+      .catch(err => {
+        setError(err)
+        setIsLoading(false)
+      })
+  }, [])
 
   const fadeInUp = {
     hidden: { opacity: 0, y: 30 },
@@ -30,6 +49,10 @@ export default function CompanyFeatures() {
     }
   }
 
+  if (isLoading) return <div>Loading...</div>
+  if (error) return <div>Error loading data</div>
+  if (!data) return null
+
   return (
     <motion.div 
       className="features-container"
@@ -43,13 +66,13 @@ export default function CompanyFeatures() {
           variants={fadeInUp}
         >
           <div className="header-left">
-            <p className="subtitle">{t('features.company_features')}</p>
-            <h2 className="title">{t('features.wide_range')}</h2>
+            <p className="subtitle">{data[`title_${currentLang}`]}</p>
+            <h2 className="title">{data[`description_${currentLang}`]}</h2>
           </div>
 
           <div className="header-right">
-            <p className="description">{t('features.description1')}</p>
-            <p className="description">{t('features.description2')}</p>
+            <p className="description">{data[`subtitles_${currentLang}`].subtitle_1}</p>
+            <p className="description">{data[`subtitles_${currentLang}`].subtitle_2}</p>
           </div>
         </motion.div>
 
