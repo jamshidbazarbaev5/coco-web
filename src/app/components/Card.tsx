@@ -256,10 +256,10 @@ export default function CartPage() {
 
   // Update getAvailabilityText function
   const getAvailabilityText = (quantity: number) => {
-    if (quantity > 0) {
-      return i18n.language === "uz" ? `Mavjud: ${quantity}` : `В наличии: ${quantity}`;
+    if (quantity === 0) {
+      return i18n.language === "uz" ? "Oldindan buyurtma" : "Предзаказ";
     }
-    return i18n.language === "uz" ? "Oldindan buyurtma" : "Предзаказ";
+    return i18n.language === "uz" ? `Mavjud: ${quantity}` : `В наличии: ${quantity}`;
   };
 
   if (loading) {

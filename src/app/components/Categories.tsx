@@ -130,10 +130,15 @@ export default function CatalogPage() {
 
   // Modify the availability text based on language
   const getAvailabilityText = (quantity: number) => {
-    if (quantity > 0) {
-      return i18n.language === "uz" ? `Mavjud: ${quantity}` : `Рассцветки: ${quantity}`;
+    console.log('Getting availability text for quantity:', quantity, typeof quantity);
+    if (quantity === 0) {
+      const text = i18n.language === "uz" ? "Oldindan buyurtma" : "Предзаказ";
+      console.log('Product has 0 quantity, returning:', text);
+      return text;
     }
-    return i18n.language === "uz" ? "Oldindan buyurtma" : "Предзаказ";
+    const text = i18n.language === "uz" ? `Mavjud: ${quantity}` : `В наличии: ${quantity}`;
+    console.log('Product has quantity, returning:', text);
+    return text;
   };
 
   // Modify the "All" filter text based on language
@@ -347,9 +352,16 @@ export default function CatalogPage() {
       const productDetails = await Promise.all(productDetailsPromises);
 
       const formattedProducts = productDetails.map((product: any) => {
-        const firstAvailableVariant = product.product_attributes?.find((variant: any) => variant.quantity > 0) 
-          || product.product_attributes?.[0] 
-          || {};
+        const firstAvailableVariant = product.product_attributes?.[0] || {};
+        console.log('Processing product ID:', product.id);
+        console.log('Product details:', {
+          name: product.title_ru || product.title_uz,
+          variant: firstAvailableVariant,
+          quantity: firstAvailableVariant.quantity
+        });
+        
+        const availability = getAvailabilityText(firstAvailableVariant.quantity || 0);
+        console.log('Final availability text:', availability);
         
         return {
           id: product.id,
@@ -357,7 +369,7 @@ export default function CatalogPage() {
           name: i18n.language === "uz" ? product.title_uz : product.title_ru,
           description: i18n.language === "uz" ? product.description_uz : product.description_ru,
           price: formatPrice(firstAvailableVariant.price || "0"),
-          availability: getAvailabilityText(firstAvailableVariant.quantity || 0),
+          availability,
           image: firstAvailableVariant.attribute_images?.[0]?.image || "/placeholder.svg",
           on_sale: firstAvailableVariant.on_sale || false,
           new_price: firstAvailableVariant.new_price,
@@ -370,6 +382,7 @@ export default function CatalogPage() {
         };
       });
 
+      console.log('Final formatted products:', formattedProducts);
       setProducts(formattedProducts);
     } catch (error) {
       console.error("Error fetching products:", error);
@@ -949,7 +962,10 @@ export default function CatalogPage() {
                       <h3 className="product-brand">{product.name}</h3>
                       <p className="product-name">{brandNameFromId(product.brand)}</p>
                       <p className="product-price">{product.price}</p>
-                      
+                      <p className="product-availability">
+                        {console.log('Rendering availability:', product.availability)}
+                        {product.availability}
+                      </p>
                       
                       {/* Add color variants section */}
                       <div className="color-variants">
