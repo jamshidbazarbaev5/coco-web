@@ -12,6 +12,7 @@
     "get_in_touch": "Свяжитесь с нами",
     "address": "2972 Westheimer Rd, Santa Ana, Illinois 85486"
   },
+ 
   "form": {
     "name": "Имя",
     "sendOrder":"Оформить заказ",
@@ -51,10 +52,15 @@
       "sizes": "Размеры",
       "description": "Описание",
       "brown": "Коричневый",
-      "premium_leather": "Премиум веган кожа"
+      "premium_leather": "Премиум веган кожа",
+      "dimensions": "Дополнительная информация о размере",
+      "length": "Длина",
+      "width": "Ширина",
+      "height": "Высота"
     },
     "in_stock": "Расцветки: ",
-    "sizes":"Размеры"
+    "sizes":"Размеры",
+    "size_details": "Размеры"
   },
   "header": {
     "home": "Главная",

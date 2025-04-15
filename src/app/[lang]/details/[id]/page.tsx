@@ -5,12 +5,12 @@ import Image from "next/image"
 import { useRouter, useParams } from "next/navigation"
 import ConfirmationModal from '../../../components/ConfirmationModal'
 import { useTranslation } from 'react-i18next'
+import { IoChevronBackOutline, IoChevronForwardOutline } from 'react-icons/io5'
 
 // Define interfaces for the data
 interface ProductAttribute {
   id: number;
   color_code: string;
-  image: string;
   sizes: number[];
   color_name_ru: string;
   color_name_uz: string;
@@ -19,6 +19,11 @@ interface ProductAttribute {
   quantity: number;
   created_at: string;
   on_sale: boolean;
+  attribute_images: {
+    id: number;
+    product: string;
+    image: string;
+  }[];
 }
 
 interface Product {
@@ -56,6 +61,9 @@ interface Size {
   id: number;
   name_uz: string;
   name_ru: string;
+  length: string;
+  width: string;
+  height: string;
 }
 
 interface Brand {
@@ -79,7 +87,22 @@ export default function ProductPage() {
   const productId = params.id
   
   const [brands, setBrands] = useState<Brand[]>([])
-  
+  const [currentImageIndex, setCurrentImageIndex] = useState(0)
+
+  const nextImage = () => {
+    const images = product?.product_attributes[selectedColorIndex]?.attribute_images || []
+    setCurrentImageIndex((prev) => (prev + 1) % images.length)
+  }
+
+  const previousImage = () => {
+    const images = product?.product_attributes[selectedColorIndex]?.attribute_images || []
+    setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length)
+  }
+
+  useEffect(() => {
+    setCurrentImageIndex(0)
+  }, [selectedColorIndex])
+
   useEffect(() => {
     const fetchAllData = async () => {
       if (!productId) {
@@ -141,7 +164,7 @@ export default function ProductPage() {
       description: product.title_ru,
       price: formatPrice(currentVariant.price),
       stock: currentVariant.quantity,
-      image: currentVariant.image || "/placeholder.svg"
+      image: currentVariant.attribute_images?.[0]?.image || "/placeholder.svg"
     }
     
     const existingCart = JSON.parse(localStorage.getItem('cart') || '[]')
@@ -235,21 +258,52 @@ export default function ProductPage() {
   return (
     <main className="min-h-screen">
       <div className="product-container">
-        <div className="product-image">
-          <Image
-            src={product.product_attributes[selectedColorIndex]?.image || '/DETAILS.png'}
-            alt={product.title_ru}
-            width={801}
-            height={914}
-            className="main-image"
-          />
+        <div className="product-image-container">
+          <div className="main-image-wrapper">
+            <button className="nav-button prev" onClick={previousImage}>
+              <IoChevronBackOutline size={24} />
+            </button>
+            
+            <div className="image-container">
+              <Image
+                src={product.product_attributes[selectedColorIndex]?.attribute_images?.[currentImageIndex]?.image || '/DETAILS.png'}
+                alt={product.title_ru}
+                width={600}
+                height={800}
+                className="main-image"
+                priority
+              />
+            </div>
+            
+            <button className="nav-button next" onClick={nextImage}>
+              <IoChevronForwardOutline size={24} />
+            </button>
+          </div>
+          <div className="thumbnail-container">
+            {product.product_attributes[selectedColorIndex]?.attribute_images.map((image, index) => (
+              <div 
+                key={image.id}
+                className={`thumbnail ${currentImageIndex === index ? 'active' : ''}`}
+                onClick={() => setCurrentImageIndex(index)}
+              >
+                <Image
+                  src={image.image}
+                  alt={`Thumbnail ${index + 1}`}
+                  width={80}
+                  height={80}
+                  className="thumbnail-image"
+                />
+              </div>
+            ))}
+          </div>
         </div>
         <div className="product-info">
           <h1 className="brand-name">
-            {brands.find(b => b.id === product?.brand)?.name || "Unknown Brand"}
+          {params.lang === 'uz' ? product.title_uz : product.title_ru}
           </h1>
           <p className="product-name">
-            {params.lang === 'uz' ? product.title_uz : product.title_ru}
+          {brands.find(b => b.id === product?.brand)?.name || "Unknown Brand"}
+
           </p>
           <p className="product-description">
             {params.lang === 'uz' ? product.description_uz : product.description_ru}
@@ -344,6 +398,35 @@ export default function ProductPage() {
                 </tr>
               </tbody>
             </table>
+
+            {selectedSize && (
+              <div className="size-details">
+                {/* <p className="info-title">{t('product_details.size_details')}</p> */}
+                <table className="info-table">
+                  <tbody>
+                    {/* Single row for dimensions */}
+                    <tr>
+                      <td className="info-label">{t('product_details.table.dimensions')}</td>
+                      <td className="info-value">
+                        {(() => {
+                          const size = sizes.find(s => s.id === selectedSize);
+                          if (!size) return null;
+                          return (
+                            <div className="dimensions-row">
+                              <span>{t('product_details.table.length')}: {size.length} sm</span>
+                              <span> × </span>
+                              <span>{t('product_details.table.width')}: {size.width} sm</span>
+                              <span> × </span>
+                              <span>{t('product_details.table.height')}: {size.height} sm</span>
+                            </div>
+                          );
+                        })()}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
 
           <button className="add-to-cart-button" onClick={handleAddToCart}>
@@ -581,8 +664,153 @@ export default function ProductPage() {
           font-size: 18px;
           color: #666;
         }
+
+        .product-image-container {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          gap: 20px;
+        }
+
+        .main-image-wrapper {
+          position: relative;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          overflow: hidden;
+          width: 100%;
+          max-width: 600px;
+          margin: 0 auto;
+        }
+
+        .image-container {
+          position: relative;
+          width: 100%;
+          padding-top: 133.33%; /* 4:3 aspect ratio */
+        }
+
+        .main-image {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          object-fit: contain;
+        }
+
+        .nav-button {
+          position: absolute;
+          top: 50%;
+          transform: translateY(-50%);
+          background: rgba(201, 166, 107, 0.85);
+          color: white;
+          border: none;
+          width: 38px;
+          height: 38px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          border-radius: 50%;
+          transition: all 0.3s ease;
+          opacity: 0;
+          z-index: 10;
+        }
+
+        .main-image-wrapper:hover .nav-button {
+          opacity: 1;
+        }
+
+        .nav-button.prev {
+          left: 12px;
+        }
+
+        .nav-button.next {
+          right: 12px;
+        }
+
+        @media (max-width: 768px) {
+          .nav-button {
+            width: 36px;
+            height: 36px;
+            opacity: 0.9;
+          }
+
+          .nav-button svg {
+            width: 20px;
+            height: 20px;
+          }
+          
+          .nav-button.prev {
+            left: 16px;
+          }
+          
+          .nav-button.next {
+            right: 16px;
+          }
+        }
+
+        .thumbnail-container {
+          display: flex;
+          gap: 8px;
+          padding: 10px 0;
+          max-width: 600px;
+          margin: 0;
+          overflow-x: auto;
+          scrollbar-width: thin;
+          -ms-overflow-style: none;
+          scrollbar-color: rgba(201, 166, 107, 0.5) transparent;
+        }
+
+        .thumbnail-container::-webkit-scrollbar {
+          height: 4px;
+        }
+
+        .thumbnail-container::-webkit-scrollbar-thumb {
+          background-color: rgba(201, 166, 107, 0.5);
+          border-radius: 4px;
+        }
+
+        .thumbnail {
+          width: 82px;
+          height: 82px;
+          border: 1px solid #eee;
+          border-radius: 4px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          overflow: hidden;
+        }
+
+        .thumbnail.active {
+          border: 2px solid #C9A66B;
+          transform: scale(1.05);
+        }
+
+           @media (max-width: 768px) {           .image-container {             padding-top: 100%; /* 1:1 aspect ratio on mobile */           }            .thumbnail {             width: 60px;             height: 60px;           }                      .thumbnail-container {             grid-template-columns: repeat(auto-fit, 60px);             gap: 6px;           }         }       
+
+        .size-details {
+          margin-top: 20px;
+          padding-top: 20px;
+          border-top: 1px solid #eee;
+        }
+        
+        .size-details .info-title {
+          font-size: 14px;
+          color: #666;
+          margin-bottom: 10px;
+        }
+
+        .dimensions-row {
+          display: flex;
+          gap: 5px;
+          align-items: center;
+          flex-wrap: wrap;
+        }
+        
+        .dimensions-row span {
+          white-space: nowrap;
+        }
       `}</style>
     </main>
   )
 }
-

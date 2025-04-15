@@ -9,7 +9,6 @@ import i18n from "../i18/config";
 interface ProductAttribute {
   id: number;
   color_code: string;
-  image: string;
   sizes: number[];
   color_name_ru: string;
   color_name_uz: string;
@@ -18,6 +17,11 @@ interface ProductAttribute {
   quantity: number;
   created_at: string;
   on_sale: boolean;
+  attribute_images: {
+    id: number;
+    product: string;
+    image: string;
+  }[];
 }
 
 interface Product {
@@ -59,10 +63,10 @@ export default function SalesPage() {
   };
 
   const getAvailabilityText = (quantity: number) => {
-    if (i18n.language === 'uz') {
-      return quantity > 0 ? `Mavjud: ${quantity}` : "Buyurtma asosida";
+    if (quantity === 0) {
+      return i18n.language === 'uz' ? "Buyurtma asosida" : "Предзаказ";
     }
-    return quantity > 0 ? `В наличии: ${quantity}` : "На заказ";
+    return i18n.language === 'uz' ? `Mavjud: ${quantity}` : `Рассцветки: ${quantity}`;
   };
 
   const getSalesTitle = () => {
@@ -98,10 +102,14 @@ export default function SalesPage() {
               price: saleVariant?.price || "0",
               new_price: saleVariant?.new_price || "0",
               availability: getAvailabilityText(saleVariant?.quantity || 0),
-              image: saleVariant?.image || "/placeholder.svg",
+              image: saleVariant?.attribute_images?.[0]?.image || "/placeholder.svg",
               on_sale: true,
               product_variant: saleVariant?.id || 0,
-              sizes: saleVariant?.sizes || []
+              sizes: saleVariant?.sizes || [],
+              product_attributes: product.product_attributes?.map(attr => ({
+                ...attr,
+                image: attr.attribute_images?.[0]?.image || null
+              })) || []
             };
           });
 
@@ -173,26 +181,6 @@ export default function SalesPage() {
                 height={300}
                 className="product-image"
               />
-              <button
-                className="cart-button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleAddToCart(product);
-                }}
-              >
-                <svg
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M18.8337 19.0002C19.4525 19.0002 20.046 19.246 20.4836 19.6836C20.9212 20.1212 21.167 20.7147 21.167 21.3335C21.167 21.9523 20.9212 22.5458 20.4836 22.9834C20.046 23.421 19.4525 23.6668 18.8337 23.6668C18.2148 23.6668 17.6213 23.421 17.1837 22.9834C16.7462 22.5458 16.5003 21.9523 16.5003 21.3335C16.5003 20.0385 17.5387 19.0002 18.8337 19.0002ZM0.166992 0.333496H3.98199L5.07866 2.66683H22.3337C22.6431 2.66683 22.9398 2.78975 23.1586 3.00854C23.3774 3.22733 23.5003 3.52408 23.5003 3.8335C23.5003 4.03183 23.442 4.23016 23.3603 4.41683L19.1837 11.9652C18.787 12.6768 18.017 13.1668 17.142 13.1668H8.45033L7.40032 15.0685L7.36533 15.2085C7.36533 15.2859 7.39605 15.36 7.45075 15.4147C7.50545 15.4694 7.57964 15.5002 7.65699 15.5002H21.167V17.8335H7.16699C6.54815 17.8335 5.95466 17.5877 5.51708 17.1501C5.07949 16.7125 4.83366 16.119 4.83366 15.5002C4.83366 15.0918 4.93866 14.7068 5.11366 14.3802L6.70033 11.5218L2.50033 2.66683H0.166992V0.333496ZM7.16699 19.0002C7.78583 19.0002 8.37932 19.246 8.81691 19.6836C9.25449 20.1212 9.50033 20.7147 9.50033 21.3335C9.50033 21.9523 9.25449 22.5458 8.81691 22.9834C8.37932 23.421 7.78583 23.6668 7.16699 23.6668C6.54815 23.6668 5.95466 23.421 5.51708 22.9834C5.07949 22.5458 4.83366 21.9523 4.83366 21.3335C4.83366 20.0385 5.87199 19.0002 7.16699 19.0002ZM17.667 10.8335L20.9103 5.00016H6.16366L8.91699 10.8335H17.667Z"
-                    fill="#18191A"
-                  />
-                </svg>
-              </button>
             </div>
             <div className="product-details">
               <h3 className="product-brand">{product.brand}</h3>
@@ -201,7 +189,28 @@ export default function SalesPage() {
                 <p className="product-old-price">{formatPrice(product.price)}</p>
                 <p className="product-new-price">{formatPrice(product.new_price)} </p>
               </div>
-              <p className="product-availability">{product.availability}</p>
+              <div className="color-variants">
+                {product.product_attributes?.map((attr) => (
+                  <button
+                    key={attr.id}
+                    className="color-circle"
+                    style={{ backgroundColor: attr.color_code }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                    }}
+                    aria-label={`Color ${i18n.language === 'uz' ? attr.color_name_uz : attr.color_name_ru}`}
+                  />
+                ))}
+              </div>
+              <button
+                className="add-to-cart-button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleAddToCart(product);
+                }}
+              >
+                {i18n.language === "uz" ? "Savatga qo'shish" : "Добавить в корзину"}
+              </button>
             </div>
           </div>
         ))}
@@ -276,24 +285,24 @@ export default function SalesPage() {
         }
 
         .cart-button {
-          position: absolute;
-          top: 10px;
-          right: 10px;
-          width: 36px;
-          height: 36px;
-          border-radius: 50%;
-          background-color: rgba(255, 255, 255, 0.6);
-          border: none;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-          box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-          transition: transform 0.2s;
+          display: none;
         }
 
-        .cart-button:hover {
-          transform: scale(1.05);
+        .add-to-cart-button {
+          width: 100%;
+          background-color: #c9a66b;
+          color: white;
+          border: none;
+          padding: 12px;
+          border-radius: 4px;
+          font-size: 14px;
+          margin-top: 10px;
+          cursor: pointer;
+          transition: background-color 0.2s ease;
+        }
+
+        .add-to-cart-button:hover {
+          background-color: #b89559;
         }
 
         .product-details {
@@ -341,6 +350,26 @@ export default function SalesPage() {
           color: #E11D48;
           font-weight: 500;
           font-size: 16px;
+        }
+
+        .color-variants {
+          display: flex;
+          gap: 8px;
+          margin: 8px 0;
+        }
+
+        .color-circle {
+          width: 20px;
+          height: 20px;
+          border-radius: 50%;
+          border: 1px solid #ddd;
+          padding: 0;
+          cursor: pointer;
+          transition: transform 0.2s ease;
+        }
+
+        .color-circle:hover {
+          transform: scale(1.1);
         }
       `}</style>
     </div>

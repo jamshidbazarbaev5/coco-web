@@ -7,7 +7,22 @@ import FilterModal from "./filter-modal";
 import { useRouter, usePathname } from "next/navigation";
 import { useTranslation } from 'react-i18next';
 import Image from "next/image";
+
+const useWindowSize = () => {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth <= 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  return isMobile;
+};
+
 export default function Header() {
+  const isMobile = useWindowSize();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
@@ -114,7 +129,12 @@ export default function Header() {
         </nav>
         <div className="logo">
           <Link href={`/${i18n.language}`}>
-            <Image src="/logo-3.svg" alt="logo" width={130} height={140} />
+            <Image 
+              src="/logo-3.svg" 
+              alt="logo" 
+              width={isMobile ? 140 : 180} 
+              height={isMobile ? 140 : 180} 
+            />
           </Link>
         </div>
         

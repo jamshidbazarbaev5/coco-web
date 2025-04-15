@@ -6,6 +6,7 @@ import { Send } from "lucide-react"
 import styles from '../styles/language-selector.module.css'
 import ConfirmationModal from "./ConfirmationModal"
 import { useTranslation } from 'react-i18next'
+import i18n from "../i18/config"
 
 // Define interface for cart items
 interface CartItem {
@@ -18,6 +19,18 @@ interface CartItem {
   price: string;
   stock: number;
   image: string;
+  product_attributes: {
+    id: number;
+    color_code: string;
+    color_name_ru: string;
+    color_name_uz: string;
+    quantity: number;
+    attribute_images: {
+      id: number;
+      product: string;
+      image: string;
+    }[];
+  }[];
 }
 
 export default function CartPage() {
@@ -28,14 +41,48 @@ export default function CartPage() {
   const [orderSuccess, setOrderSuccess] = useState(false)
   const [orderError, setOrderError] = useState("")
 
-  // Load cart items from localStorage on component mount
-  useEffect(() => {
-    const storedCart = localStorage.getItem('cart')
-    if (storedCart) {
-      setCartItems(JSON.parse(storedCart))
+  // Add new function to fetch product details
+  const fetchProductDetails = async (productId: number) => {
+    try {
+      const response = await fetch(`https://coco20.uz/api/v1/products/crud/product/${productId}/`);
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error(`Error fetching product ${productId} details:`, error);
+      return null;
     }
-    setLoading(false)
-  }, [])
+  };
+
+  // Update the useEffect for loading cart items
+  useEffect(() => {
+    const loadCartItems = async () => {
+      const storedCart = localStorage.getItem('cart');
+      if (storedCart) {
+        const parsedCart = JSON.parse(storedCart);
+        console.log('Initial cart items:', parsedCart);
+
+        // Fetch product details for each cart item
+        const updatedCart = await Promise.all(
+          parsedCart.map(async (item: CartItem) => {
+            const productDetails = await fetchProductDetails(item.product);
+            if (productDetails) {
+              return {
+                ...item,
+                product_attributes: productDetails.product_attributes
+              };
+            }
+            return item;
+          })
+        );
+
+        console.log('Updated cart with product attributes:', updatedCart);
+        setCartItems(updatedCart);
+      }
+      setLoading(false);
+    };
+
+    loadCartItems();
+  }, []);
 
   // Update localStorage whenever cart items change
   useEffect(() => {
@@ -48,13 +95,40 @@ export default function CartPage() {
   const updateQuantity = (id: number, newQuantity: number) => {
     const updatedItems = cartItems.map((item) => {
       if (item.product === id) {
-        return { ...item, quantity: newQuantity }
+        // Prevent negative quantities and exceeding stock
+        if (newQuantity < 1 || newQuantity > item.stock) {
+          return item;
+        }
+        return { ...item, quantity: newQuantity };
       }
-      return item
-    })
+      return item;
+    });
 
     setCartItems(updatedItems)
   }
+
+  // Add new function to update color variant quantity
+  const updateColorVariantQuantity = (productId: number, attributeId: number, newQuantity: number) => {
+    setCartItems(prevItems => 
+      prevItems.map(item => {
+        if (item.product === productId) {
+          return {
+            ...item,
+            product_attributes: item.product_attributes?.map(attr => {
+              if (attr.id === attributeId) {
+                return {
+                  ...attr,
+                  quantity: Math.max(0, Math.min(newQuantity, attr.quantity))
+                };
+              }
+              return attr;
+            })
+          };
+        }
+        return item;
+      })
+    );
+  };
 
   // Function to remove item from cart
   const removeItem = (id: number) => {
@@ -180,6 +254,14 @@ export default function CartPage() {
     }, 0);
   };
 
+  // Update getAvailabilityText function
+  const getAvailabilityText = (quantity: number) => {
+    if (quantity > 0) {
+      return i18n.language === "uz" ? `Mavjud: ${quantity}` : `В наличии: ${quantity}`;
+    }
+    return i18n.language === "uz" ? "Oldindan buyurtma" : "Предзаказ";
+  };
+
   if (loading) {
     return <div className="cart-container">Loading...</div>;
   }
@@ -208,52 +290,75 @@ export default function CartPage() {
         </div>
       ) : (
         <div className="cart-grid">
-          {cartItems.map((item) => (
-            <div className="cart-item" key={item.product}>
-              <div className="item-image-container">
-                <Image
-                  src={item.image}
-                  alt={item.description}
-                  width={300}
-                  height={300}
-                  className="item-image"
-                />
-                <button 
-                  className="remove-button" 
-                  onClick={() => removeItem(item.product)} 
-                  aria-label={t('cart.remove_item')}
-                >
-                  <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M5.46882 7.24854L7.93398 22.1387C8.04674 22.8204 8.39784 23.4399 8.92472 23.8869C9.4516 24.3338 10.1201 24.5792 10.811 24.5794H14.717M22.5313 7.24854L20.0673 22.1387C19.9546 22.8204 19.6035 23.4399 19.0766 23.8869C18.5497 24.3338 17.8813 24.5792 17.1903 24.5794H13.2843M11.693 12.9687V18.8592M16.3083 12.9687V18.8592M3.20898 7.24854H24.7923M17.2405 7.24854V5.17187C17.2405 4.70775 17.0561 4.26263 16.7279 3.93444C16.3997 3.60625 15.9546 3.42188 15.4905 3.42188H12.5108C12.0467 3.42188 11.6016 3.60625 11.2734 3.93444C10.9452 4.26263 10.7608 4.70775 10.7608 5.17187V7.24854H17.2405Z" stroke="white" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                </button>
-              </div>
-
-              <div className="item-details">
-                <h3 className="item-brand">{item.name}</h3>
-                <p className="item-name">{item.description}</p>
-                <p className="item-price">{item.price}</p>
-                <p className="item-stock">{t('cart.in_stock')} {item.stock}</p>
-
-                <div className="quantity-control">
-                  <button
-                    className="quantity-button"
-                    onClick={() => updateQuantity(item.product, item.quantity - 1)}
-                    aria-label={t('cart.quantity.decrease')}
+          {cartItems.map((item) => {
+            console.log('Rendering cart item:', item)
+            console.log('Item product_attributes:', item.product_attributes)
+            
+            return (
+              <div className="cart-item" key={item.product}>
+                <div className="item-image-container">
+                  <Image
+                    src={item.image}
+                    alt={item.description}
+                    width={300}
+                    height={300}
+                    className="item-image"
+                  />
+                  <button 
+                    className="remove-button" 
+                    onClick={() => removeItem(item.product)} 
+                    aria-label={t('cart.remove_item')}
                   >
-                    -
-                  </button>
-                  <input type="text" className="quantity-input" value={item.quantity} readOnly />
-                  <button
-                    className="quantity-button"
-                    onClick={() => updateQuantity(item.product, item.quantity + 1)}
-                  >
-                    +
+                    <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M5.46882 7.24854L7.93398 22.1387C8.04674 22.8204 8.39784 23.4399 8.92472 23.8869C9.4516 24.3338 10.1201 24.5792 10.811 24.5794H14.717M22.5313 7.24854L20.0673 22.1387C19.9546 22.8204 19.6035 23.4399 19.0766 23.8869C18.5497 24.3338 17.8813 24.5792 17.1903 24.5794H13.2843M11.693 12.9687V18.8592M16.3083 12.9687V18.8592M3.20898 7.24854H24.7923M17.2405 7.24854V5.17187C17.2405 4.70775 17.0561 4.26263 16.7279 3.93444C16.3997 3.60625 15.9546 3.42188 15.4905 3.42188H12.5108C12.0467 3.42188 11.6016 3.60625 11.2734 3.93444C10.9452 4.26263 10.7608 4.70775 10.7608 5.17187V7.24854H17.2405Z" stroke="white" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
                   </button>
                 </div>
+
+                <div className="item-details">
+                  <h3 className="item-brand">{item.name}</h3>
+                  <p className="item-name">{item.description}</p>
+                  <p className="item-price">{item.price}</p>
+                  <p className="item-stock">{getAvailabilityText(item.stock)}</p>
+
+                  {/* Simplified color variants display */}
+                  <div className="color-variants">
+                    {item.product_attributes?.map((attr) => (
+                      <button
+                        key={attr.id}
+                        className="color-circle"
+                        style={{ backgroundColor: attr.color_code }}
+                        aria-label={i18n.language === 'uz' ? attr.color_name_uz : attr.color_name_ru}
+                      />
+                    ))}
+                  </div>
+
+                  {/* Only show quantity controls if stock > 0 */}
+                  {item.stock > 0 && (
+                    <div className="quantity-control">
+                      <button
+                        className="quantity-button"
+                        onClick={() => updateQuantity(item.product, item.quantity - 1)}
+                        disabled={item.quantity <= 1}
+                        aria-label={t('cart.quantity.decrease')}
+                      >
+                        -
+                      </button>
+                      <input type="text" className="quantity-input" value={item.quantity} readOnly />
+                      <button
+                        className="quantity-button"
+                        onClick={() => updateQuantity(item.product, item.quantity + 1)}
+                        disabled={item.quantity >= item.stock}
+                        aria-label={t('cart.quantity.increase')}
+                      >
+                        +
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
           
           <div className="contact-content">
             <div className="contact-form">
@@ -322,7 +427,7 @@ export default function CartPage() {
         </div>
       )}
 
-      {/* Order Success Modal */}
+      
       {orderSuccess && (
         <ConfirmationModal 
           messageUz="Mahsulot muvaffaqiyatli buyurtma qilindi"
@@ -631,6 +736,36 @@ export default function CartPage() {
         .error-message {
           color: #ff3b30;
           margin-bottom: 15px;
+        }
+
+        .color-variants {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 8px;
+          margin: 8px 0;
+        }
+
+        .color-circle {
+          width: 20px;
+          height: 20px;
+          border-radius: 50%;
+          border: 1px solid #ddd;
+          padding: 0;
+          cursor: pointer;
+          transition: transform 0.2s ease;
+        }
+
+        .color-circle:hover {
+          transform: scale(1.1);
+        }
+
+        /* Remove old color variant styles */
+        .color-variant-item,
+        .color-variant-header,
+        .color-name,
+        .variant-quantity,
+        .quantity-display {
+          display: none;
         }
       `}</style>
     </div>

@@ -39,9 +39,9 @@ interface Product {
 
 // Add new interface for product attributes
 interface ProductAttribute {
+  image: null;
   id: number;
   color_code: string;
-  image: string;
   sizes: number[];
   color_name_ru: string;
   color_name_uz: string;
@@ -50,6 +50,21 @@ interface ProductAttribute {
   quantity: number;
   created_at: string;
   on_sale: boolean;
+  attribute_images: {
+    id: number;
+    product: string;
+    image: string;
+  }[];
+}
+
+// Add new interface for color variants
+interface ColorVariant {
+  id: number;
+  color_code: string;
+  color_name_ru: string;
+  color_name_uz: string;
+  image: string;
+  quantity: number;
 }
 
 // Update CartItem interface
@@ -92,7 +107,7 @@ export default function CatalogPage() {
 
   // Add state for API data with proper typing
   const [categories, setCategories] = useState<Category[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<any>([]);
   const [loading, setLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [nextProductsPage, setNextProductsPage] = useState<string | null>(null);
@@ -324,24 +339,36 @@ export default function CatalogPage() {
 
       setNextProductsPage(productsData.next);
 
-      const formattedProducts = productsData.results
-        .map((product: Product) => {
-          // Find the first variant with quantity > 0, or get the first variant if none have quantity
-          const firstAvailableVariant = product.product_attributes.find(variant => variant.quantity > 0) || product.product_attributes[0];
-          return {
-            id: product.id,
-            brand: product.brand,
-            name: i18n.language === "uz" ? product.title_uz : product.title_ru,
-            description: i18n.language === "uz" ? product.description_uz : product.description_ru,
-            price: formatPrice(firstAvailableVariant.price || "0"),
-            availability: getAvailabilityText(firstAvailableVariant.quantity || 0),
-            image: firstAvailableVariant.image || null,
-            on_sale: firstAvailableVariant.on_sale || false,
-            new_price: firstAvailableVariant.new_price,
-            product_variant: firstAvailableVariant.id,
-            sizes: firstAvailableVariant.sizes,
-          };
-        });
+      // Fetch full product details for each product
+      const productDetailsPromises = productsData.results.map((product: any) =>
+        fetch(`https://coco20.uz/api/v1/products/crud/product/${product.id}/`).then(res => res.json())
+      );
+
+      const productDetails = await Promise.all(productDetailsPromises);
+
+      const formattedProducts = productDetails.map((product: any) => {
+        const firstAvailableVariant = product.product_attributes?.find((variant: any) => variant.quantity > 0) 
+          || product.product_attributes?.[0] 
+          || {};
+        
+        return {
+          id: product.id,
+          brand: product.brand,
+          name: i18n.language === "uz" ? product.title_uz : product.title_ru,
+          description: i18n.language === "uz" ? product.description_uz : product.description_ru,
+          price: formatPrice(firstAvailableVariant.price || "0"),
+          availability: getAvailabilityText(firstAvailableVariant.quantity || 0),
+          image: firstAvailableVariant.attribute_images?.[0]?.image || "/placeholder.svg",
+          on_sale: firstAvailableVariant.on_sale || false,
+          new_price: firstAvailableVariant.new_price,
+          product_variant: firstAvailableVariant.id,
+          sizes: firstAvailableVariant.sizes || [],
+          product_attributes: product.product_attributes?.map((attr: any) => ({
+            ...attr,
+            image: attr.attribute_images?.[0]?.image || null
+          })) || []
+        };
+      });
 
       setProducts(formattedProducts);
     } catch (error) {
@@ -443,7 +470,7 @@ export default function CatalogPage() {
       });
 
       // Append new products to existing ones
-      setProducts((prevProducts) => [...prevProducts, ...newProducts]);
+      setProducts((prevProducts:any) => [...prevProducts, ...newProducts]);
     } catch (error) {
       console.error("Error loading more products:", error);
     } finally {
@@ -894,43 +921,69 @@ export default function CatalogPage() {
           {products.length > 0 ? (
             // Products grid
             <div className="products-grid">
-              {products.map((product) => (
-                <div
-                  className="product-card"
-                  key={product.id}
-                  onClick={() => handleProductClick(product.id)}
-                  style={{ cursor: "pointer" }}
-                >
-                  <div className="product-image-container">
-                    {product.image ? (
-                      <Image
-                        src={product.image}
-                        alt={product.name}
-                        width={300}
-                        height={300}
-                        className="product-image"
-                      />
-                    ) : (
-                      <div className="no-image">{getNoImageText()}</div>
-                    )}
+              {products.map((product:any) => {
+                console.log('Rendering product:', product);
+                console.log('Product attributes:', product.product_attributes);
+                
+                return (
+                  <div
+                    className="product-card"
+                    key={product.id}
+                    onClick={() => handleProductClick(product.id)}
+                    style={{ cursor: "pointer" }}
+                  >
+                    <div className="product-image-container">
+                      {product.image ? (
+                        <Image
+                          src={product.image}
+                          alt={product.name}
+                          width={300}
+                          height={300}
+                          className="product-image"
+                        />
+                      ) : (
+                        <div className="no-image">{getNoImageText()}</div>
+                      )}
+                    </div>
+                    <div className="product-details">
+                      <h3 className="product-brand">{product.name}</h3>
+                      <p className="product-name">{brandNameFromId(product.brand)}</p>
+                      <p className="product-price">{product.price}</p>
+                      
+                      
+                      {/* Add color variants section */}
+                      <div className="color-variants">
+                        {console.log('Before mapping attributes:', product.product_attributes)}
+                        {product.product_attributes?.map((attr:any) => {
+                          console.log('Processing attribute:', attr);
+                          return (
+                            <button
+                              key={attr.id}
+                              className="color-circle"  
+                              style={{ backgroundColor: attr.color_code }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                console.log('Color clicked:', attr.color_code);
+                              }}
+                              aria-label={`Color ${i18n.language === 'uz' ? attr.color_name_uz : attr.color_name_ru}`}
+                            />
+                          );
+                        })}
+                      </div>
+
+                      <button
+                        className="add-to-cart-button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleAddToCart(product);
+                        }}
+                      >
+                        {i18n.language === "uz" ? "Savatga qo'shish" : "Добавить в корзину"}
+                      </button>
+                    </div>
                   </div>
-                  <div className="product-details">
-                    <h3 className="product-brand">{product.name}</h3>
-                    <p className="product-name">{brandNameFromId(product.brand)}</p>
-                    <p className="product-price">{product.price}</p>
-                    <p className="product-availability">{product.availability}</p>
-                    <button
-                      className="add-to-cart-button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleAddToCart(product);
-                      }}
-                    >
-                      {i18n.language === "uz" ? "Savatga qo'shish" : "Добавить в корзину"}
-                    </button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             // No results message
@@ -1551,6 +1604,26 @@ export default function CatalogPage() {
 
         .cart-button {
           display: none;
+        }
+
+        .color-variants {
+          display: flex;
+          gap: 8px;
+          margin: 8px 0;
+        }
+
+        .color-circle {
+          width: 20px;
+          height: 20px;
+          border-radius: 50%;
+          border: 1px solid #ddd;
+          padding: 0;
+          cursor: pointer;
+          transition: transform 0.2s ease;
+        }
+
+        .color-circle:hover {
+          transform: scale(1.1);
         }
       `}</style>
     </div>
