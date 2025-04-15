@@ -4,20 +4,36 @@ import styles from "../styles/BrandSlider.module.css";
 import { useRouter } from "next/navigation";
 import i18n from "../i18/config";
 
-// Add new interfaces for the API response
-interface ProductAttribute {
-  color: string;
+// Update interfaces for the new API response
+interface AttributeImage {
+  id: number;
+  product: string;
   image: string;
+}
+
+interface ProductAttribute {
+  id: number;
+  color_code: string;
   sizes: number[];
+  color_name_ru: string;
+  color_name_uz: string;
+  price: string;
+  new_price: string;
+  quantity: number;
+  created_at: string;
+  on_sale: boolean;
+  attribute_images: AttributeImage[];
 }
 
 interface Product {
   id: number;
   brand: number;
+  category: number;
   title_uz: string;
   title_ru: string;
   description_uz: string;
   description_ru: string;
+  material: number;
   product_attributes: ProductAttribute[];
 }
 
@@ -237,7 +253,7 @@ export default function BrandSlider() {
                   </div>
                 </div>
                 <img
-                  src={slide?.product_attributes?.[0]?.image || ''}
+                  src={slide?.product_attributes?.[0]?.attribute_images?.[0]?.image || ''}
                   alt={slide?.title_ru || ''}
                   className={styles.slideImage}
                   loading="lazy"
