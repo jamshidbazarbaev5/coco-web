@@ -19,6 +19,8 @@
     "feedback": "Sizning taklif/istaklaringiz",
     "sending": "Yuborilmoqda...",
     "send": "Yuborish",
+    "sending2": "Yuborilmoqda...",
+    "send2": "Yuborish",
     "consent": "Ma'lumotlarimni yig'ish va saqlashga roziman",
     "alerts": {
       "consent_required": "Iltimos, ma'lumotlarni yig'ishga rozilik bering",

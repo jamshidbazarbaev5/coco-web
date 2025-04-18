@@ -254,7 +254,7 @@ const cartConfirmationMessage = {
                 disabled={isSubmitting}
               >
                 <Send size={16} />
-                <span>{isSubmitting ? t('form.sending') : t('form.send')}</span>
+                <span>{isSubmitting ? t('form.sending2') : t('form.send2')}</span>
               </button>
               <div className={styles.checkboxGroup}>
                 <input 

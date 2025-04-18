@@ -235,7 +235,7 @@ export default function SalesPage() {
         }
 
         .catalog-container {
-          max-width: 1200px;
+          max-width: 1418px;
           margin: 0 auto;
           padding: 20px;
         }
