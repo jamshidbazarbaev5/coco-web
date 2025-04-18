@@ -2,8 +2,9 @@
 
 import Image from "next/image"
 import { motion } from "framer-motion"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import i18n from "../i18/config"
+import { useRouter } from "next/navigation"
 
 interface Category {
   id: number
@@ -13,20 +14,23 @@ interface Category {
 }
 
 export default function CategorySection() {
+  const router = useRouter();
+  const scrollRef = useRef<HTMLDivElement>(null);
   const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
+  const [isDragging, setIsDragging] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [scrollLeft, setScrollLeft] = useState(0);
 
   useEffect(() => {
     const fetchAllCategories = async () => {
       try {
-        // First fetch to get total count
         const initialResponse = await fetch('https://coco20.uz/api/v1/brands/crud/category/?page=1&page_size=10')
         const initialData = await initialResponse.json()
         const totalItems = initialData.count
         const pageSize = 10
         const totalPages = Math.ceil(totalItems / pageSize)
 
-        // Fetch all pages
         const promises = Array.from({ length: totalPages }, (_, i) =>
           fetch(`https://coco20.uz/api/v1/brands/crud/category/?page=${i + 1}&page_size=${pageSize}`)
             .then(res => res.json())
@@ -44,6 +48,41 @@ export default function CategorySection() {
 
     fetchAllCategories()
   }, [])
+
+  // Enhanced wheel event handler
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+
+    const onWheel = (e: WheelEvent) => {
+      if (e.deltaY === 0) return;
+      
+      e.preventDefault();
+      el.scrollLeft += e.deltaY + e.deltaX;
+    };
+
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
+  }, []);
+
+  // Mouse drag scrolling
+  const handleMouseDown = (e: React.MouseEvent) => {
+    setIsDragging(true);
+    setStartX(e.pageX - scrollRef.current!.offsetLeft);
+    setScrollLeft(scrollRef.current!.scrollLeft);
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging) return;
+    e.preventDefault();
+    const x = e.pageX - scrollRef.current!.offsetLeft;
+    const walk = (x - startX) * 2;
+    scrollRef.current!.scrollLeft = scrollLeft - walk;
+  };
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -70,10 +109,14 @@ export default function CategorySection() {
     }
   }
 
-  // Helper function to get translated name based on current language
   const getTranslatedName = (category: Category) => {
     return i18n.language === 'uz' ? category.name_uz : category.name_ru
   }
+
+  const handleCategoryClick = (category: Category) => {
+    const categoryName = i18n.language === 'uz' ? category.name_uz : category.name_ru;
+    router.push(`/${i18n.language}/categories?category=${encodeURIComponent(categoryName)}`);
+  };
 
   if (loading) {
     return <div>Loading...</div>
@@ -87,16 +130,25 @@ export default function CategorySection() {
       viewport={{ once: true, margin: "-100px" }}
     >
       <motion.div 
+        ref={scrollRef}
         className="category-grid"
         variants={containerVariants}
+        onMouseDown={handleMouseDown}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+        onMouseMove={handleMouseMove}
         style={{
           display: 'flex',
           overflowX: 'auto',
+          overflowY: 'hidden',
           gap: '1rem',
           padding: '1rem',
           WebkitOverflowScrolling: 'touch',
-          scrollbarWidth: 'none',  // Firefox
-          msOverflowStyle: 'none',  // IE/Edge
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none',
+          scrollSnapType: 'x mandatory',
+          cursor: isDragging ? 'grabbing' : 'grab',
+          userSelect: 'none'
         }}
       >
         {categories.map((category) => (
@@ -104,9 +156,12 @@ export default function CategorySection() {
             key={category.id}
             variants={itemVariants}
             style={{ 
-              flex: '0 0 auto',  // Prevent items from shrinking
-              width: '158px',    // Match the image width
+              flex: '0 0 auto',
+              width: '158px',
+              scrollSnapAlign: 'start',
+              cursor: 'pointer',
             }}
+            onClick={() => handleCategoryClick(category)}
           >
             <div className="category-item">
               <div className="category-image">
@@ -123,6 +178,16 @@ export default function CategorySection() {
           </motion.div>
         ))}
       </motion.div>
+
+      <style jsx>{`
+        .category-item {
+          transition: transform 0.2s ease;
+        }
+        
+        .category-item:hover {
+          transform: translateY(-5px);
+        }
+      `}</style>
     </motion.section>
   )
 }

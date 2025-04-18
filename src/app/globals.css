@@ -320,14 +320,19 @@ body {
 .category-section {
   padding: 60px 20px;
   background-color: rgba(246, 245, 237, 1);
+  overflow: hidden;
 }
 
 .category-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-  gap: 20px;
   max-width: var(--container-width);
   margin: 0 auto;
+  -ms-overflow-style: none;  /* Hide scrollbar for IE and Edge */
+  scrollbar-width: none;  /* Hide scrollbar for Firefox */
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.category-grid::-webkit-scrollbar {
+  display: none;
 }
 
 .category-item {
@@ -336,7 +341,6 @@ body {
   align-items: center;
   text-decoration: none;
   color: var(--dark-text);
-  transition: transform 0.3s;
 }
 
 .category-image {
@@ -344,7 +348,6 @@ body {
   position: relative;
   aspect-ratio: 3/4;
   overflow: hidden;
-  /* border-radius: 8px; */
 }
 
 .category-img {

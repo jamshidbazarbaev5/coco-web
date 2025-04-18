@@ -746,7 +746,7 @@ export default function ProductPage() {
         .thumbnail-container {
           display: flex;
           gap: 8px;
-          padding: 10px 0;
+          padding: 10px 6px;
           max-width: 600px;
           margin: 0;
           overflow-x: auto;

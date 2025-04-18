@@ -11,7 +11,8 @@ import { t } from "i18next";
 // Define interfaces for your data structures
 interface Category {
   id: number;
-  name: string;
+  name_uz: string;
+  name_ru: string;
   image: string;
 }
 
@@ -196,6 +197,7 @@ export default function CatalogPage() {
     selectedBrands: [] as { id: number; name: string }[],
     selectedSizes: [] as Size[],
     selectedColors: [] as string[],
+    selectedCategory: null as Category | null,
     priceRange: { min: "0", max: "1000000" },
   });
 
@@ -240,7 +242,9 @@ export default function CatalogPage() {
       try {
         setLoading(true);
 
-        // Get URL parameters when component mounts
+        // Fetch categories first to handle the URL category parameter
+        const categoriesData = await fetchAllCategories();
+        
         const urlParams = new URLSearchParams(window.location.search);
         const urlFilters: Filters = {
           title_ru__icontains: "",
@@ -253,23 +257,59 @@ export default function CatalogPage() {
           category: "",
         };
 
-        // Convert URL parameters to filters
+        // Initialize new filter data
+        const newFilterData = {
+          searchQuery: "",
+          selectedBrands: [] as { id: number; name: string }[],
+          selectedSizes: [] as Size[],
+          selectedColors: [] as string[],
+          selectedCategory: null as Category | null,
+          priceRange: { min: "0", max: "1000000" },
+        };
+
+        // Handle category from URL
+        const categoryParam = urlParams.get('category');
+        if (categoryParam) {
+          const matchedCategory = categoriesData.find((cat: any) => 
+            cat.name_uz === categoryParam || cat.name_ru === categoryParam
+          );
+          
+          if (matchedCategory) {
+            urlFilters.category = categoryParam;
+            newFilterData.selectedCategory = {
+              id: matchedCategory.id,
+              name_uz: matchedCategory.name_uz,
+              name_ru: matchedCategory.name_ru,
+              image: matchedCategory.image || ''
+            };
+          }
+        }
+
+        // Handle other URL parameters
         urlParams.forEach((value, key) => {
-          if (key in urlFilters) {
+          if (key in urlFilters && key !== 'category') {
             urlFilters[key] = value;
           }
         });
 
-        if (Object.keys(urlFilters).length > 0) {
-          setFilters((prevFilters) => ({
-            ...prevFilters,
-            ...urlFilters,
-          }));
-        }
+        // Set initial filters and filter data
+        setFilters(urlFilters);
+        setCurrentFilterData(newFilterData);
 
-        const [brandsResponse, categoriesData, sizesResponse] = await Promise.all([
+        // Format and set categories
+        const formattedCategories: Category[] = categoriesData.map(
+          (category: any, index: number) => ({
+            id: category.id,
+            name_uz: category.name_uz,
+            name_ru: category.name_ru,
+            image: "/cart-" + ((index % 4) + 1) + ".jpg",
+          })
+        );
+        setCategories(formattedCategories);
+
+        // Fetch other data
+        const [brandsResponse, sizesResponse] = await Promise.all([
           fetch("https://coco20.uz/api/v1/brands/crud/brand/"),
-          fetchAllCategories(),
           fetch("https://coco20.uz/api/v1/products/crud/size/"),
         ]);
 
@@ -305,16 +345,6 @@ export default function CatalogPage() {
         if (!activeFilter || activeFilter === "Все" || activeFilter === "Hammasi") {
           setActiveFilter(getAllFilterText());
         }
-
-        const formattedCategories: Category[] = categoriesData.map(
-          (category: any, index: number) => ({
-            id: category.id,
-            name: getTranslatedCategoryName(category),
-            image: "/cart-" + ((index % 4) + 1) + ".jpg",
-          })
-        );
-
-        setCategories(formattedCategories);
 
         await fetchProducts(urlFilters);
       } catch (error) {
@@ -393,6 +423,7 @@ export default function CatalogPage() {
       selectedBrands: [] as { id: number; name: string }[],
       selectedSizes: [] as Size[],
       selectedColors: [] as string[],
+      selectedCategory: null as Category | null,
       priceRange: { min: "0", max: "1000000" },
     };
 
@@ -645,9 +676,17 @@ export default function CatalogPage() {
     updateURL(newFilters);
   };
 
-  // Remove these functions as they're no longer needed
-  const handleCategoryClick = (category: Category) => {};
-  const getActiveCategoryName = () => null;
+  // Update handleCategoryClick function
+  const handleCategoryClick = (category: Category) => {
+    const categoryName = i18n.language === "uz" ? category.name_uz : category.name_ru;
+    const newFilters = { ...filters, category: categoryName };
+    setFilters(newFilters);
+    setCurrentFilterData(prev => ({
+      ...prev,
+      selectedCategory: category
+    }));
+    updateURL(newFilters);
+  };
 
   // Update getActiveFiltersDisplay function
   const getActiveFiltersDisplay = () => {
@@ -705,10 +744,12 @@ export default function CatalogPage() {
     }
 
     // Add category if active
-    if (filters.category) {
+    if (currentFilterData.selectedCategory) {
       activeFilters.push({
         type: "category",
-        label: filters.category,
+        label: i18n.language === "uz" 
+          ? currentFilterData.selectedCategory.name_uz 
+          : currentFilterData.selectedCategory.name_ru
       });
     }
 
@@ -732,6 +773,7 @@ export default function CatalogPage() {
       selectedBrands: [],
       selectedSizes: [],
       selectedColors: [],
+      selectedCategory: null,
       priceRange: { min: "0", max: "1000000" },
     });
     router.push(`/${i18n.language}/categories`);
@@ -739,55 +781,55 @@ export default function CatalogPage() {
 
   const removeFilter = (filterType: string) => {
     const newFilters = { ...filters };
-
+    const newFilterData = { ...currentFilterData };
+  
     switch (filterType) {
       case "brand":
         setActiveFilter(getAllFilterText());
         newFilters.brand = "";
-        setCurrentFilterData({ ...currentFilterData, selectedBrands: [] });
+        newFilterData.selectedBrands = [];
         break;
       case "category":
         newFilters.category = "";
+        newFilterData.selectedCategory = null;
         break;
       case "search":
         newFilters.title_ru__icontains = "";
         newFilters.title_uz__icontains = "";
-        setCurrentFilterData({ ...currentFilterData, searchQuery: "" });
+        newFilterData.searchQuery = "";
         break;
       case "price":
-        newFilters.price__gt = "0";
-        newFilters.price__lt = "1000000";
-        setCurrentFilterData({
-          ...currentFilterData,
-          priceRange: { min: "0", max: "1000000" },
-        });
+        newFilters.price__gt = "";
+        newFilters.price__lt = "";
+        newFilterData.priceRange = { min: "0", max: "1000000" };
         break;
       case "color":
         newFilters.color = "";
-        setCurrentFilterData({ ...currentFilterData, selectedColors: [] });
+        newFilterData.selectedColors = [];
         break;
       case "size":
         newFilters.size = "";
-        setCurrentFilterData({ ...currentFilterData, selectedSizes: [] });
+        newFilterData.selectedSizes = [];
         break;
     }
-
+  
     setFilters(newFilters);
-
+    setCurrentFilterData(newFilterData);
+  
     // Update URL with remaining filters
     const queryParams = new URLSearchParams();
     Object.entries(newFilters).forEach(([key, value]) => {
       if (value) {
-        queryParams.append(key, value.toString());
+        queryParams.append(key, value);
       }
     });
-
+  
     // Update URL with remaining filters or clear if none remain
-    if (queryParams.toString()) {
-      router.push(`/${i18n.language}/categories?${queryParams.toString()}`);
-    } else {
-      router.push(`/${i18n.language}/categories`);
-    }
+    const newPath = queryParams.toString() 
+      ? `/${i18n.language}/categories?${queryParams.toString()}`
+      : `/${i18n.language}/categories`;
+  
+    router.push(newPath);
   };
 
   // Helper function to update URL
@@ -900,14 +942,20 @@ export default function CatalogPage() {
       <div className="categories-container">
         {categories.map((category) => (
           <div
-            className="category-item"
+            className={`category-item ${
+              filters.category === (i18n.language === "uz" ? category.name_uz : category.name_ru) 
+                ? "active-category" 
+                : ""
+            }`}
             key={category.id}
+            onClick={() => handleCategoryClick(category)}
+            style={{ cursor: "pointer" }}
           >
             <div className="category-image-container">
               {category.image ? (
                 <Image
                   src={category.image}
-                  alt={category.name}
+                  alt={i18n.language === "uz" ? category.name_uz : category.name_ru}
                   width={150}
                   height={150}
                   className="category-image"
@@ -916,7 +964,9 @@ export default function CatalogPage() {
                 <div className="no-image">{getNoImageText()}</div>
               )}
             </div>
-            <p className="category-name">{category.name}</p>
+            <p className="category-name">
+              {i18n.language === "uz" ? category.name_uz : category.name_ru}
+            </p>
           </div>
         ))}
       </div>
