@@ -62,6 +62,7 @@
     },
     "in_stock": "Расцветки: ",
     "sizes":"Размеры",
+    "select_size":"Выберите размер",
     "size_details": "Размеры"
   },
   "header": {

@@ -25,16 +25,26 @@ interface Size {
 // Update the Product interface to match new structure
 interface Product {
   id: number;
-  image: string;
-  name: string;
-  price: string;
-  availability: string;
-  brand: number; // Changed from string to number
   title_uz: string;
   title_ru: string;
   description_uz: string;
   description_ru: string;
   product_attributes: ProductAttribute[];
+  brand_details: {
+    id: number;
+    name: string;
+  };
+  material_details: {
+    id: number;
+    name_uz: string;
+    name_ru: string;
+  };
+  category_details: {
+    id: number;
+    name_ru: string;
+    name_uz: string;
+    image: string;
+  };
 }
 
 // Add new interface for product attributes
@@ -78,6 +88,7 @@ interface CartItem {
   price: string;
   stock: number;
   image: string;
+  selected_color?: number; // Add this field
 }
 
 // Add interface for filters
@@ -94,6 +105,9 @@ interface Filters {
 }
 
 export default function CatalogPage() {
+  // Add new state for selected colors
+  const [selectedColors, setSelectedColors] = useState<{[key: number]: number}>({});
+
   // Add state for brands
   const [brands, setBrands] = useState<{ id: number; name: string }[]>([]);
   const [activeFilter, setActiveFilter] = useState("Все");
@@ -136,8 +150,7 @@ export default function CatalogPage() {
       console.log('Product has 0 quantity, returning:', text);
       return text;
     }
-    const text = i18n.language === "uz" ? `Mavjud: ${quantity}` : `В наличии: ${quantity}`;
-    console.log('Product has quantity, returning:', text);
+    const text = i18n.language === "uz" ? `Mavjud` : `Есть в наличии`;
     return text;
   };
 
@@ -338,51 +351,32 @@ export default function CatalogPage() {
         }
       });
 
-      const productsUrl = `https://coco20.uz/api/v1/products/crud/product/?${queryParams.toString()}`;
+      const productsUrl = `https://coco20.uz/api/v1/products/list/?${queryParams.toString()}`;
       const productsResponse = await fetch(productsUrl);
       const productsData = await productsResponse.json();
 
       setNextProductsPage(productsData.next);
 
-      // Fetch full product details for each product
-      const productDetailsPromises = productsData.results.map((product: any) =>
-        fetch(`https://coco20.uz/api/v1/products/crud/product/${product.id}/`).then(res => res.json())
-      );
-
-      const productDetails = await Promise.all(productDetailsPromises);
-
-      const formattedProducts = productDetails.map((product: any) => {
-        const firstAvailableVariant = product.product_attributes?.[0] || {};
-        console.log('Processing product ID:', product.id);
-        console.log('Product details:', {
-          name: product.title_ru || product.title_uz,
-          variant: firstAvailableVariant,
-          quantity: firstAvailableVariant.quantity
-        });
-        
-        const availability = getAvailabilityText(firstAvailableVariant.quantity || 0);
-        console.log('Final availability text:', availability);
+      const formattedProducts = productsData.results.map((product: Product) => {
+        const firstAvailableVariant = product.product_attributes[0] || {};
         
         return {
           id: product.id,
-          brand: product.brand,
+          brand: product.brand_details.id,
+          brandName: product.brand_details.name,
           name: i18n.language === "uz" ? product.title_uz : product.title_ru,
           description: i18n.language === "uz" ? product.description_uz : product.description_ru,
           price: formatPrice(firstAvailableVariant.price || "0"),
-          availability,
+          availability: getAvailabilityText(firstAvailableVariant.quantity || 0),
           image: firstAvailableVariant.attribute_images?.[0]?.image || "/placeholder.svg",
           on_sale: firstAvailableVariant.on_sale || false,
           new_price: firstAvailableVariant.new_price,
           product_variant: firstAvailableVariant.id,
           sizes: firstAvailableVariant.sizes || [],
-          product_attributes: product.product_attributes?.map((attr: any) => ({
-            ...attr,
-            image: attr.attribute_images?.[0]?.image || null
-          })) || []
+          product_attributes: product.product_attributes || []
         };
       });
 
-      console.log('Final formatted products:', formattedProducts);
       setProducts(formattedProducts);
     } catch (error) {
       console.error("Error fetching products:", error);
@@ -469,7 +463,8 @@ export default function CatalogPage() {
         const firstVariant = product.product_attributes[0] || {};
         return {
           id: product.id,
-          brand: product.brand,
+          brand: product.brand_details.id,
+          brandName: product.brand_details.name,
           name: i18n.language === "uz" ? product.title_uz : product.title_ru,
           description: i18n.language === "uz" ? product.description_uz : product.description_ru,
           price: formatPrice(firstVariant.price || "0"),
@@ -498,17 +493,21 @@ export default function CatalogPage() {
 
   // Update handleAddToCart function
   const handleAddToCart = (product: any) => {
-    // Create a cart item from the product
+    const selectedVariantId = selectedColors[product.id];
+    const selectedVariant = product.product_attributes.find((attr: any) => attr.id === selectedVariantId) 
+      || product.product_attributes[0];
+
     const cartItem: CartItem = {
       product: product.id,
-      product_variant: product.product_variant, // Add variant ID
-      size: product.sizes[0], // Default to first size, you might want to add size selection
+      product_variant: selectedVariant.id,
+      size: selectedVariant.sizes[0],
       quantity: 1,
-      name: brandNameFromId(product.brand), // New helper function needed
+      name: brandNameFromId(product.brand),
       description: product.name,
-      price: product.price,
-      stock: parseInt(product.availability.match(/\d+/)?.[0] || "0"),
-      image: product.image || "/placeholder.svg",
+      price: selectedVariant.price,
+      stock: selectedVariant.quantity,
+      image: selectedVariant.attribute_images[0]?.image || "/placeholder.svg",
+      selected_color: selectedVariant.id // Add this line
     };
 
     // Get existing cart from localStorage or initialize empty array
@@ -523,7 +522,10 @@ export default function CatalogPage() {
     );
 
     if (existingItemIndex >= 0) {
-      existingCart[existingItemIndex].quantity += 1;
+      existingCart[existingItemIndex] = {
+        ...existingCart[existingItemIndex],
+        selected_color: selectedVariant.id // Update selected color even for existing items
+      };
     } else {
       existingCart.push(cartItem);
     }
@@ -537,6 +539,15 @@ export default function CatalogPage() {
       setShowMobileCart(true);
       setTimeout(() => setShowMobileCart(false), 5000);
     }
+  };
+
+  // Add color selection handler
+  const handleColorSelect = (e: React.MouseEvent, productId: number, variantId: number) => {
+    e.stopPropagation();
+    setSelectedColors(prev => ({
+      ...prev,
+      [productId]: variantId
+    }));
   };
 
   // Add helper function to get brand name from ID
@@ -634,18 +645,9 @@ export default function CatalogPage() {
     updateURL(newFilters);
   };
 
-  // Update handleCategoryClick to include URL update
-  const handleCategoryClick = (category: Category) => {
-    const newFilters = { ...filters, category: category.name };
-    setFilters(newFilters);
-    updateURL(newFilters);
-  };
-
-  // Update the getActiveCategoryName function
-  const getActiveCategoryName = () => {
-    if (!filters.category) return null;
-    return filters.category;
-  };
+  // Remove these functions as they're no longer needed
+  const handleCategoryClick = (category: Category) => {};
+  const getActiveCategoryName = () => null;
 
   // Update getActiveFiltersDisplay function
   const getActiveFiltersDisplay = () => {
@@ -894,16 +896,12 @@ export default function CatalogPage() {
         />
       )}
 
-      {/* Categories - Updated to pass the entire category object */}
+      {/* Update Categories section to remove click functionality */}
       <div className="categories-container">
         {categories.map((category) => (
           <div
-            className={`category-item ${
-              filters.category === category.name ? "active-category" : ""
-            }`}
+            className="category-item"
             key={category.id}
-            onClick={() => handleCategoryClick(category)}
-            style={{ cursor: "pointer" }}
           >
             <div className="category-image-container">
               {category.image ? (
@@ -960,7 +958,7 @@ export default function CatalogPage() {
                     </div>
                     <div className="product-details">
                       <h3 className="product-brand">{product.name}</h3>
-                      <p className="product-name">{brandNameFromId(product.brand)}</p>
+                      <p className="product-name">{product.brandName}</p>
                       <p className="product-price">{product.price}</p>
                       <p className="product-availability">
                         {console.log('Rendering availability:', product.availability)}
@@ -975,12 +973,9 @@ export default function CatalogPage() {
                           return (
                             <button
                               key={attr.id}
-                              className="color-circle"  
+                              className={`color-circle ${selectedColors[product.id] === attr.id ? 'selected' : ''}`}
                               style={{ backgroundColor: attr.color_code }}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                console.log('Color clicked:', attr.color_code);
-                              }}
+                              onClick={(e) => handleColorSelect(e, product.id, attr.id)}
                               aria-label={`Color ${i18n.language === 'uz' ? attr.color_name_uz : attr.color_name_ru}`}
                             />
                           );
@@ -1182,11 +1177,23 @@ export default function CatalogPage() {
           gap: 15px;
           margin-bottom: 40px;
           padding-bottom: 10px;
-          scrollbar-width: none; /* Firefox */
+       -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+          scroll-behavior: smooth; /* Smooth scrolling on desktop */
+          scrollbar-width: thin;
+          scrollbar-color: #c9a66b transparent;
         }
 
         .categories-container::-webkit-scrollbar {
-          display: none; /* Chrome, Safari, Edge */
+          height: 6px;
+        }
+
+        .categories-container::-webkit-scrollbar-thumb {
+          background-color: #c9a66b;
+          border-radius: 3px;
+        }
+
+        .categories-container::-webkit-scrollbar-track {
+          background-color: transparent;
         }
 
         .category-item {
@@ -1243,6 +1250,9 @@ export default function CatalogPage() {
         .product-card {
           background-color: rgba(255, 255, 255, 0.6);
           overflow: hidden;
+          display: flex;
+          flex-direction: column;
+          height: 100%;
         }
 
         .product-image-container {
@@ -1260,6 +1270,10 @@ export default function CatalogPage() {
 
         .product-details {
           padding: 15px;
+          display: flex;
+          flex-direction: column;
+          flex-grow: 1;
+          min-height: 180px; /* Set minimum height for details section */
         }
 
         .product-brand {
@@ -1285,11 +1299,30 @@ export default function CatalogPage() {
         .product-availability {
           font-size: 14px;
           color: #666;
+          min-height: 20px; /* Set fixed height for availability text */
+        }
+
+        .color-variants {
+          display: flex;
+          gap: 8px;
+          margin: 8px 0;
+        }
+
+        .add-to-cart-button {
+          width: 100%;
+          background-color: #c9a66b;
+          color: white;
+          border: none;
+          padding: 12px;
+          border-radius: 4px;
+          font-size: 14px;
+          margin-top: auto; /* Push button to bottom */
+          cursor: pointer;
+          transition: background-color 0.2s ease;
         }
 
         /* Active filters */
-        .active-filters {
-          margin-bottom: 20px;
+              .active-filters {     margin-bottom: 20px;
           padding: 10px 15px;
           background-color: #f5f5f5;
           border-radius: 4px;
@@ -1609,7 +1642,7 @@ export default function CatalogPage() {
           padding: 12px;
           border-radius: 4px;
           font-size: 14px;
-          margin-top: 10px;
+          margin-top: auto; /* Push button to bottom */
           cursor: pointer;
           transition: background-color 0.2s ease;
         }
@@ -1635,7 +1668,36 @@ export default function CatalogPage() {
           border: 1px solid #ddd;
           padding: 0;
           cursor: pointer;
-          transition: transform 0.2s ease;
+          transition: all 0.2s ease;
+          position: relative;
+        }
+
+        .color-circle.selected {
+          border: 2px solid #c9a66b;
+          transform: scale(1.1);
+        }
+
+        .color-circle.selected::after {
+          content: '';
+          position: absolute;
+          top: -4px;
+          right: -4px;
+          bottom: -4px;
+          left: -4px;
+          border: 1px solid #c9a66b;
+          border-radius: 50%;
+          animation: pulse 1s ease-out;
+        }
+
+        @keyframes pulse {
+          from {
+            transform: scale(0.8);
+            opacity: 1;
+          }
+          to {
+            transform: scale(1.1);
+            opacity: 0;
+          }
         }
 
         .color-circle:hover {

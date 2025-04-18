@@ -1,10 +1,8 @@
 "use client";
 
 import Image from "next/image"
-import Link from "next/link"
 import { motion } from "framer-motion"
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
 import i18n from "../i18/config"
 
 interface Category {
@@ -17,7 +15,6 @@ interface Category {
 export default function CategorySection() {
   const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
-  const router = useRouter()
 
   useEffect(() => {
     const fetchAllCategories = async () => {
@@ -78,11 +75,6 @@ export default function CategorySection() {
     return i18n.language === 'uz' ? category.name_uz : category.name_ru
   }
 
-  const handleCategoryClick = (category: Category) => {
-    const categoryName = getTranslatedName(category)
-    router.push(`/${i18n.language}/categories?category=${encodeURIComponent(categoryName)}`)
-  }
-
   if (loading) {
     return <div>Loading...</div>
   }
@@ -111,9 +103,7 @@ export default function CategorySection() {
           <motion.div
             key={category.id}
             variants={itemVariants}
-            onClick={() => handleCategoryClick(category)}
             style={{ 
-              cursor: 'pointer',
               flex: '0 0 auto',  // Prevent items from shrinking
               width: '158px',    // Match the image width
             }}

@@ -21,21 +21,32 @@ interface ProductAttribute {
   on_sale: boolean;
   attribute_images: {
     id: number;
-    product: string;
     image: string;
   }[];
 }
 
 interface Product {
   id: number;
-  brand: number;
-  category: number;
   title_uz: string;
   title_ru: string;
-  description_uz: string;
-  description_ru: string;
-  material: number;
+  description_uz: string | null;
+  description_ru: string | null;
   product_attributes: ProductAttribute[];
+  brand_details: {
+    id: number;
+    name: string;
+  };
+  material_details: {
+    id: number;
+    name_uz: string;
+    name_ru: string;
+  };
+  category_details: {
+    id: number;
+    name_ru: string;
+    name_uz: string;
+    image: string;
+  };
 }
 
 interface CartItem {
@@ -50,13 +61,6 @@ interface CartItem {
   image: string;
 }
 
-interface Material {
-  id: number;
-  name: string;
-  name_uz: string;
-  name_ru: string;
-}
-
 interface Size {
   id: number;
   name_uz: string;
@@ -66,17 +70,11 @@ interface Size {
   height: string;
 }
 
-interface Brand {
-  id: number;
-  name: string;
-}
-
 export default function ProductPage() {
   const [selectedColor, setSelectedColor] = useState<string>("")
   const [selectedColorIndex, setSelectedColorIndex] = useState(0)
   const [selectedSize, setSelectedSize] = useState<number | null>(null)
   const [product, setProduct] = useState<Product | null>(null)
-  const [materials, setMaterials] = useState<Material[]>([])
   const [sizes, setSizes] = useState<Size[]>([])
   const [loading, setLoading] = useState(true)
   const [showConfirmation, setShowConfirmation] = useState(false)
@@ -86,7 +84,6 @@ export default function ProductPage() {
   const params = useParams()
   const productId = params.id
   
-  const [brands, setBrands] = useState<Brand[]>([])
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
 
   const nextImage = () => {
@@ -111,24 +108,18 @@ export default function ProductPage() {
       }
       
       try {
-        const [productRes, materialsRes, sizesRes, brandsRes] = await Promise.all([
-          fetch(`https://coco20.uz/api/v1/products/crud/product/${productId}/`),
-          fetch('https://coco20.uz/api/v1/products/crud/material/?page=1'),
-          fetch('https://coco20.uz/api/v1/products/crud/size/?page=1&page_size=10'),
-          fetch('https://coco20.uz/api/v1/brands/crud/brand/?page=1')
+        const [productRes, sizesRes] = await Promise.all([
+          fetch(`https://coco20.uz/api/v1/products/${productId}/`),
+          fetch('https://coco20.uz/api/v1/products/crud/size/?page=1&page_size=10')
         ]);
 
-        const [productData, materialsData, sizesData, brandsData] = await Promise.all([
+        const [productData, sizesData] = await Promise.all([
           productRes.json(),
-          materialsRes.json(),
-          sizesRes.json(),
-          brandsRes.json()
+          sizesRes.json()
         ]);
 
         setProduct(productData)
-        setMaterials(materialsData.results)
         setSizes(sizesData.results)
-        setBrands(brandsData.results)
         
         if (productData.product_attributes.length > 0) {
           setSelectedColor(productData.product_attributes[0].color_code)
@@ -152,7 +143,7 @@ export default function ProductPage() {
       return;
     }
     
-    const brandName = brands.find(b => b.id === product.brand)?.name || "Unknown Brand"
+    const brandName = product.brand_details?.name || "Unknown Brand"
     const currentVariant = product.product_attributes[selectedColorIndex];
     
     const cartItem: CartItem = {
@@ -302,7 +293,7 @@ export default function ProductPage() {
           {params.lang === 'uz' ? product.title_uz : product.title_ru}
           </h1>
           <p className="product-name">
-          {brands.find(b => b.id === product?.brand)?.name || "Unknown Brand"}
+          {product?.brand_details?.name || "Unknown Brand"}
 
           </p>
           <p className="product-description">
@@ -381,7 +372,9 @@ export default function ProductPage() {
                 <tr>
                   <td className="info-label">{t('product_details.table.material')}</td>
                   <td className="info-value">
-                    {materials.find(m => m.id === product?.material)?.name_ru || t('product_details.table.premium_leather')}
+                    {params.lang === 'uz' 
+                      ? product.material_details?.name_uz 
+                      : product.material_details?.name_ru}
                   </td>
                 </tr>
                 <tr>

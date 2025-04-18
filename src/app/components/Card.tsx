@@ -31,6 +31,7 @@ interface CartItem {
       image: string;
     }[];
   }[];
+  selected_color?: number; // Add this line
 }
 
 export default function CartPage() {
@@ -40,6 +41,7 @@ export default function CartPage() {
   const [loading, setLoading] = useState(true)
   const [orderSuccess, setOrderSuccess] = useState(false)
   const [orderError, setOrderError] = useState("")
+  const [selectedColorIds, setSelectedColorIds] = useState<{[key: number]: number}>({});
 
   // Add new function to fetch product details
   const fetchProductDetails = async (productId: number) => {
@@ -59,7 +61,15 @@ export default function CartPage() {
       const storedCart = localStorage.getItem('cart');
       if (storedCart) {
         const parsedCart = JSON.parse(storedCart);
-        console.log('Initial cart items:', parsedCart);
+        
+        // Initialize selected colors from stored cart items
+        const initialSelectedColors: {[key: number]: number} = {};
+        parsedCart.forEach((item: CartItem) => {
+          if (item.selected_color) {
+            initialSelectedColors[item.product] = item.selected_color;
+          }
+        });
+        setSelectedColorIds(initialSelectedColors);
 
         // Fetch product details for each cart item
         const updatedCart = await Promise.all(
@@ -259,7 +269,11 @@ export default function CartPage() {
     if (quantity === 0) {
       return i18n.language === "uz" ? "Oldindan buyurtma" : "Предзаказ";
     }
-    return i18n.language === "uz" ? `Mavjud: ${quantity}` : `В наличии: ${quantity}`;
+    return i18n.language === "uz" ? `Mavjud ` : `Есть в наличии`;
+  };
+
+  const isColorSelected = (productId: number, attributeId: number) => {
+    return selectedColorIds[productId] === attributeId;
   };
 
   if (loading) {
@@ -326,8 +340,12 @@ export default function CartPage() {
                     {item.product_attributes?.map((attr) => (
                       <button
                         key={attr.id}
-                        className="color-circle"
+                        className={`color-circle ${isColorSelected(item.product, attr.id) ? 'selected' : ''}`}
                         style={{ backgroundColor: attr.color_code }}
+                        onClick={() => setSelectedColorIds(prev => ({
+                          ...prev,
+                          [item.product]: attr.id
+                        }))}
                         aria-label={i18n.language === 'uz' ? attr.color_name_uz : attr.color_name_ru}
                       />
                     ))}
@@ -752,7 +770,36 @@ export default function CartPage() {
           border: 1px solid #ddd;
           padding: 0;
           cursor: pointer;
-          transition: transform 0.2s ease;
+          transition: all 0.2s ease;
+          position: relative;
+        }
+
+        .color-circle.selected {
+          border: 2px solid #c9a66b;
+          transform: scale(1.1);
+        }
+
+        .color-circle.selected::after {
+          content: '';
+          position: absolute;
+          top: -4px;
+          right: -4px;
+          bottom: -4px;
+          left: -4px;
+          border: 1px solid #c9a66b;
+          border-radius: 50%;
+          animation: pulse 1s ease-out;
+        }
+
+        @keyframes pulse {
+          from {
+            transform: scale(0.8);
+            opacity: 1;
+          }
+          to {
+            transform: scale(1.1);
+            opacity: 0;
+          }
         }
 
         .color-circle:hover {

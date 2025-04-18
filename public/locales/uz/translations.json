@@ -63,7 +63,8 @@
       "height": "Balandligi"
     },
     "in_stock": "Mavjud:",
-    "color_title": "Ranglar:"
+    "color_title": "Ranglar:",
+    "select_size":"O'lchamni tanlang"
   },
   "header": {
     "home": "Asosiy",

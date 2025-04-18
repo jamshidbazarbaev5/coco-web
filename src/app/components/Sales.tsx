@@ -26,19 +26,26 @@ interface ProductAttribute {
 
 interface Product {
   id: number;
-  brand: number;
-  image: string;
-  name: string;
-  price: string;  
-  new_price: string;
-  availability: string;
-  category: number;
   title_uz: string;
   title_ru: string;
   description_uz: string;
   description_ru: string;
-  material: number;
   product_attributes: ProductAttribute[];
+  brand_details: {
+    id: number;
+    name: string;
+  };
+  material_details: {
+    id: number;
+    name_uz: string;
+    name_ru: string;
+  };
+  category_details: {
+    id: number;
+    name_ru: string;
+    name_uz: string;
+    image: string;
+  };
 }
 
 interface CartItem {
@@ -51,11 +58,13 @@ interface CartItem {
   price: string;
   stock: number;
   image: string;
+  selected_color: number;
 }
 
 export default function SalesPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedColors, setSelectedColors] = useState<{[key: number]: number}>({});
   const router = useRouter();
 
   const getTranslatedTitle = (product: any) => {
@@ -64,9 +73,9 @@ export default function SalesPage() {
 
   const getAvailabilityText = (quantity: number) => {
     if (quantity === 0) {
-      return i18n.language === 'uz' ? "Buyurtma asosida" : "Предзаказ";
+      return i18n.language === "uz" ? "Oldindan buyurtma" : "Предзаказ";
     }
-    return i18n.language === 'uz' ? `Mavjud: ${quantity}` : `Рассцветки: ${quantity}`;
+    return i18n.language === "uz" ? "Mavjud" : "Есть в наличии";
   };
 
   const getSalesTitle = () => {
@@ -85,7 +94,7 @@ export default function SalesPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const productsResponse = await fetch('https://coco20.uz/api/v1/products/crud/product/');
+        const productsResponse = await fetch('https://coco20.uz/api/v1/products/list');
         const productsData = await productsResponse.json();
 
         const formattedProducts = productsData.results
@@ -97,7 +106,8 @@ export default function SalesPage() {
 
             return {
               id: product.id,
-              brand: product.brand,
+              brand: product.brand_details.id,
+              brandName: product.brand_details.name,
               name: getTranslatedTitle(product),
               price: saleVariant?.price || "0",
               new_price: saleVariant?.new_price || "0",
@@ -106,10 +116,7 @@ export default function SalesPage() {
               on_sale: true,
               product_variant: saleVariant?.id || 0,
               sizes: saleVariant?.sizes || [],
-              product_attributes: product.product_attributes?.map(attr => ({
-                ...attr,
-                image: attr.attribute_images?.[0]?.image || null
-              })) || []
+              product_attributes: product.product_attributes || []
             };
           });
 
@@ -127,23 +134,28 @@ export default function SalesPage() {
   const [showConfirmation, setShowConfirmation] = useState(false);
 
   const handleAddToCart = (product: any) => {
+    const selectedVariantId = selectedColors[product.id];
+    const selectedVariant = product.product_attributes.find((attr: any) => attr.id === selectedVariantId) 
+      || product.product_attributes[0];
+
     const cartItem: CartItem = {
       product: product.id,
-      product_variant: product.product_variant,
-      size: product.sizes[0],
+      product_variant: selectedVariant.id,
+      size: selectedVariant.sizes[0],
       quantity: 1,
-      name: product.brand.toString(),
-      description: product.name,
-      price: formatPrice(product.new_price || product.price),
-      stock: parseInt(product.availability.match(/\d+/)?.[0] || "0"),
-      image: product.image
+      name: product.name,
+      description: product.brandName,
+      price: formatPrice(selectedVariant.new_price || selectedVariant.price),
+      stock: selectedVariant.quantity,
+      image: selectedVariant.attribute_images[0]?.image || "/placeholder.svg",
+      selected_color: selectedVariant.id
     };
 
     const existingCart = JSON.parse(localStorage.getItem('cart') || '[]');
     const existingItemIndex = existingCart.findIndex((item: CartItem) =>
       item.product === product.id &&
-      item.product_variant === product.product_variant &&
-      item.size === product.sizes[0]
+      item.product_variant === selectedVariant.id &&
+      item.size === selectedVariant.sizes[0]
     );
 
     if (existingItemIndex >= 0) {
@@ -157,6 +169,18 @@ export default function SalesPage() {
     setShowConfirmation(true);
   };
 
+  const handleColorSelect = (e: React.MouseEvent, productId: number, variantId: number) => {
+    e.stopPropagation();
+    setSelectedColors(prev => ({
+      ...prev,
+      [productId]: variantId
+    }));
+  };
+
+  const isColorSelected = (productId: number, attributeId: number) => {
+    return selectedColors[productId] === attributeId;
+  };
+
   const handleProductClick = (productId: number) => {
     router.push(`/${i18n.language}/details/${productId}`);
   };
@@ -166,7 +190,7 @@ export default function SalesPage() {
       <h1 className="catalog-title">{getSalesTitle()}</h1>
 
       <div className="products-grid">
-        {products.map((product) => (
+        {products.map((product:any) => (
           <div
             className="product-card"
             key={product.id}
@@ -183,21 +207,22 @@ export default function SalesPage() {
               />
             </div>
             <div className="product-details">
-              <h3 className="product-brand">{product.brand}</h3>
-              <p className="product-name">{product.name}</p>
+              <h3 className="product-brand">{product.name}</h3>
+              <p className="product-name">{product.brandName}</p>
               <div className="price-container">
                 <p className="product-old-price">{formatPrice(product.price)}</p>
                 <p className="product-new-price">{formatPrice(product.new_price)} </p>
               </div>
+              <p className="product-availability">
+                {getAvailabilityText(product.product_attributes[0]?.quantity || 0)}
+              </p>
               <div className="color-variants">
-                {product.product_attributes?.map((attr) => (
+                {product.product_attributes?.map((attr:any) => (
                   <button
                     key={attr.id}
-                    className="color-circle"
+                    className={`color-circle ${isColorSelected(product.id, attr.id) ? 'selected' : ''}`}
                     style={{ backgroundColor: attr.color_code }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                    }}
+                    onClick={(e) => handleColorSelect(e, product.id, attr.id)}
                     aria-label={`Color ${i18n.language === 'uz' ? attr.color_name_uz : attr.color_name_ru}`}
                   />
                 ))}
@@ -332,6 +357,7 @@ export default function SalesPage() {
         .product-availability {
           font-size: 14px;
           color: #666;
+          margin: 5px 0;
         }
 
         .price-container {
@@ -365,7 +391,36 @@ export default function SalesPage() {
           border: 1px solid #ddd;
           padding: 0;
           cursor: pointer;
-          transition: transform 0.2s ease;
+          transition: all 0.2s ease;
+          position: relative;
+        }
+
+        .color-circle.selected {
+          border: 2px solid #c9a66b;
+          transform: scale(1.1);
+        }
+
+        .color-circle.selected::after {
+          content: '';
+          position: absolute;
+          top: -4px;
+          right: -4px;
+          bottom: -4px;
+          left: -4px;
+          border: 1px solid #c9a66b;
+          border-radius: 50%;
+          animation: pulse 1s ease-out;
+        }
+
+        @keyframes pulse {
+          from {
+            transform: scale(0.8);
+            opacity: 1;
+          }
+          to {
+            transform: scale(1.1);
+            opacity: 0;
+          }
         }
 
         .color-circle:hover {
