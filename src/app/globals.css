@@ -33,12 +33,44 @@ body {
 .header {
   display: flex;
   align-items: center;
-  padding: 0 20px;
+  padding: 0;
   background-color: var(--cream);
   position: relative;
   z-index: 10;
   height: 100px;
+  width: 100%;
+}
+
+.header-inner {
+  max-width: var(--container-width);
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
   justify-content: space-between;
+  position: relative;
+}
+
+.logo {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1;
+}
+
+.nav {
+  flex: 0 0 auto;
+  width: 33%;
+}
+
+.header-actions {
+  flex: 0 0 auto;
+  width: 33%;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  justify-content: flex-end;
 }
 
 .header > .container {
@@ -318,14 +350,17 @@ body {
 
 /* Category Section */
 .category-section {
-  padding: 60px 20px;
+  padding-top: 60px;
+  padding-bottom: 60px;
   background-color: rgba(246, 245, 237, 1);
   overflow: hidden;
 }
 
 .category-grid {
   max-width: var(--container-width);
+  width: 100%;
   margin: 0 auto;
+  padding: 0 20px;
   -ms-overflow-style: none;  /* Hide scrollbar for IE and Edge */
   scrollbar-width: none;  /* Hide scrollbar for Firefox */
 }
@@ -370,13 +405,16 @@ body {
 
 /* Features Section */
 .features-section {
-  padding: 80px 20px;
+  padding-top: 60px;
+  padding-bottom: 60px;
   background-color: var(--cream);
 }
 
 .features-container {
   max-width: var(--container-width);
+  width: 100%;
   margin: 0 auto;
+  padding: 0 20px;
 }
 
 .features-header {
@@ -473,6 +511,7 @@ body {
 /* Cart container */
 .cart-container {
   max-width: var(--container-width);
+  width: 100%;
   margin: 0 auto;
   padding: 20px;
 }
@@ -498,6 +537,25 @@ body {
 }
 
 @media (max-width: 768px) {
+  .header-inner {
+    padding: 15px 20px;
+  }
+  
+  .nav {
+    display: none;
+  }
+  
+  .logo {
+    position: static;
+    transform: none;
+    flex-grow: 1;
+    text-align: center;
+  }
+  
+  .header-actions {
+    width: auto;
+  }
+
   .header {
     padding: 15px 20px;
     justify-content: space-between;
@@ -754,16 +812,6 @@ body {
     left: 20px;
     right: 20px;
     text-align: center;
-  }
-}
-
-@media (max-width: 1440px) {
-  .header,
-  .category-section,
-  .features-section,
-  .cart-container {
-    padding-left: 28px;
-    padding-right: 20px;
   }
 }
 

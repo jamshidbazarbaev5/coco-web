@@ -451,28 +451,48 @@ export default function ProductPage() {
           display: flex;
           max-width: 1200px;
           margin: 0 auto;
-          padding:  70px 20px;
+          padding: 70px 20px;
           gap: 40px;
+          justify-content: space-between;
         }
         
-        .product-image {
-          flex: 1;
+        .product-image-container {
+          flex: 0 0 50%;
+          max-width: 500px;
           display: flex;
-          justify-content: center;
-          align-items: flex-start;
+          flex-direction: column;
+          gap: 20px;
         }
-        
-        .main-image {
-          max-width: 100%;
-          height: auto;
-          object-fit: contain;
-        }
-        
+
         .product-info {
-          flex: 1;
+          flex: 0 0 50%;
+          max-width: 500px;
           display: flex;
           flex-direction: column;
           gap: 15px;
+        }
+
+        .main-image-wrapper {
+          position: relative;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          overflow: hidden;
+          width: 100%;
+        }
+        
+        @media (max-width: 768px) {
+          .product-container {
+            flex-direction: column;
+            padding: 20px;
+          }
+          
+          .product-image-container,
+          .product-info {
+            flex: 1;
+            max-width: 100%;
+            width: 100%;
+          }
         }
         
         .brand-name {

@@ -435,7 +435,6 @@ export default function FilterModal({
             >
               <span className="filter-title">
                 {t("filters.brands")}
-                {formatSelectedBrands(selectedBrands)}
               </span>
               <span className={`arrow ${brandsOpen ? "up" : "down"}`}>
                 <svg
@@ -514,7 +513,7 @@ export default function FilterModal({
               <span className="filter-title">
                 {selectedSizes.length > 0 ? (
                   <span>
-                    {t("filters.sizes")} : {formatSizesList(selectedSizes)}
+                    {t("filters.sizes")} 
                   </span>
                 ) : (
                   <span>{t("filters.sizes")}</span>
@@ -543,11 +542,11 @@ export default function FilterModal({
 
           {sizesOpen && (
             <div className="filter-content">
-              <div className="options-list">
+              <div className="brand-list">
                 {sizes.map((size) => (
                   <div
                     key={size.id}
-                    className={`size-item ${
+                    className={`brand-item ${
                       selectedSizes.some((s) => s.id === size.id)
                         ? "selected"
                         : ""
@@ -558,7 +557,20 @@ export default function FilterModal({
                       {i18n.language === "uz" ? size.name_uz : size.name_ru}
                     </span>
                     {selectedSizes.some((s) => s.id === size.id) && (
-                      <span className="checkmark"></span>
+                      <span className="checkmark">
+                        <svg
+                          width="17"
+                          height="16"
+                          viewBox="0 0 17 16"
+                          fill="none"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            d="M14.2631 4.69818L6.33894 12.6223L2.70703 8.99044L3.63812 8.05935L6.33894 10.7536L13.332 3.76709L14.2631 4.69818Z"
+                            fill="black"
+                          />
+                        </svg>
+                      </span>
                     )}
                   </div>
                 ))}
@@ -604,7 +616,7 @@ export default function FilterModal({
               <span className="filter-title">
                 {selectedColors.length > 0 ? (
                   <span>
-                    {t("filters.colors")} : {formatColorsList(selectedColors)}
+                    {t("filters.colors")} 
                   </span>
                 ) : (
                   <span>{t("filters.colors")}</span>
@@ -633,11 +645,11 @@ export default function FilterModal({
 
           {colorsOpen && (
             <div className="filter-content">
-              <div className="options-list">
+              <div className="brand-list">
                 {getDisplayColors().map((color) => (
                   <div
                     key={color}
-                    className={`option-item ${
+                    className={`brand-item ${
                       selectedColors.includes(color) ? "selected" : ""
                     }`}
                     onClick={() => toggleColor(color)}
@@ -645,7 +657,6 @@ export default function FilterModal({
                     <span>{color}</span>
                     {selectedColors.includes(color) && (
                       <span className="checkmark">
-                        {" "}
                         <svg
                           width="17"
                           height="16"
@@ -668,6 +679,7 @@ export default function FilterModal({
         </div>
 
         <div className="filter-actions">
+         
           <button className="apply-button" onClick={applyFilters}>
             {t("filters.apply")}
           </button>
@@ -675,6 +687,7 @@ export default function FilterModal({
             {t("filters.reset")}
           </button>
         </div>
+
       </div>
 
       <style jsx>{`
@@ -906,9 +919,9 @@ export default function FilterModal({
 
         .filter-actions {
           display: flex;
-          justify-content: end;
+          justify-content: flex-end;
           margin-top: 20px;
-          gap: 10px;
+          gap: 6px;
 
           @media (max-width: 768px) {
             position: sticky;
@@ -922,7 +935,6 @@ export default function FilterModal({
         .reset-button {
           @media (max-width: 768px) {
             flex: 1;
-            margin-right: 0;
           }
         }
 
@@ -935,7 +947,6 @@ export default function FilterModal({
           cursor: pointer;
           width: 125px;
           font-size: 14px;
-          margin-right: 23px;
           transition: background-color 0.2s;
         }
 
@@ -952,6 +963,7 @@ export default function FilterModal({
           cursor: pointer;
           outline: none;
           font-size: 14px;
+          width: 125px;
           transition: background-color 0.2s;
         }
 

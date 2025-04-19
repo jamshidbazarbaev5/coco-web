@@ -1229,23 +1229,14 @@ export default function CatalogPage() {
           gap: 15px;
           margin-bottom: 40px;
           padding-bottom: 10px;
-       -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
-          scroll-behavior: smooth; /* Smooth scrolling on desktop */
-          scrollbar-width: thin;
-          scrollbar-color: #c9a66b transparent;
+          -webkit-overflow-scrolling: touch;
+          scroll-behavior: smooth;
+          scrollbar-width: none; /* Firefox */
+          -ms-overflow-style: none; /* IE and Edge */
         }
 
         .categories-container::-webkit-scrollbar {
-          height: 6px;
-        }
-
-        .categories-container::-webkit-scrollbar-thumb {
-          background-color: #c9a66b;
-          border-radius: 3px;
-        }
-
-        .categories-container::-webkit-scrollbar-track {
-          background-color: transparent;
+          display: none; /* Chrome, Safari, Opera */
         }
 
         .category-item {
