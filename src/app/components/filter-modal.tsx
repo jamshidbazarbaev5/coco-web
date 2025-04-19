@@ -26,6 +26,20 @@ interface Product {
   product_attributes: ProductAttribute[];
 }
 
+// Add this helper function before the component
+const formatPrice = (price: string) => {
+  // Remove all non-digit characters
+  const numericValue = price.replace(/\D/g, '');
+  
+  // Format with spaces between thousands
+  return numericValue.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+};
+
+const unformatPrice = (formattedPrice: string) => {
+  // Remove all spaces and non-digit characters
+  return formattedPrice.replace(/\s/g, '').replace(/\D/g, '');
+};
+
 export default function FilterModal({
   onClose,
   onApply,
@@ -50,10 +64,10 @@ export default function FilterModal({
   );
   const [brandInput, setBrandInput] = useState("");
   const [minPrice, setMinPrice] = useState(
-    initialFilters?.priceRange?.min || "0"
+    formatPrice(initialFilters?.priceRange?.min || "0")
   );
   const [maxPrice, setMaxPrice] = useState(
-    initialFilters?.priceRange?.max || "1000000"
+    formatPrice(initialFilters?.priceRange?.max || "1000000")
   );
   const [showModal, setShowModal] = useState(true);
 
@@ -203,11 +217,22 @@ export default function FilterModal({
   const resetFilters = () => {
     setSearchQuery("");
     setBrandInput("");
-    setMinPrice("0");
-    setMaxPrice("1000000");
+    setMinPrice(formatPrice("0"));
+    setMaxPrice(formatPrice("1000000"));
     setSelectedBrands([]);
     setSelectedSizes([]);
     setSelectedColors([]);
+  };
+
+  // Update price handlers
+  const handleMinPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatPrice(e.target.value);
+    setMinPrice(formatted);
+  };
+
+  const handleMaxPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatPrice(e.target.value);
+    setMaxPrice(formatted);
   };
 
   // Update the applyFilters function
@@ -217,7 +242,10 @@ export default function FilterModal({
       selectedBrands,
       selectedSizes,
       selectedColors,
-      priceRange: { min: minPrice, max: maxPrice },
+      priceRange: { 
+        min: unformatPrice(minPrice), 
+        max: unformatPrice(maxPrice) 
+      },
     };
 
     // Build query parameters
@@ -247,12 +275,12 @@ export default function FilterModal({
       queryParams.append("color", selectedColors[0]);
     }
 
-    // Add price range
-    if (minPrice !== "0") {
-      queryParams.append("price__gt", minPrice);
+    // Update price range params
+    if (unformatPrice(minPrice) !== "0") {
+      queryParams.append("price__gt", unformatPrice(minPrice));
     }
-    if (maxPrice !== "1000000") {
-      queryParams.append("price__lt", maxPrice);
+    if (unformatPrice(maxPrice) !== "1000000") {
+      queryParams.append("price__lt", unformatPrice(maxPrice));
     }
 
     // Call the onApply callback if provided
@@ -304,10 +332,10 @@ export default function FilterModal({
         setSelectedColors(initialFilters.selectedColors);
       }
 
-      // Initialize price range
+      // Initialize price range with formatting
       if (initialFilters.priceRange) {
-        setMinPrice(initialFilters.priceRange.min);
-        setMaxPrice(initialFilters.priceRange.max);
+        setMinPrice(formatPrice(initialFilters.priceRange.min));
+        setMaxPrice(formatPrice(initialFilters.priceRange.max));
       }
     }
   }, [initialFilters]);
@@ -545,7 +573,7 @@ export default function FilterModal({
             <input
               type="text"
               value={minPrice}
-              onChange={(e) => setMinPrice(e.target.value)}
+              onChange={handleMinPriceChange}
               className="price-input"
             />
             <span className="price-currency">
@@ -558,7 +586,7 @@ export default function FilterModal({
             <input
               type="text"
               value={maxPrice}
-              onChange={(e) => setMaxPrice(e.target.value)}
+              onChange={handleMaxPriceChange}
               className="price-input"
             />
             <span className="price-currency">

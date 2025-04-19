@@ -256,7 +256,11 @@ export default function CartPage() {
     }
   };
 
-  // Calculate total amount
+  const formatPrice = (price: string) => {
+    const numericPrice = parseFloat(price.replace(/[^\d.]/g, ''));
+    return `${numericPrice.toLocaleString('ru-RU')} UZS`;
+  };
+
   const calculateTotal = () => {
     return cartItems.reduce((total, item) => {
       const price = parseFloat(item.price.replace(/[^\d.]/g, '')); // Remove non-digit characters except decimal point
@@ -332,7 +336,7 @@ export default function CartPage() {
                 <div className="item-details">
                   <h3 className="item-brand">{item.name}</h3>
                   <p className="item-name">{item.description}</p>
-                  <p className="item-price">{item.price}</p>
+                  <p className="item-price">{formatPrice(item.price)}</p>
                   <p className="item-stock">{getAvailabilityText(item.stock)}</p>
 
                   {/* Simplified color variants display */}
@@ -591,21 +595,28 @@ export default function CartPage() {
         
         .quantity-control {
           display: flex;
-          align-items: center;
+          align-items: stretch;
           border: 1px solid #ddd;
           width: fit-content;
+          height: 36px;
         }
         
         .quantity-button {
-          width: 30px;
-          height: 30px;
+          width: 36px;
+          height: 100%;
           background: none;
           border: none;
-          font-size: 16px;
+          font-size: 18px;
           cursor: pointer;
           display: flex;
           align-items: center;
           justify-content: center;
+          color: #333;
+          transition: background-color 0.2s;
+        }
+        
+        .quantity-button:hover:not(:disabled) {
+          background-color: #f5f5f5;
         }
         
         .quantity-button:disabled {
@@ -614,13 +625,20 @@ export default function CartPage() {
         }
         
         .quantity-input {
-          width: 30px;
-          height: 30px;
+          width: 40px;
+          height: 100%;
           border: none;
           border-left: 1px solid #ddd;
           border-right: 1px solid #ddd;
           text-align: center;
           font-size: 14px;
+          -moz-appearance: textfield;
+        }
+        
+        .quantity-input::-webkit-outer-spin-button,
+        .quantity-input::-webkit-inner-spin-button {
+          -webkit-appearance: none;
+          margin: 0;
         }
 
         .contact-content {

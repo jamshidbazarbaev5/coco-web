@@ -685,7 +685,7 @@ body {
 
 .mobile-menu a {
   font-size: 18px;
-  color: var (--dark-text);
+  color:  #000;
   text-decoration: none;
   display: block;
   padding: 10px 0;

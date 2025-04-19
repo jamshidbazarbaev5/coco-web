@@ -894,22 +894,8 @@ export default function CatalogPage() {
 
   return (
     <div className="catalog-container">
-      <h1 className="catalog-title">{getCatalogTitle()}</h1>
-
-      {/* Active filters display */}
-      <ActiveFilters />
-
-      {/* Updated Brand filters with exact name matching */}
-      <div className="brand-filters">
-        {brands.map((brand) => (
-          <button
-            key={brand.id}
-            className={`brand-filter ${activeFilter === brand.name ? "active" : ""}`}
-            onClick={() => handleBrandFilterClick(brand)}
-          >
-            {brand.name}
-          </button>
-        ))}
+      <div className="catalog-header">
+        <h1 className="catalog-title">{getCatalogTitle()}</h1>
         <button className="filter-button" onClick={() => setShowFilterModal(true)}>
           <svg
             width="24"
@@ -927,6 +913,22 @@ export default function CatalogPage() {
             />
           </svg>
         </button>
+      </div>
+
+      {/* Active filters display */}
+      <ActiveFilters />
+
+      {/* Brand filters */}
+      <div className="brand-filters">
+        {brands.map((brand) => (
+          <button
+            key={brand.id}
+            className={`brand-filter ${activeFilter === brand.name ? "active" : ""}`}
+            onClick={() => handleBrandFilterClick(brand)}
+          >
+            {brand.name}
+          </button>
+        ))}
       </div>
 
       {/* Add Filter Modal with onApply handler and initialFilters */}
@@ -1752,6 +1754,59 @@ export default function CatalogPage() {
 
         .color-circle:hover {
           transform: scale(1.1);
+        }
+
+        .catalog-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 30px;
+        }
+
+        .catalog-title {
+          font-size: 24px;
+          font-weight: 400;
+          color: #000;
+          margin: 0; /* Remove margin from title */
+        }
+
+        .filter-button {
+          margin-left: 15px;
+          background: none;
+          border: none;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 8px;
+        }
+
+        .brand-filters {
+          display: flex;
+          align-items: center;
+          margin-bottom: 30px;
+          border-bottom: 1px solid #eee;
+          padding-bottom: 10px;
+          overflow-x: auto;
+          scrollbar-width: none;
+        }
+
+        @media (max-width: 768px) {
+          .catalog-header {
+            position: sticky;
+            top: 0;
+            background-color: #f8f8f6;
+            z-index: 100;
+            padding: 15px 0;
+          }
+
+          .catalog-title {
+            font-size: 20px;
+          }
+
+          .brand-filters {
+            margin-top: 0;
+          }
         }
       `}</style>
     </div>
