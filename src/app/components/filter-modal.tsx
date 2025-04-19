@@ -71,8 +71,8 @@ export default function FilterModal({
   );
   const [showModal, setShowModal] = useState(true);
 
-  // State for dropdowns
-  const [brandsOpen, setBrandsOpen] = useState(true);
+  // State for dropdowns - change brandsOpen initial state to false
+  const [brandsOpen, setBrandsOpen] = useState(false);
   const [sizesOpen, setSizesOpen] = useState(false);
   const [colorsOpen, setColorsOpen] = useState(false);
 
@@ -436,7 +436,7 @@ export default function FilterModal({
               <span className="filter-title">
                 {t("filters.brands")}
               </span>
-              <span className={`arrow ${brandsOpen ? "up" : "down"}`}>
+              <span className={`arrow ${brandsOpen ? "down" : "up"}`}>
                 <svg
                   width="22"
                   height="11"
@@ -444,7 +444,7 @@ export default function FilterModal({
                   fill="none"
                   xmlns="http://www.w3.org/2000/svg"
                   style={{
-                    transform: `rotate(${brandsOpen ? "-180deg" : "0deg"})`,
+                    transform: `rotate(${brandsOpen ? "0deg" : "180deg"})`,
                     transition: "transform 0.3s ease",
                   }}
                 >
@@ -519,7 +519,7 @@ export default function FilterModal({
                   <span>{t("filters.sizes")}</span>
                 )}
               </span>
-              <span className={`arrow ${sizesOpen ? "up" : "down"}`}>
+              <span className={`arrow ${sizesOpen ? "down" : "up"}`}>
                 <svg
                   width="22"
                   height="11"
@@ -527,7 +527,7 @@ export default function FilterModal({
                   fill="none"
                   xmlns="http://www.w3.org/2000/svg"
                   style={{
-                    transform: `rotate(${sizesOpen ? "-180deg" : "0deg"})`,
+                    transform: `rotate(${sizesOpen ? "0deg" : "180deg"})`,
                     transition: "transform 0.3s ease",
                   }}
                 >
@@ -622,7 +622,7 @@ export default function FilterModal({
                   <span>{t("filters.colors")}</span>
                 )}
               </span>
-              <span className={`arrow ${colorsOpen ? "up" : "down"}`}>
+              <span className={`arrow ${colorsOpen ? "down" : "up"}`}>
                 <svg
                   width="22"
                   height="11"
@@ -630,7 +630,7 @@ export default function FilterModal({
                   fill="none"
                   xmlns="http://www.w3.org/2000/svg"
                   style={{
-                    transform: `rotate(${colorsOpen ? "-180deg" : "0deg"})`,
+                    transform: `rotate(${colorsOpen ? "0deg" : "180deg"})`,
                     transition: "transform 0.3s ease",
                   }}
                 >
