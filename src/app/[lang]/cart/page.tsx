@@ -1,5 +1,9 @@
-import Cart from "../../components/Card"
+"use client"
+
+import Card from "../../components/Card"
 
 export default function CartPage() {
-  return <Cart />
+  return (
+    <Card />
+  )
 }

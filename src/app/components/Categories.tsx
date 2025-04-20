@@ -8,7 +8,6 @@ import { useRouter } from "next/navigation";
 import i18n from "../i18/config";
 import { t } from "i18next";
 
-// Define interfaces for your data structures
 interface Category {
   id: number;
   name_uz: string;
@@ -16,14 +15,12 @@ interface Category {
   image: string;
 }
 
-// Add interface for Size
 interface Size {
   id: number;
   name_uz: string;
   name_ru: string;
 }
 
-// Update the Product interface to match new structure
 interface Product {
   id: number;
   title_uz: string;
@@ -48,7 +45,6 @@ interface Product {
   };
 }
 
-// Add new interface for product attributes
 interface ProductAttribute {
   image: null;
   id: number;
@@ -68,7 +64,6 @@ interface ProductAttribute {
   }[];
 }
 
-// Add new interface for color variants
 interface ColorVariant {
   id: number;
   color_code: string;
@@ -89,10 +84,9 @@ interface CartItem {
   price: string;
   stock: number;
   image: string;
-  selected_color?: number; // Add this field
+  selected_color?: number; 
 }
 
-// Add interface for filters
 interface Filters {
   title_ru__icontains: string;
   title_uz__icontains: string;
@@ -102,7 +96,7 @@ interface Filters {
   color: string;
   size: string;
   category: string;
-  [key: string]: string; // Add index signature for dynamic keys
+  [key: string]: string; 
 }
 
 export default function CatalogPage() {
@@ -120,7 +114,6 @@ export default function CatalogPage() {
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
 
-  // Add state for API data with proper typing
   const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<any>([]);
   const [loading, setLoading] = useState(true);
@@ -129,21 +122,12 @@ export default function CatalogPage() {
 
   const router = useRouter();
 
-  // Add translation based on current language
-  const getTranslatedTitle = (product: any) => {
-    return i18n.language === "uz" ? product.title_uz : product.title_ru;
-  };
+ ;
 
-  const getTranslatedDescription = (product: any) => {
-    return i18n.language === "uz" ? product.description_uz : product.description_ru;
-  };
-
-  // Modify the catalog title based on language
   const getCatalogTitle = () => {
     return i18n.language === "uz" ? "Bizning katalog" : "Наш каталог";
   };
 
-  // Modify the availability text based on language
   const getAvailabilityText = (quantity: number) => {
     console.log('Getting availability text for quantity:', quantity, typeof quantity);
     if (quantity === 0) {
@@ -155,31 +139,24 @@ export default function CatalogPage() {
     return text;
   };
 
-  // Modify the "All" filter text based on language
   const getAllFilterText = () => {
     return i18n.language === "uz" ? "Hammasi" : "Все";
   };
 
-  // Add translation helper for category names
   const getTranslatedCategoryName = (category: any) => {
     return i18n.language === "uz" ? category.name_uz : category.name_ru;
   };
 
-  // Add this helper function at the top level of your component
   const formatPrice = (price: string) => {
-    // Convert price string to number, removing any non-digit characters except decimal point
     const numPrice = Number(price.replace(/[^\d.]/g, ""));
 
-    // Format with spaces between thousands
     const formattedPrice = Math.floor(numPrice)
       .toString()
       .replace(/\B(?=(\d{3})+(?!\d))/g, " ");
 
-    // Return formatted price with 'uzs' suffix
     return `${formattedPrice} uzs`;
   };
 
-  // Update state for filters to include size ID
   const [filters, setFilters] = useState({
     title_ru__icontains: "",
     title_uz__icontains: "",
@@ -191,7 +168,6 @@ export default function CatalogPage() {
     category: "",
   });
 
-  // Update state to track all filter selections
   const [currentFilterData, setCurrentFilterData] = useState({
     searchQuery: "",
     selectedBrands: [] as { id: number; name: string }[],
@@ -201,7 +177,6 @@ export default function CatalogPage() {
     priceRange: { min: "0", max: "1000000" },
   });
 
-  // Add these helper functions at the top of your component
   const getActiveFiltersText = () => {
     return i18n.language === "uz" ? "Faol filtrlar:" : "Активные фильтры:";
   };
@@ -242,7 +217,6 @@ export default function CatalogPage() {
       try {
         setLoading(true);
 
-        // Fetch categories first to handle the URL category parameter
         const categoriesData = await fetchAllCategories();
         
         const urlParams = new URLSearchParams(window.location.search);
@@ -257,7 +231,6 @@ export default function CatalogPage() {
           category: "",
         };
 
-        // Initialize new filter data
         const newFilterData = {
           searchQuery: "",
           selectedBrands: [] as { id: number; name: string }[],
@@ -267,7 +240,6 @@ export default function CatalogPage() {
           priceRange: { min: "0", max: "1000000" },
         };
 
-        // Handle category from URL
         const categoryParam = urlParams.get('category');
         if (categoryParam) {
           const matchedCategory = categoriesData.find((cat: any) => 
@@ -285,18 +257,15 @@ export default function CatalogPage() {
           }
         }
 
-        // Handle other URL parameters
         urlParams.forEach((value, key) => {
           if (key in urlFilters && key !== 'category') {
             urlFilters[key] = value;
           }
         });
 
-        // Set initial filters and filter data
         setFilters(urlFilters);
         setCurrentFilterData(newFilterData);
 
-        // Format and set categories
         const formattedCategories: Category[] = categoriesData.map(
           (category: any, index: number) => ({
             id: category.id,
@@ -307,7 +276,6 @@ export default function CatalogPage() {
         );
         setCategories(formattedCategories);
 
-        // Fetch other data
         const [brandsResponse, sizesResponse] = await Promise.all([
           fetch("https://coco20.uz/api/v1/brands/crud/brand/"),
           fetch("https://coco20.uz/api/v1/products/crud/size/"),
@@ -318,11 +286,9 @@ export default function CatalogPage() {
           sizesResponse.json(),
         ]);
 
-        // Handle sizes data and initialize selected size from URL
         const allSizes = sizesData.results as Size[];
         setSizes(allSizes);
 
-        // Initialize filter data with size if present in URL
         const sizeId = urlFilters.size;
         if (sizeId) {
           const selectedSize = allSizes.find((s: Size) => s.id.toString() === sizeId);
@@ -371,7 +337,6 @@ export default function CatalogPage() {
     return allCategories;
   };
 
-  // Update fetchProducts function
   const fetchProducts = async (currentFilters: Filters) => {
     try {
       let queryParams = new URLSearchParams();
@@ -414,7 +379,7 @@ export default function CatalogPage() {
   };
 
   useEffect(() => {
-    if (!brands.length || !sizes.length) return; // Skip if initial data isn't loaded yet
+    if (!brands.length || !sizes.length) return; 
 
     const urlParams = new URLSearchParams(window.location.search);
     const urlFilters: any = {};
@@ -468,15 +433,13 @@ export default function CatalogPage() {
     setCurrentFilterData(newFilterData);
   }, [i18n.language, brands, sizes]);
 
-  // Modify useEffect for handling filter changes
   useEffect(() => {
-    if (!brands.length) return; // Skip if initial data isn't loaded yet
+    if (!brands.length) return; 
 
     setLoading(true);
     fetchProducts(filters).finally(() => setLoading(false));
   }, [filters, i18n.language]);
 
-  // Add function to load more products
   const loadMoreProducts = async () => {
     if (!nextProductsPage || isLoadingMore) return;
 
@@ -486,10 +449,8 @@ export default function CatalogPage() {
       const response = await fetch(nextProductsPage);
       const data = await response.json();
 
-      // Save next page URL for pagination
       setNextProductsPage(data.next);
 
-      // Transform and add new products
       const newProducts: Product[] = data.results.map((product: Product) => {
         const firstVariant = product.product_attributes[0] || {};
         return {
@@ -508,7 +469,6 @@ export default function CatalogPage() {
         };
       });
 
-      // Append new products to existing ones
       setProducts((prevProducts:any) => [...prevProducts, ...newProducts]);
     } catch (error) {
       console.error("Error loading more products:", error);
@@ -519,10 +479,8 @@ export default function CatalogPage() {
 
   const [showConfirmation, setShowConfirmation] = useState(false);
 
-  // Add new state for mobile cart notification
   const [showMobileCart, setShowMobileCart] = useState(false);
 
-  // Update handleAddToCart function
   const handleAddToCart = (product: any) => {
     const selectedVariantId = selectedColors[product.id];
     const selectedVariant = product.product_attributes.find((attr: any) => attr.id === selectedVariantId) 
@@ -538,13 +496,11 @@ export default function CatalogPage() {
       price: selectedVariant.price,
       stock: selectedVariant.quantity,
       image: selectedVariant.attribute_images[0]?.image || "/placeholder.svg",
-      selected_color: selectedVariant.id // Add this line
+      selected_color: selectedVariant.id 
     };
 
-    // Get existing cart from localStorage or initialize empty array
     const existingCart = JSON.parse(localStorage.getItem("cart") || "[]");
 
-    // Check if product already exists in cart with same variant and size
     const existingItemIndex = existingCart.findIndex(
       (item: CartItem) =>
         item.product === product.id &&
@@ -555,7 +511,7 @@ export default function CatalogPage() {
     if (existingItemIndex >= 0) {
       existingCart[existingItemIndex] = {
         ...existingCart[existingItemIndex],
-        selected_color: selectedVariant.id // Update selected color even for existing items
+        selected_color: selectedVariant.id 
       };
     } else {
       existingCart.push(cartItem);
@@ -572,7 +528,6 @@ export default function CatalogPage() {
     }
   };
 
-  // Add color selection handler
   const handleColorSelect = (e: React.MouseEvent, productId: number, variantId: number) => {
     e.stopPropagation();
     setSelectedColors(prev => ({
@@ -581,7 +536,6 @@ export default function CatalogPage() {
     }));
   };
 
-  // Add helper function to get brand name from ID
   const brandNameFromId = (brandId: number): string => {
     const brand = brands.find((b) => b.id === brandId);
     return brand ? brand.name : "Unknown Brand";
@@ -591,12 +545,9 @@ export default function CatalogPage() {
     router.push(`/${i18n.language}/details/${productId}`);
   };
 
-  // Update handleFilterApply to sync with URL params
   const handleFilterApply = (filterData: any) => {
-    // Save current filter data for next modal open
     setCurrentFilterData(filterData);
 
-    // Convert filter data to API query parameters
     const newFilters = {
       ...filters, // Keep existing filters (like category)
       title_ru__icontains: "",
@@ -608,7 +559,6 @@ export default function CatalogPage() {
       size: "",
     };
 
-    // Only add non-empty filters
     if (filterData.searchQuery) {
       if (i18n.language === "ru") {
         newFilters.title_ru__icontains = filterData.searchQuery;
@@ -640,43 +590,34 @@ export default function CatalogPage() {
       newFilters.price__lt = filterData.priceRange.max;
     }
 
-    // Update filters state
     setFilters(newFilters);
 
-    // Close the modal
     setShowFilterModal(false);
 
-    // Update URL
     updateURL(newFilters);
   };
-
-  // Update handleBrandFilterClick to sync with filter modal state
   const handleBrandFilterClick = (brand: { id: number; name: string }) => {
     setActiveFilter(brand.name);
 
     if (brand.id === 0) {
       setFilters({ ...filters, brand: "" });
-      // Sync with filter modal state
       setCurrentFilterData({
         ...currentFilterData,
         selectedBrands: [],
       });
     } else {
       setFilters({ ...filters, brand: brand.id.toString() });
-      // Sync with filter modal state
       setCurrentFilterData({
         ...currentFilterData,
         selectedBrands: [brand],
       });
     }
 
-    // Update URL
     const newFilters =
       brand.id === 0 ? { ...filters, brand: "" } : { ...filters, brand: brand.id.toString() };
     updateURL(newFilters);
   };
 
-  // Update handleCategoryClick function
   const handleCategoryClick = (category: Category) => {
     const categoryName = i18n.language === "uz" ? category.name_uz : category.name_ru;
     const newFilters = { ...filters, category: categoryName };
@@ -688,11 +629,9 @@ export default function CatalogPage() {
     updateURL(newFilters);
   };
 
-  // Update getActiveFiltersDisplay function
   const getActiveFiltersDisplay = () => {
     const activeFilters = [];
 
-    // Add search query if active
     if (currentFilterData.searchQuery) {
       activeFilters.push({
         type: "search",
@@ -700,7 +639,6 @@ export default function CatalogPage() {
       });
     }
 
-    // Add brand filters
     if (currentFilterData.selectedBrands.length > 0) {
       currentFilterData.selectedBrands.forEach((brand) => {
         activeFilters.push({
@@ -710,7 +648,6 @@ export default function CatalogPage() {
       });
     }
 
-    // Add size filters
     if (currentFilterData.selectedSizes.length > 0) {
       currentFilterData.selectedSizes.forEach((size) => {
         activeFilters.push({
@@ -720,7 +657,6 @@ export default function CatalogPage() {
       });
     }
 
-    // Add color filters
     if (currentFilterData.selectedColors.length > 0) {
       currentFilterData.selectedColors.forEach((color) => {
         activeFilters.push({
@@ -730,7 +666,6 @@ export default function CatalogPage() {
       });
     }
 
-    // Add price range if different from default
     if (
       currentFilterData.priceRange.min !== "0" ||
       currentFilterData.priceRange.max !== "1000000"
@@ -743,7 +678,6 @@ export default function CatalogPage() {
       });
     }
 
-    // Add category if active
     if (currentFilterData.selectedCategory) {
       activeFilters.push({
         type: "category",
@@ -816,7 +750,6 @@ export default function CatalogPage() {
     setFilters(newFilters);
     setCurrentFilterData(newFilterData);
   
-    // Update URL with remaining filters
     const queryParams = new URLSearchParams();
     Object.entries(newFilters).forEach(([key, value]) => {
       if (value) {
@@ -824,7 +757,6 @@ export default function CatalogPage() {
       }
     });
   
-    // Update URL with remaining filters or clear if none remain
     const newPath = queryParams.toString() 
       ? `/${i18n.language}/categories?${queryParams.toString()}`
       : `/${i18n.language}/categories`;
@@ -832,7 +764,6 @@ export default function CatalogPage() {
     router.push(newPath);
   };
 
-  // Helper function to update URL
   const updateURL = (newFilters: any) => {
     const queryParams = new URLSearchParams();
     Object.entries(newFilters).forEach(([key, value]) => {
@@ -848,32 +779,26 @@ export default function CatalogPage() {
     router.push(newPath);
   };
 
-  // Add translation helper for no results message
   const getNoResultsMessage = () => {
     return i18n.language === "uz" ? "Hech qanday mahsulot topilmadi" : "Товары не найдены";
   };
 
-  // Add translation helper for no results description
   const getNoResultsDescription = () => {
     return i18n.language === "uz"
       ? "Boshqa parametrlar bilan qidirishga harakat qiling"
       : "Попробуйте поиск с другими параметрами";
   };
 
-  // Add these new states at the top of your component
   const [showFloatingCart, setShowFloatingCart] = useState(false);
   const [lastScrollY, setLastScrollY] = useState(0);
 
-  // Add this useEffect to handle scroll events
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
 
       if (currentScrollY > lastScrollY && currentScrollY > 200) {
-        // Scrolling down & past 200px
         setShowFloatingCart(true);
       } else if (currentScrollY < lastScrollY || currentScrollY < 200) {
-        // Scrolling up or near top
         setShowFloatingCart(false);
       }
 
@@ -887,7 +812,6 @@ export default function CatalogPage() {
     };
   }, [lastScrollY]);
 
-  // Add translation helper for no image text
   const getNoImageText = () => {
     return i18n.language === "uz" ? "Rasm yo'q" : "Нет фото";
   };
@@ -940,7 +864,6 @@ export default function CatalogPage() {
         />
       )}
 
-      {/* Update Categories section to remove click functionality */}
       <div className="categories-container">
         {categories.map((category) => (
           <div
@@ -1009,30 +932,38 @@ export default function CatalogPage() {
                       )}
                     </div>
                     <div className="product-details">
-                      <h3 className="product-brand">{product.name}</h3>
-                      <p className="product-name">{product.brandName}</p>
+                      {/* Only show name if it exists */}
+                      {product.name && (
+                        <h3 className="product-brand">{product.name}</h3>
+                      )}
+                      {/* Only show brand name if it exists */}
+                      {product.brandName && (
+                        <p className="product-name">{product.brandName}</p>
+                      )}
                       <p className="product-price">{product.price}</p>
                       <p className="product-availability">
                         {console.log('Rendering availability:', product.availability)}
                         {product.availability}
                       </p>
                       
-                      {/* Add color variants section */}
-                      <div className="color-variants">
-                        {console.log('Before mapping attributes:', product.product_attributes)}
-                        {product.product_attributes?.map((attr:any) => {
-                          console.log('Processing attribute:', attr);
-                          return (
-                            <button
-                              key={attr.id}
-                              className={`color-circle ${selectedColors[product.id] === attr.id ? 'selected' : ''}`}
-                              style={{ backgroundColor: attr.color_code }}
-                              onClick={(e) => handleColorSelect(e, product.id, attr.id)}
-                              aria-label={`Color ${i18n.language === 'uz' ? attr.color_name_uz : attr.color_name_ru}`}
-                            />
-                          );
-                        })}
-                      </div>
+                      {/* Only show color variants if they exist */}
+                      {product.product_attributes && product.product_attributes.length > 0 && (
+                        <div className="color-variants">
+                          {console.log('Before mapping attributes:', product.product_attributes)}
+                          {product.product_attributes.map((attr:any) => {
+                            console.log('Processing attribute:', attr);
+                            return (
+                              <button
+                                key={attr.id}
+                                className={`color-circle ${selectedColors[product.id] === attr.id ? 'selected' : ''}`}
+                                style={{ backgroundColor: attr.color_code }}
+                                onClick={(e) => handleColorSelect(e, product.id, attr.id)}
+                                aria-label={`Color ${i18n.language === 'uz' ? attr.color_name_uz : attr.color_name_ru}`}
+                              />
+                            );
+                          })}
+                        </div>
+                      )}
 
                       <button
                         className="add-to-cart-button"
@@ -1071,7 +1002,7 @@ export default function CatalogPage() {
             </div>
           )}
 
-          {/* Load more button - Updated styling */}
+          {/* Load more button */}
           {nextProductsPage && products.length > 0 && (
             <div className="load-more-container">
               <button
@@ -1169,7 +1100,7 @@ export default function CatalogPage() {
         }
 
         .catalog-container {
-          max-width: 1418px;
+          max-width: 1422px;
           margin: 0 auto;
           padding: 20px;
         }

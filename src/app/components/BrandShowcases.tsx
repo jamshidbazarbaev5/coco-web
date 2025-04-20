@@ -54,7 +54,6 @@ export default function BrandSlider() {
   const [touchMove, setTouchMove] = useState<number | null>(null);
   const sliderRef = useRef<HTMLDivElement>(null);
 
-  // Add function to fetch all products from paginated API
   const fetchAllProducts = async () => {
     try {
       let url = 'https://coco20.uz/api/v1/products/crud/product/';
@@ -75,15 +74,12 @@ export default function BrandSlider() {
     }
   };
 
-  // Add useEffect to fetch data on component mount
   useEffect(() => {
     fetchAllProducts();
   }, []);
 
-  // Create an extended array of slides for infinite effect
   const extendedSlides = [...slides, ...slides, ...slides];
 
-  // Updated getSlideWidth function
   const getSlideWidth = () => {
     if (typeof window === 'undefined') return 25;
     const width = window.innerWidth;
@@ -115,7 +111,6 @@ export default function BrandSlider() {
     }
   };
 
-  // Add resize handler
   useEffect(() => {
     const handleResize = () => {
       const slideWidth = getSlideWidth();
@@ -128,9 +123,8 @@ export default function BrandSlider() {
     return () => window.removeEventListener('resize', handleResize);
   }, [currentIndex]);
 
-  // Updated touch handlers
   const handleTouchStart = (e: TouchEvent) => {
-    setIsTransitioning(false); // Disable transition during touch
+    setIsTransitioning(false); 
     setTouchStart(e.touches[0].clientX);
     setTouchMove(e.touches[0].clientX);
   };
@@ -142,7 +136,7 @@ export default function BrandSlider() {
     if (sliderRef.current && touchStart !== null) {
       const diff = touchStart - e.touches[0].clientX;
       const slideWidth = getSlideWidth();
-      const move = (diff / window.innerWidth) * 100; // Use percentage based on screen width
+      const move = (diff / window.innerWidth) * 100; 
       sliderRef.current.style.transform = `translateX(${-(currentIndex * slideWidth + move)}%)`;
     }
   };
@@ -150,7 +144,7 @@ export default function BrandSlider() {
   const handleTouchEnd = () => {
     if (touchStart !== null && touchMove !== null) {
       const diff = touchStart - touchMove;
-      const threshold = window.innerWidth * 0.2; // Increased threshold to 20% for better detection
+      const threshold = window.innerWidth * 0.2;
 
       if (Math.abs(diff) > threshold) {
         if (diff > 0) {
@@ -159,7 +153,6 @@ export default function BrandSlider() {
           prevSlide();
         }
       } else {
-        // Reset to current slide if threshold not met
         if (sliderRef.current) {
           const slideWidth = getSlideWidth();
           sliderRef.current.style.transform = `translateX(-${currentIndex * slideWidth}%)`;
@@ -167,7 +160,7 @@ export default function BrandSlider() {
       }
     }
     
-    setIsTransitioning(true); // Re-enable transition
+    setIsTransitioning(true); 
     setTouchStart(null);
     setTouchMove(null);
   };
@@ -175,7 +168,7 @@ export default function BrandSlider() {
   // Auto advance slides
   useEffect(() => {
     const interval = setInterval(() => {
-      if (!touchStart) { // Don't auto-advance while touching
+      if (!touchStart) { 
         nextSlide();
       }
     }, 5000);
@@ -183,7 +176,6 @@ export default function BrandSlider() {
     return () => clearInterval(interval);
   }, [touchStart]);
 
-  // Calculate slider position
   const getSliderStyle = () => {
     const slideWidth = getSlideWidth();
     const baseTransform = -(currentIndex * slideWidth);
@@ -193,28 +185,23 @@ export default function BrandSlider() {
     };
   };
 
-  // Function to truncate text with null check
   const truncateText = (text?: string, maxLength: number = 50) => {
     if (!text) return '';
     if (text.length <= maxLength) return text;
     return text.slice(0, maxLength) + '...';
   };
 
-  // Function to get visible pagination dots (only 3)
   const getVisibleDots = () => {
     const totalDots = slides.length;
     const currentDot = currentIndex % totalDots;
     
-    // If we have 3 or fewer slides, show all dots
     if (totalDots <= 3) return slides.map((_, i) => i);
     
-    // Otherwise, show current dot and one on each side
     if (currentDot === 0) return [0, 1, 2];
     if (currentDot === totalDots - 1) return [totalDots - 3, totalDots - 2, totalDots - 1];
     return [currentDot - 1, currentDot, currentDot + 1];
   };
 
-  // Add click handler for product navigation
   const handleProductClick = (productId: number) => {
     router.push(`/${i18n.language}/details/${productId}`);
   };
@@ -239,25 +226,40 @@ export default function BrandSlider() {
                 key={`${slide.id}-${index}`} 
                 className={styles.slide}
                 onClick={() => handleProductClick(slide.id)}
-                style={{ cursor: 'pointer' }}  // Add cursor pointer to indicate clickable
+                style={{ cursor: 'pointer' }}  
               >
                 <div className={styles.slideContent}>
                   <span className={styles.slideNumber}>
                     {`${(index % (slides?.length || 1)) + 1}`.padStart(2, '0')}.
                   </span>
                   <div className={styles.slideInfo}>
-                    <h2 className={styles.brandName}>{slide?.title_ru || ''}</h2>
-                    <p className={styles.description}>
-                      {truncateText(slide?.description_ru)}
-                    </p>
+                    {/* Only show title if it exists */}
+                    {(i18n.language === 'ru' ? slide?.title_ru : slide?.title_uz) && (
+                      <h2 className={styles.brandName}>
+                        {i18n.language === 'ru' ? slide?.title_ru : slide?.title_uz}
+                      </h2>
+                    )}
+                    {/* Only show description if it exists */}
+                    {(i18n.language === 'ru' ? slide?.description_ru : slide?.description_uz) && (
+                      <p className={styles.description}>
+                        {truncateText(i18n.language === 'ru' ? slide?.description_ru : slide?.description_uz)}
+                      </p>
+                    )}
                   </div>
                 </div>
-                <img
-                  src={slide?.product_attributes?.[0]?.attribute_images?.[0]?.image || ''}
-                  alt={slide?.title_ru || ''}
-                  className={styles.slideImage}
-                  loading="lazy"
-                />
+                {/* Check if slide has product attributes and images */}
+                {slide?.product_attributes?.[0]?.attribute_images?.[0]?.image ? (
+                  <img
+                    src={slide.product_attributes[0].attribute_images[0].image}
+                    alt={i18n.language === 'ru' ? slide?.title_ru : slide?.title_uz}
+                    className={styles.slideImage}
+                    loading="lazy"
+                  />
+                ) : (
+                  <div className={styles.noImage}>
+                    {i18n.language === 'uz' ? "Rasm yo'q" : "Нет фото"}
+                  </div>
+                )}
               </div>
             ))}
           </div>

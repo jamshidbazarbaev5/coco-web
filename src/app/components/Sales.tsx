@@ -198,35 +198,47 @@ export default function SalesPage() {
             style={{ cursor: 'pointer' }}
           >
             <div className="product-image-container">
-              <Image
-                src={product.image || "/placeholder.svg"}
-                alt={product.name}
-                width={300}
-                height={300}
-                className="product-image"
-              />
+              {product.image ? (
+                <Image
+                  src={product.image}
+                  alt={product.name || 'Product image'}
+                  width={300}
+                  height={300}
+                  className="product-image"
+                />
+              ) : (
+                <div className="no-image">
+                  {i18n.language === "uz" ? "Rasm yo'q" : "Нет фото"}
+                </div>
+              )}
             </div>
             <div className="product-details">
-              <h3 className="product-brand">{product.name}</h3>
-              <p className="product-name">{product.brandName}</p>
-              <div className="price-container">
-                <p className="product-old-price">{formatPrice(product.price)}</p>
-                <p className="product-new-price">{formatPrice(product.new_price)} </p>
-              </div>
+              {product.name && <h3 className="product-brand">{product.name}</h3>}
+              {product.brandName && <p className="product-name">{product.brandName}</p>}
+              {product.price && (
+                <div className="price-container">
+                  <p className="product-old-price">{formatPrice(product.price)}</p>
+                  {product.new_price && (
+                    <p className="product-new-price">{formatPrice(product.new_price)} </p>
+                  )}
+                </div>
+              )}
               <p className="product-availability">
-                {getAvailabilityText(product.product_attributes[0]?.quantity || 0)}
+                {getAvailabilityText(product.product_attributes?.[0]?.quantity || 0)}
               </p>
-              <div className="color-variants">
-                {product.product_attributes?.map((attr:any) => (
-                  <button
-                    key={attr.id}
-                    className={`color-circle ${isColorSelected(product.id, attr.id) ? 'selected' : ''}`}
-                    style={{ backgroundColor: attr.color_code }}
-                    onClick={(e) => handleColorSelect(e, product.id, attr.id)}
-                    aria-label={`Color ${i18n.language === 'uz' ? attr.color_name_uz : attr.color_name_ru}`}
-                  />
-                ))}
-              </div>
+              {product.product_attributes?.length > 0 && (
+                <div className="color-variants">
+                  {product.product_attributes.map((attr:any) => (
+                    <button
+                      key={attr.id}
+                      className={`color-circle ${isColorSelected(product.id, attr.id) ? 'selected' : ''}`}
+                      style={{ backgroundColor: attr.color_code }}
+                      onClick={(e) => handleColorSelect(e, product.id, attr.id)}
+                      aria-label={`Color ${i18n.language === 'uz' ? attr.color_name_uz : attr.color_name_ru}`}
+                    />
+                  ))}
+                </div>
+              )}
               <button
                 className="add-to-cart-button"
                 onClick={(e) => {
@@ -260,7 +272,7 @@ export default function SalesPage() {
         }
 
         .catalog-container {
-          max-width: 1418px;
+          max-width: 1422px;
           margin: 0 auto;
           padding: 20px;
         }

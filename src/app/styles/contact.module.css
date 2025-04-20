@@ -39,6 +39,10 @@
     line-height: 1.4;
     margin: 0;
     font-family: var(--font-plus-jakarta);
+    text-align: left;
+    max-width: 400px;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
   }
   
   /* Social Section */
@@ -67,6 +71,11 @@
   /* Form Section */
   .formSection {
     flex: 2;
+  }
+  .emptyDiv{
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
   
   .formTitle {

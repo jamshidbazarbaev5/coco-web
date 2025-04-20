@@ -146,7 +146,8 @@ const cartConfirmationMessage = {
       )}
       
       <div className={styles.container}>
-        <div className={styles.brandSection}>
+
+        <div className={styles.emptyDiv}>  <div className={styles.brandSection}>
           <Image src="/logo-3.svg" alt="COCO" width={150} height={150} unoptimized={true} />
           <p className={styles.brandTagline}>
             {t('contact_page.brand_tagline')}
@@ -204,7 +205,8 @@ const cartConfirmationMessage = {
             </a>
           </div>
           
-        </div>
+        </div></div>
+      
 
         <div className={styles.formSection}>
           <h2 className={styles.formTitle}>{t('contact_page.help_title')}</h2>

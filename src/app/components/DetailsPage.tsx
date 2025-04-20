@@ -154,77 +154,132 @@ export default function ProductPage() {
           className="main-image"
         />
       </div>
-      <div className="product-info">
-        <h1 className="brand-name">
-          {product && getBrandName(product.brand)}
-        </h1>
-        <p className="product-name">{product.title_ru}</p>
-        <p className="product-price">
-          {product.on_sale ? (
-            <>
-              <span className="original-price">{product.price} uzs</span>
-              <span className="sale-price">{product.new_price} uzs</span>
-            </>
-          ) : (
-            `${product.price} uzs`
-          )}
-        </p>
-        <p className="product-availability">В наличии: {product.quantity}</p>
+      <div className="product-details">
+        {/* Only show name if title exists */}
+        {product.title_ru && (
+          <h1 className="brand-name">
+            {product.title_ru}
+          </h1>
+        )}
+        
+        {/* Only show brand name if brand_details exists */}
+        {product.brand && (
+          <p className="product-name">{getBrandName(product.brand)}</p>
+        )}
+        
+        {/* Only show description if it exists */}
+        {product.description_ru && (
+          <p className="product-description">
+            {product.description_ru}
+          </p>
+        )}
+        
+        {/* Only show price if it exists */}
+        {product.price && (
+          <p className="product-price">
+            {product.on_sale ? (
+              <>
+                <span className="original-price">
+                  {product.price} uzs
+                </span>
+                {product.new_price && (
+                  <span className="sale-price">
+                    {product.new_price} uzs
+                  </span>
+                )}
+              </>
+            ) : (
+              `${product.price} uzs`
+            )}
+          </p>
+        )}
+        
+        {/* Show availability if quantity exists */}
+        {typeof product.quantity !== 'undefined' && (
+          <p className="product-availability">
+            В наличии: {product.quantity}
+          </p>
+        )}
 
-        <div className="color-section">
-          <p className="color-title">Цвета:</p>
-          <div className="color-options">
-            <button
-              className={`color-option brown ${selectedColor === "brown" ? "selected" : ""}`}
-              onClick={() => setSelectedColor("brown")}
-              aria-label="Brown color"
-            ></button>
-            <button
-              className={`color-option beige ${selectedColor === "beige" ? "selected" : ""}`}
-              onClick={() => setSelectedColor("beige")}
-              aria-label="Beige color"
-            ></button>
-            <button
-              className={`color-option peach ${selectedColor === "peach" ? "selected" : ""}`}
-              onClick={() => setSelectedColor("peach")}
-              aria-label="Peach color"
-            ></button>
-            <button
-              className={`color-option green ${selectedColor === "green" ? "selected" : ""}`}
-              onClick={() => setSelectedColor("green")}
-              aria-label="Green color"
-            ></button>
+        {/* Only show color section if there are color variants */}
+        {product.product_attributes?.length > 0 && (
+          <div className="color-section">
+            <p className="color-title">Цвета:</p>
+            <div className="color-options">
+              {product.product_attributes.map((attr) => (
+                <button
+                  key={attr.color}
+                  className={`color-option ${selectedColor === attr.color ? "selected" : ""}`}
+                  onClick={() => setSelectedColor(attr.color)}
+                  aria-label={`Color ${attr.color}`}
+                  style={{ backgroundColor: attr.color }}
+                ></button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
-        <div className="additional-info">
-          <p className="info-title">Дополнительная информация:</p>
-          <table className="info-table">
-            <tbody>
-              <tr>
-                <td className="info-label">Цвет</td>
-                <td className="info-value">Коричневый</td>
-              </tr>
-              <tr>
-                <td className="info-label">Материал</td>
-                <td className="info-value">Премиум веган кожа</td>
-              </tr>
-              <tr>
-                <td className="info-label">Размеры</td>
-                <td className="info-value">34/10/24</td>
-              </tr>
-              <tr>
-                <td className="info-label">Описание</td>
-                <td className="info-value">{product.description_ru}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+        {/* Only show size section if there are sizes */}
+        {product.product_attributes[0]?.sizes?.length > 0 && (
+          <div className="size-section">
+            <p className="size-title">Размеры:</p>
+            <div className="size-options">
+              {product.product_attributes[0].sizes.map((size) => (
+                <button
+                  key={size}
+                  className="size-option"
+                >
+                  {size}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
-        <button className="add-to-cart-button" onClick={handleAddToCart}>
-          Добавить в корзину
-        </button>
+        {/* Only show additional info if relevant fields exist */}
+        {(product.material || product.product_attributes[0]?.color) && (
+          <div className="additional-info">
+            <p className="info-title">Дополнительная информация:</p>
+            <table className="info-table">
+              <tbody>
+                {/* Only show color row if color exists */}
+                {product.product_attributes[0]?.color && (
+                  <tr>
+                    <td className="info-label">Цвет</td>
+                    <td className="info-value">
+                      {product.product_attributes[0].color}
+                    </td>
+                  </tr>
+                )}
+                
+                {/* Only show material row if material exists */}
+                {product.material && (
+                  <tr>
+                    <td className="info-label">Материал</td>
+                    <td className="info-value">
+                      {product.material}
+                    </td>
+                  </tr>
+                )}
+                
+                {/* Only show sizes row if sizes exist */}
+                {product.product_attributes[0]?.sizes?.length > 0 && (
+                  <tr>
+                    <td className="info-label">Размеры</td>
+                    <td className="info-value">
+                      {product.product_attributes[0].sizes.join(", ")}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
+
+      <button className="add-to-cart-button" onClick={handleAddToCart}>
+        Добавить в корзину
+      </button>
 
       {/* Add Confirmation Modal */}
       {showConfirmation && (

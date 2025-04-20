@@ -12,7 +12,6 @@ export default function ClientLanguageProvider({
   const { i18n } = useTranslation();
 
   useEffect(() => {
-    // Set the language based on the URL parameter
     const lang = params.lang as string;
     if (i18n.language !== lang) {
       i18n.changeLanguage(lang);
