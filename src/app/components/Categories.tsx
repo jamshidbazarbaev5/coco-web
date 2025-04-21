@@ -1130,7 +1130,7 @@ export default function CatalogPage() {
         .brand-filter {
           background: none;
           border: none;
-          padding: 8px 16px;
+          padding: 8px 0;
           margin-right: 10px;
           font-size: 14px;
           cursor: pointer;
@@ -1141,6 +1141,7 @@ export default function CatalogPage() {
         .brand-filter.active {
           color: #000;
           border-bottom: 2px solid #000;
+          padding:10px 0;
         }
 
         .filter-button {
@@ -1297,7 +1298,7 @@ export default function CatalogPage() {
 
         /* Active filters */
               .active-filters {     margin-bottom: 20px;
-          padding: 10px 15px;
+          padding: 10px 0;
           background-color: #f5f5f5;
           border-radius: 4px;
           display: flex;
@@ -1715,10 +1716,9 @@ export default function CatalogPage() {
 
         @media (max-width: 768px) {
           .catalog-header {
-            position: sticky;
-            top: 0;
-            background-color: #f8f8f6;
-            z-index: 100;
+            position: relative; /* Changed from sticky to relative */
+            background-color: transparent; /* Remove background */
+            z-index: 1; /* Lower z-index */
             padding: 15px 0;
           }
 
@@ -1728,6 +1728,23 @@ export default function CatalogPage() {
 
           .brand-filters {
             margin-top: 0;
+          }
+
+          /* Hide filter button on mobile when menu is open */
+          .mobile-menu.open .filter-button {
+            display: none;
+          }
+
+          /* Ensure mobile menu appears above other content */
+          .mobile-menu {
+            z-index: 1000;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: white;
+            overflow-y: auto;
           }
         }
       `}</style>
