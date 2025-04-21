@@ -128,15 +128,21 @@ export default function CatalogPage() {
     return i18n.language === "uz" ? "Bizning katalog" : "Наш каталог";
   };
 
-  const getAvailabilityText = (quantity: number) => {
+  const getAvailabilityText = (quantity: number | null) => {
     console.log('Getting availability text for quantity:', quantity, typeof quantity);
-    if (quantity === 0) {
-      const text = i18n.language === "uz" ? "Oldindan buyurtma" : "Предзаказ";
-      console.log('Product has 0 quantity, returning:', text);
-      return text;
+    
+    if (quantity === null) {
+      console.log('Quantity is null, returning pre-order status');
+      return i18n.language === "uz" ? "Oldindan buyurtma" : "Предзаказ";
     }
-    const text = i18n.language === "uz" ? `Mavjud` : `Есть в наличии`;
-    return text;
+    
+    if (quantity === 0) {
+      console.log('Quantity is 0, returning sold out status');
+      return i18n.language === "uz" ? "Sotilgan" : "Распродано";
+    }
+    
+    console.log('Quantity is greater than 0, returning in stock status');
+    return i18n.language === "uz" ? `Mavjud` : `Есть в наличии`;
   };
 
   const getAllFilterText = () => {
@@ -362,7 +368,7 @@ export default function CatalogPage() {
           name: i18n.language === "uz" ? product.title_uz : product.title_ru,
           description: i18n.language === "uz" ? product.description_uz : product.description_ru,
           price: formatPrice(firstAvailableVariant.price || "0"),
-          availability: getAvailabilityText(firstAvailableVariant.quantity || 0),
+          availability: getAvailabilityText(firstAvailableVariant.quantity),
           image: firstAvailableVariant.attribute_images?.[0]?.image || "/placeholder.svg",
           on_sale: firstAvailableVariant.on_sale || false,
           new_price: firstAvailableVariant.new_price,
@@ -460,7 +466,7 @@ export default function CatalogPage() {
           name: i18n.language === "uz" ? product.title_uz : product.title_ru,
           description: i18n.language === "uz" ? product.description_uz : product.description_ru,
           price: formatPrice(firstVariant.price || "0"),
-          availability: getAvailabilityText(firstVariant.quantity || 0),
+          availability: getAvailabilityText(firstVariant.quantity),
           image: firstVariant.image || null,
           on_sale: firstVariant.on_sale || false,
           new_price: firstVariant.new_price,

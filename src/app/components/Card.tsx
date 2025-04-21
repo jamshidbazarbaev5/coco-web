@@ -222,7 +222,7 @@ export default function CartPage() {
         order_items: cartItems.map(item => ({
           product_variant: item.product_variant,
           size: item.size,
-          quantity: item.stock === 0 ? 0 : item.quantity // Send 0 if stock is 0
+          quantity: !item.stock || item.stock === 0 ? 0 : item.quantity // Send 0 if stock is null or 0
         }))
       };
 
@@ -269,11 +269,14 @@ export default function CartPage() {
   };
 
   // Update getAvailabilityText function
-  const getAvailabilityText = (quantity: number) => {
-    if (quantity === 0) {
+  const getAvailabilityText = (quantity: number | null) => {
+    if (quantity === null) {
       return i18n.language === "uz" ? "Oldindan buyurtma" : "Предзаказ";
     }
-    return i18n.language === "uz" ? `Mavjud ` : `Есть в наличии`;
+    if (quantity === 0) {
+      return i18n.language === "uz" ? "Sotilgan" : "Распродано";
+    }
+    return i18n.language === "uz" ? `Mavjud` : `Есть в наличии`;
   };
 
   const isColorSelected = (productId: number, attributeId: number) => {

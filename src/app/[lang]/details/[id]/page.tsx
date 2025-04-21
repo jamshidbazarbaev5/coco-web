@@ -238,6 +238,16 @@ export default function ProductPage() {
     return translationKey ? t(translationKey) : hex;
   };
 
+  const getAvailabilityText = (quantity: number | null) => {
+    if (quantity === null) {
+      return t("product_details.preorder");
+    }
+    if (quantity === 0) {
+      return t("product_details.sold_out");
+    }
+    return t("product_details.in_stock");
+  };
+
   if (loading) {
     return (
       <main className="min-h-screen">
@@ -342,8 +352,9 @@ export default function ProductPage() {
             )}
           </p>
           <p className="product-availability">
-            {t("product_details.in_stock")}{" "}
-            {product.product_attributes[selectedColorIndex].quantity}
+            {getAvailabilityText(
+              product.product_attributes[selectedColorIndex].quantity
+            )}
           </p>
 
           <div className="color-section">

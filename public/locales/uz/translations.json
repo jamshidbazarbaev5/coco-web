@@ -64,7 +64,10 @@
     },
     "in_stock": "Mavjud:",
     "color_title": "Ranglar:",
-    "select_size":"O'lchamni tanlang"
+    "select_size":"O'lchamni tanlang",
+    "sold_out":"Mavjud emas",
+    "preorder":"Oldindan buyurtma"
+    
   },
   "header": {
     "home": "Asosiy",

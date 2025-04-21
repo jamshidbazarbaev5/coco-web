@@ -71,9 +71,12 @@ export default function SalesPage() {
     return i18n.language === 'uz' ? product.title_uz : product.title_ru;
   };
 
-  const getAvailabilityText = (quantity: number) => {
-    if (quantity === 0) {
+  const getAvailabilityText = (quantity: number | null) => {
+    if (quantity === null) {
       return i18n.language === "uz" ? "Oldindan buyurtma" : "Предзаказ";
+    }
+    if (quantity === 0) {
+      return i18n.language === "uz" ? "Sotilgan" : "Распродано";
     }
     return i18n.language === "uz" ? "Mavjud" : "Есть в наличии";
   };
@@ -111,7 +114,7 @@ export default function SalesPage() {
               name: getTranslatedTitle(product),
               price: saleVariant?.price || "0",
               new_price: saleVariant?.new_price || "0",
-              availability: getAvailabilityText(saleVariant?.quantity || 0),
+              availability: getAvailabilityText(saleVariant?.quantity ?? null), // Convert undefined to null
               image: saleVariant?.attribute_images?.[0]?.image || "/placeholder.svg",
               on_sale: true,
               product_variant: saleVariant?.id || 0,
@@ -224,7 +227,7 @@ export default function SalesPage() {
                 </div>
               )}
               <p className="product-availability">
-                {getAvailabilityText(product.product_attributes?.[0]?.quantity || 0)}
+                {getAvailabilityText(product.product_attributes?.[0]?.quantity)}
               </p>
               {product.product_attributes?.length > 0 && (
                 <div className="color-variants">
