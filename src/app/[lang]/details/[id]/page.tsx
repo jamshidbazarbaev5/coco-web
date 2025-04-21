@@ -71,8 +71,9 @@ interface Size {
 export default function ProductPage() {
   const [selectedColor, setSelectedColor] = useState<string>("");
   const [selectedColorIndex, setSelectedColorIndex] = useState(0);
-  const [selectedSize, setSelectedSize] = useState<number | null>(null);
   const [product, setProduct] = useState<Product | null>(null);
+  const [selectedSize, setSelectedSize] = useState<number | null>(null);
+
   const [sizes, setSizes] = useState<Size[]>([]);
   const [loading, setLoading] = useState(true);
   const [showConfirmation, setShowConfirmation] = useState(false);
@@ -125,6 +126,10 @@ export default function ProductPage() {
 
         if (productData.product_attributes.length > 0) {
           setSelectedColor(productData.product_attributes[0].color_code);
+          // Set the first available size as selected
+          if (productData.product_attributes[0].sizes.length > 0) {
+            setSelectedSize(productData.product_attributes[0].sizes[0]);
+          }
         }
 
         setLoading(false);
@@ -634,6 +639,10 @@ export default function ProductPage() {
           border: 1px solid #ddd;
           cursor: pointer;
           transition: transform 0.2s;
+          color: #333; /* Add explicit text color */
+          background-color: transparent; /* Reset background */
+          -webkit-text-fill-color: #333; /* Force text color on iOS */
+          font-size: 14px; /* Consistent font size */
         }
 
         .size-option:hover {
@@ -642,6 +651,8 @@ export default function ProductPage() {
 
         .size-option.selected {
           border: 2px solid #333;
+          color: #333; /* Ensure selected state also has correct color */
+          -webkit-text-fill-color: #333; /* Force text color on iOS */
         }
 
         .additional-info {

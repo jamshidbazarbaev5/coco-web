@@ -830,7 +830,7 @@ export default function CatalogPage() {
           >
             <path
               d="M3 7H21M6 12H18M10 17H14"
-              stroke="currentColor"
+              stroke="#333333"
               strokeWidth="1.5"
               strokeLinecap="round"
               strokeLinejoin="round"
