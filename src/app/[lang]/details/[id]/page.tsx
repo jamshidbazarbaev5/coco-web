@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, MouseEvent, TouchEvent } from "react";
 import Image from "next/image";
 import { useRouter, useParams } from "next/navigation";
 import ConfirmationModal from "../../../components/ConfirmationModal";
@@ -245,7 +245,37 @@ export default function ProductPage() {
     if (quantity === 0) {
       return t("product_details.sold_out");
     }
-    return t("product_details.in_stock");
+    // return t("product_details.in_stock");
+  };
+
+  const [isDragging, setIsDragging] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [scrollLeft, setScrollLeft] = useState(0);
+
+  const handleDragStart = (e: MouseEvent<HTMLDivElement> | TouchEvent<HTMLDivElement>) => {
+    setIsDragging(true);
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    setStartX(clientX);
+  };
+
+  const handleDragEnd = () => {
+    setIsDragging(false);
+    if (Math.abs(scrollLeft) > 50) {
+      if (scrollLeft > 0) {
+        previousImage();
+      } else {
+        nextImage();
+      }
+    }
+    setScrollLeft(0);
+  };
+
+  const handleDragMove = (e: MouseEvent<HTMLDivElement> | TouchEvent<HTMLDivElement>) => {
+    if (!isDragging) return;
+    e.preventDefault();
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const diff = clientX - startX;
+    setScrollLeft(diff);
   };
 
   if (loading) {
@@ -279,7 +309,20 @@ export default function ProductPage() {
               <IoChevronBackOutline size={24} />
             </button>
 
-            <div className="image-container">
+            <div className="image-container"
+              onMouseDown={handleDragStart}
+              onMouseUp={handleDragEnd}
+              onMouseMove={handleDragMove}
+              onMouseLeave={handleDragEnd}
+              onTouchStart={handleDragStart}
+              onTouchEnd={handleDragEnd}
+              onTouchMove={handleDragMove}
+              style={{
+                cursor: isDragging ? 'grabbing' : 'grab',
+                transform: `translateX(${scrollLeft}px)`,
+                transition: isDragging ? 'none' : 'transform 0.3s ease-out'
+              }}
+            >
               <Image
                 src={
                   product.product_attributes[selectedColorIndex]
@@ -462,21 +505,22 @@ export default function ProductPage() {
                         {(() => {
                           const size = sizes.find((s) => s.id === selectedSize);
                           if (!size) return null;
+                          const unit = params.lang === "ru" ? "см" : "sm";
                           return (
                             <div className="dimensions-row">
                               <span>
                                 {t("product_details.table.length")}:{" "}
-                                {size.length} sm
+                                {size.length} {unit}
                               </span>
                               <span> × </span>
                               <span>
                                 {t("product_details.table.width")}: {size.width}{" "}
-                                sm
+                                {unit}
                               </span>
                               <span> × </span>
                               <span>
                                 {t("product_details.table.height")}:{" "}
-                                {size.height} sm
+                                {size.height} {unit}
                               </span>
                             </div>
                           );
@@ -558,6 +602,7 @@ export default function ProductPage() {
           .product-info {
             width: 100%;
             max-width: 100%;
+            gap:2px;
           }
         }
 
@@ -610,15 +655,19 @@ export default function ProductPage() {
         .color-options {
           display: flex;
           gap: 10px;
+          flex-wrap: wrap;
         }
 
         .color-option {
           width: 30px;
           height: 30px;
+          min-width: 30px; /* Ensure fixed width on mobile */
+          min-height: 30px; /* Ensure fixed height on mobile */
           border-radius: 50%;
-          border: 1px solid #ddd;
+          border: none;
           cursor: pointer;
           transition: transform 0.2s;
+          position: relative;
         }
 
         .color-option:hover {
@@ -627,6 +676,27 @@ export default function ProductPage() {
 
         .color-option.selected {
           border: 2px solid #333;
+        }
+
+        .color-option.selected::after {
+          content: '';
+          position: absolute;
+          top: -2px;
+          right: -2px;
+          bottom: -2px;
+          left: -2px;
+          border: 2px solid #333;
+          border-radius: 50%;
+          pointer-events: none;
+        }
+
+        @media (max-width: 768px) {
+          .color-option {
+            width: 25px;
+            height: 25px;
+            min-width: 25px;
+            min-height: 25px;
+          }
         }
 
         .size-section {
@@ -774,6 +844,8 @@ export default function ProductPage() {
           position: relative;
           width: 100%;
           padding-top: 128%; 
+          user-select: none;
+          touch-action: pan-y pinch-zoom;
         }
 
         .main-image {

@@ -133,16 +133,16 @@ export default function CatalogPage() {
     
     if (quantity === null) {
       console.log('Quantity is null, returning pre-order status');
-      return i18n.language === "uz" ? "Oldindan buyurtma" : "Предзаказ";
+      return i18n.language === "uz" ? "Oldindan buyurtman berish" : "Предзаказ";
     }
     
     if (quantity === 0) {
       console.log('Quantity is 0, returning sold out status');
-      return i18n.language === "uz" ? "Sotilgan" : "Распродано";
+      return i18n.language === "uz" ? " Sotib bo'lingan" : "Распродано";
     }
     
     console.log('Quantity is greater than 0, returning in stock status');
-    return i18n.language === "uz" ? `Mavjud` : `Есть в наличии`;
+    return i18n.language === "uz" ? ` Sotuvda bor (mavjud)` : `Есть в наличии`;
   };
 
   const getAllFilterText = () => {
@@ -258,7 +258,7 @@ export default function CatalogPage() {
               id: matchedCategory.id,
               name_uz: matchedCategory.name_uz,
               name_ru: matchedCategory.name_ru,
-              image: matchedCategory.image || ''
+              image: matchedCategory.image
             };
           }
         }
@@ -272,14 +272,12 @@ export default function CatalogPage() {
         setFilters(urlFilters);
         setCurrentFilterData(newFilterData);
 
-        const formattedCategories: Category[] = categoriesData.map(
-          (category: any, index: number) => ({
-            id: category.id,
-            name_uz: category.name_uz,
-            name_ru: category.name_ru,
-            image: "/cart-" + ((index % 4) + 1) + ".jpg",
-          })
-        );
+        const formattedCategories: Category[] = categoriesData.map((category: any) => ({
+          id: category.id,
+          name_uz: category.name_uz,
+          name_ru: category.name_ru,
+          image: category.image,
+        }));
         setCategories(formattedCategories);
 
         const [brandsResponse, sizesResponse] = await Promise.all([
@@ -1287,6 +1285,46 @@ export default function CatalogPage() {
           display: flex;
           gap: 8px;
           margin: 8px 0;
+          overflow-x: auto;
+          padding: 4px 0; /* Changed padding to top/bottom only */
+          -webkit-overflow-scrolling: touch;
+          scroll-behavior: smooth;
+          scrollbar-width: none;
+          -ms-overflow-style: none;
+          max-width: 100%;
+          position: relative; /* Added position relative */
+          min-height: 28px; /* Added minimum height to accommodate selected state */
+        }
+
+        .color-circle {
+          min-width: 20px; /* Ensure minimum width */
+          width: 20px;
+          height: 20px;
+          border-radius: 50%;
+          border: 1px solid #ddd;
+          padding: 0;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          position: relative;
+          flex-shrink: 0; /* Prevent circle from becoming oval */
+        }
+
+        .color-circle.selected {
+          border: 2px solid #c9a66b;
+          transform: scale(1.1);
+        }
+
+        .color-circle.selected::after {
+          content: '';
+          position: absolute;
+          top: -4px;
+          right: -4px;
+          bottom: -4px;
+          left: -4px;
+          border: 1px solid #c9a66b;
+          border-radius: 50%;
+          pointer-events: none; /* Ensure it doesn't interfere with scrolling */
+          animation: pulse 1s ease-out;
         }
 
         .add-to-cart-button {
@@ -1640,9 +1678,19 @@ export default function CatalogPage() {
           display: flex;
           gap: 8px;
           margin: 8px 0;
+          overflow-x: auto;
+          padding: 4px 0; /* Changed padding to top/bottom only */
+          -webkit-overflow-scrolling: touch;
+          scroll-behavior: smooth;
+          scrollbar-width: none;
+          -ms-overflow-style: none;
+          max-width: 100%;
+          position: relative; /* Added position relative */
+          min-height: 28px; /* Added minimum height to accommodate selected state */
         }
 
         .color-circle {
+          min-width: 20px; /* Ensure minimum width */
           width: 20px;
           height: 20px;
           border-radius: 50%;
@@ -1651,6 +1699,7 @@ export default function CatalogPage() {
           cursor: pointer;
           transition: all 0.2s ease;
           position: relative;
+          flex-shrink: 0; /* Prevent circle from becoming oval */
         }
 
         .color-circle.selected {
@@ -1667,18 +1716,8 @@ export default function CatalogPage() {
           left: -4px;
           border: 1px solid #c9a66b;
           border-radius: 50%;
+          pointer-events: none; /* Ensure it doesn't interfere with scrolling */
           animation: pulse 1s ease-out;
-        }
-
-        @keyframes pulse {
-          from {
-            transform: scale(0.8);
-            opacity: 1;
-          }
-          to {
-            transform: scale(1.1);
-            opacity: 0;
-          }
         }
 
         .color-circle:hover {
@@ -1751,6 +1790,17 @@ export default function CatalogPage() {
             bottom: 0;
             background-color: white;
             overflow-y: auto;
+          }
+        }
+
+        @media (max-width: 575px) {
+          .color-variants {
+            padding-bottom: 4px;
+            gap: 6px;
+          }
+          
+          .color-circle {
+            min-width: 20px; /* Ensure minimum width for touch targets */
           }
         }
       `}</style>

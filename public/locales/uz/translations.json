@@ -65,8 +65,9 @@
     "in_stock": "Mavjud:",
     "color_title": "Ranglar:",
     "select_size":"O'lchamni tanlang",
-    "sold_out":"Mavjud emas",
-    "preorder":"Oldindan buyurtma"
+    "sold_out":"Sotib bo'lingan",
+    "preorder":" Oldindan buyurtman berish",
+    "no_sizes":"Mavjud o'lchamlar yo'q"
     
   },
   "header": {

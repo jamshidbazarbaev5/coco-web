@@ -73,12 +73,12 @@ export default function SalesPage() {
 
   const getAvailabilityText = (quantity: number | null) => {
     if (quantity === null) {
-      return i18n.language === "uz" ? "Oldindan buyurtma" : "Предзаказ";
+      return i18n.language === "uz" ? "Oldindan buyurtman berish" : "Предзаказ";
     }
     if (quantity === 0) {
-      return i18n.language === "uz" ? "Sotilgan" : "Распродано";
+      return i18n.language === "uz" ? "Sotib bo'lingan" : "Распродано";
     }
-    return i18n.language === "uz" ? "Mavjud" : "Есть в наличии";
+    return i18n.language === "uz" ? "Sotuvda bor (mavjud)" : "Есть в наличии";
   };
 
   const getSalesTitle = () => {
@@ -192,69 +192,77 @@ export default function SalesPage() {
     <div className="catalog-container">
       <h1 className="catalog-title">{getSalesTitle()}</h1>
 
-      <div className="products-grid">
-        {products.map((product:any) => (
-          <div
-            className="product-card"
-            key={product.id}
-            onClick={() => handleProductClick(product.id)}
-            style={{ cursor: 'pointer' }}
-          >
-            <div className="product-image-container">
-              {product.image ? (
-                <Image
-                  src={product.image}
-                  alt={product.name || 'Product image'}
-                  width={300}
-                  height={300}
-                  className="product-image"
-                />
-              ) : (
-                <div className="no-image">
-                  {i18n.language === "uz" ? "Rasm yo'q" : "Нет фото"}
-                </div>
-              )}
+      {products.length === 0 && !loading ? (
+        <div className="no-products-message">
+          {i18n.language === "uz" 
+            ? "Hozirda chegirmalar mavjud emas" 
+            : "В данный момент скидок нет"}
+        </div>
+      ) : (
+        <div className="products-grid">
+          {products.map((product:any) => (
+            <div
+              className="product-card"
+              key={product.id}
+              onClick={() => handleProductClick(product.id)}
+              style={{ cursor: 'pointer' }}
+            >
+              <div className="product-image-container">
+                {product.image ? (
+                  <Image
+                    src={product.image}
+                    alt={product.name || 'Product image'}
+                    width={300}
+                    height={300}
+                    className="product-image"
+                  />
+                ) : (
+                  <div className="no-image">
+                    {i18n.language === "uz" ? "Rasm yo'q" : "Нет фото"}
+                  </div>
+                )}
+              </div>
+              <div className="product-details">
+                {product.name && <h3 className="product-brand">{product.name}</h3>}
+                {product.brandName && <p className="product-name">{product.brandName}</p>}
+                {product.price && (
+                  <div className="price-container">
+                    <p className="product-old-price">{formatPrice(product.price)}</p>
+                    {product.new_price && (
+                      <p className="product-new-price">{formatPrice(product.new_price)} </p>
+                    )}
+                  </div>
+                )}
+                <p className="product-availability">
+                  {getAvailabilityText(product.product_attributes?.[0]?.quantity)}
+                </p>
+                {product.product_attributes?.length > 0 && (
+                  <div className="color-variants">
+                    {product.product_attributes.map((attr:any) => (
+                      <button
+                        key={attr.id}
+                        className={`color-circle ${isColorSelected(product.id, attr.id) ? 'selected' : ''}`}
+                        style={{ backgroundColor: attr.color_code }}
+                        onClick={(e) => handleColorSelect(e, product.id, attr.id)}
+                        aria-label={`Color ${i18n.language === 'uz' ? attr.color_name_uz : attr.color_name_ru}`}
+                      />
+                    ))}
+                  </div>
+                )}
+                <button
+                  className="add-to-cart-button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleAddToCart(product);
+                  }}
+                >
+                  {i18n.language === "uz" ? "Savatga qo'shish" : "Добавить в корзину"}
+                </button>
+              </div>
             </div>
-            <div className="product-details">
-              {product.name && <h3 className="product-brand">{product.name}</h3>}
-              {product.brandName && <p className="product-name">{product.brandName}</p>}
-              {product.price && (
-                <div className="price-container">
-                  <p className="product-old-price">{formatPrice(product.price)}</p>
-                  {product.new_price && (
-                    <p className="product-new-price">{formatPrice(product.new_price)} </p>
-                  )}
-                </div>
-              )}
-              <p className="product-availability">
-                {getAvailabilityText(product.product_attributes?.[0]?.quantity)}
-              </p>
-              {product.product_attributes?.length > 0 && (
-                <div className="color-variants">
-                  {product.product_attributes.map((attr:any) => (
-                    <button
-                      key={attr.id}
-                      className={`color-circle ${isColorSelected(product.id, attr.id) ? 'selected' : ''}`}
-                      style={{ backgroundColor: attr.color_code }}
-                      onClick={(e) => handleColorSelect(e, product.id, attr.id)}
-                      aria-label={`Color ${i18n.language === 'uz' ? attr.color_name_uz : attr.color_name_ru}`}
-                    />
-                  ))}
-                </div>
-              )}
-              <button
-                className="add-to-cart-button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleAddToCart(product);
-                }}
-              >
-                {i18n.language === "uz" ? "Savatga qo'shish" : "Добавить в корзину"}
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       {showConfirmation && (
         <ConfirmationModal
@@ -440,6 +448,16 @@ export default function SalesPage() {
 
         .color-circle:hover {
           transform: scale(1.1);
+        }
+
+        .no-products-message {
+          text-align: center;
+          padding: 40px;
+          font-size: 18px;
+          color: #666;
+          border-radius: 4px;
+          margin: 20px 0;
+          height:200px;
         }
       `}</style>
     </div>

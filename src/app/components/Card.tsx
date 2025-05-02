@@ -271,12 +271,12 @@ export default function CartPage() {
   // Update getAvailabilityText function
   const getAvailabilityText = (quantity: number | null) => {
     if (quantity === null) {
-      return i18n.language === "uz" ? "Oldindan buyurtma" : "Предзаказ";
+      return i18n.language === "uz" ? " Oldindan buyurtman berish" : "Предзаказ";
     }
     if (quantity === 0) {
-      return i18n.language === "uz" ? "Sotilgan" : "Распродано";
+      return i18n.language === "uz" ? "Sotib bo'lingan" : "Распродано";
     }
-    return i18n.language === "uz" ? `Mavjud` : `Есть в наличии`;
+    return i18n.language === "uz" ? `Sotuvda bor (mavjud)` : `Есть в наличии`;
   };
 
   const isColorSelected = (productId: number, attributeId: number) => {
