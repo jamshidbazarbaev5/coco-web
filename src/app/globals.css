@@ -1,5 +1,5 @@
 :root {
-  --cream: #f8f7f2;
+  --cream: #FCF9EA;
   --dark-text: #333333;
   --gold: #c9aa71;
   --light-gold: #d9bc8b;
@@ -352,7 +352,7 @@ body {
 .category-section {
   padding-top: 60px;
   padding-bottom: 60px;
-  background-color: rgba(246, 245, 237, 1);
+  background-color: #FCF9EA;
   overflow: hidden;
 }
 
@@ -513,6 +513,7 @@ body {
   max-width: var(--container-width);
   width: 100%;
   margin: 0 auto;
+  background: #fcf9ea;
   padding: 20px;
 }
 

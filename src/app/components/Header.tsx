@@ -131,10 +131,11 @@ export default function Header() {
           <div className="logo">
             <Link href={`/${i18n.language}`}>
               <Image 
-                src="/logo-3.svg" 
+                src="/coco_header_1_1.png"
                 alt="logo" 
-                width={isMobile ? 140 : 180} 
-                height={isMobile ? 140 : 180} 
+                width={isMobile ? 100 : 150} 
+                height={isMobile ? 70 : 80} 
+                unoptimized={true}
               />
             </Link>
           </div>

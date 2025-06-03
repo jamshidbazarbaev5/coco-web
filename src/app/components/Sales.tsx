@@ -286,6 +286,7 @@ export default function SalesPage() {
           max-width: 1422px;
           margin: 0 auto;
           padding: 20px;
+          background: #fcf9ea;
         }
 
         .catalog-title {

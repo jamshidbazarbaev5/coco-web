@@ -6,10 +6,21 @@ import { useRouter, useParams } from "next/navigation";
 import ConfirmationModal from "../../../components/ConfirmationModal";
 import { useTranslation } from "react-i18next";
 import { IoChevronBackOutline, IoChevronForwardOutline } from "react-icons/io5";
+interface AttributeSize {
+  height: string;
+  length: string;
+  width: string;
+  size_detail: {
+    id: number;
+    name_uz: string;
+    name_ru: string;
+  };
+}
+
 interface ProductAttribute {
   id: number;
   color_code: string;
-  sizes: number[];
+  attribute_sizes: AttributeSize[];
   color_name_ru: string;
   color_name_uz: string;
   price: string;
@@ -127,8 +138,8 @@ export default function ProductPage() {
         if (productData.product_attributes.length > 0) {
           setSelectedColor(productData.product_attributes[0].color_code);
           // Set the first available size as selected
-          if (productData.product_attributes[0].sizes.length > 0) {
-            setSelectedSize(productData.product_attributes[0].sizes[0]);
+          if (productData.product_attributes[0].attribute_sizes.length > 0) {
+            setSelectedSize(productData.product_attributes[0].attribute_sizes[0].size_detail.id);
           }
         }
 
@@ -423,12 +434,13 @@ export default function ProductPage() {
           <div className="size-section">
             <p className="size-title">{t("product_details.sizes")}</p>
             <div className="size-options">
-              {product?.product_attributes[selectedColorIndex]?.sizes.map(
-                (sizeId) => {
-                  const size = sizes.find((s) => s.id === sizeId);
-                  if (!size) return null;
+              {product?.product_attributes[selectedColorIndex]?.attribute_sizes.map(
+                (attrSize) => {
+                  const sizeId = attrSize.size_detail.id;
                   const sizeName =
-                    params.lang === "uz" ? size.name_uz : size.name_ru;
+                    params.lang === "uz" 
+                      ? attrSize.size_detail.name_uz 
+                      : attrSize.size_detail.name_ru;
                   return (
                     <button
                       key={sizeId}
@@ -478,12 +490,11 @@ export default function ProductPage() {
                     {t("product_details.table.sizes")}
                   </td>
                   <td className="info-value">
-                    {product?.product_attributes[selectedColorIndex]?.sizes
-                      .map((sizeId) => {
-                        const size = sizes.find((s) => s.id === sizeId);
+                    {product?.product_attributes[selectedColorIndex]?.attribute_sizes
+                      .map((attrSize) => {
                         return params.lang === "uz"
-                          ? size?.name_uz
-                          : size?.name_ru;
+                          ? attrSize.size_detail.name_uz
+                          : attrSize.size_detail.name_ru;
                       })
                       .filter(Boolean)
                       .join(", ") || t("product_details.no_sizes")}
@@ -503,24 +514,24 @@ export default function ProductPage() {
                       </td>
                       <td className="info-value">
                         {(() => {
-                          const size = sizes.find((s) => s.id === selectedSize);
-                          if (!size) return null;
+                          const attrSize = product.product_attributes[selectedColorIndex]
+                            ?.attribute_sizes.find(
+                              as => as.size_detail.id === selectedSize
+                            );
+                          if (!attrSize) return null;
                           const unit = params.lang === "ru" ? "см" : "sm";
                           return (
                             <div className="dimensions-row">
                               <span>
-                                {t("product_details.table.length")}:{" "}
-                                {size.length} {unit}
+                                {t("product_details.table.length")}: {attrSize.length} {unit}
                               </span>
                               <span> × </span>
                               <span>
-                                {t("product_details.table.width")}: {size.width}{" "}
-                                {unit}
+                                {t("product_details.table.width")}: {attrSize.width} {unit}
                               </span>
                               <span> × </span>
                               <span>
-                                {t("product_details.table.height")}:{" "}
-                                {size.height} {unit}
+                                {t("product_details.table.height")}: {attrSize.height} {unit}
                               </span>
                             </div>
                           );
@@ -560,6 +571,7 @@ export default function ProductPage() {
           max-width: 1422px;
           margin: 0 auto;
           padding: 70px 20px;
+          background: #fcf9ea;
           gap: 40px;
           justify-content: center;
         }

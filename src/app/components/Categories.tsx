@@ -120,9 +120,70 @@ export default function CatalogPage() {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [nextProductsPage, setNextProductsPage] = useState<string | null>(null);
 
+  // Add new state for storing loaded pages
+  const [loadedPages, setLoadedPages] = useState(1);
+  const [filters, setFilters] = useState<Filters>({
+    title_ru__icontains: "",
+    title_uz__icontains: "",
+    price__lt: "",
+    price__gt: "",
+    brand: "",
+    color: "",
+    size: "",
+    category: "",
+  });
+
+  const [currentFilterData, setCurrentFilterData] = useState({
+    searchQuery: "",
+    selectedBrands: [] as { id: number; name: string }[],
+    selectedSizes: [] as Size[],
+    selectedColors: [] as string[],
+    selectedCategory: null as Category | null,
+    priceRange: { min: "0", max: "1000000" },
+  });
+
   const router = useRouter();
 
- ;
+  const STORAGE_KEY_PREFIX = 'categoryPage_';
+  const CACHE_EXPIRY_TIME = 60 * 60 * 1000; // 1 hour in milliseconds
+
+  // Utility functions for cache management
+  const getStorageKey = () => {
+    const currentUrl = window.location.pathname + window.location.search;
+    return `${STORAGE_KEY_PREFIX}${currentUrl}`;
+  };
+
+  const saveToCache = (data: any) => {
+    const storageKey = getStorageKey();
+    const cacheData = {
+      timestamp: Date.now(),
+      data: data
+    };
+    localStorage.setItem(storageKey, JSON.stringify(cacheData));
+  };
+
+  const loadFromCache = () => {
+    const storageKey = getStorageKey();
+    const cachedData = localStorage.getItem(storageKey);
+    
+    if (!cachedData) return null;
+
+    const { timestamp, data } = JSON.parse(cachedData);
+    
+    // Check if cache has expired
+    if (Date.now() - timestamp > CACHE_EXPIRY_TIME) {
+      localStorage.removeItem(storageKey);
+      return null;
+    }
+
+    return data;
+  };
+
+  const clearCache = () => {
+    Object.keys(localStorage)
+      .filter(key => key.startsWith(STORAGE_KEY_PREFIX))
+      .forEach(key => localStorage.removeItem(key));
+  };
 
   const getCatalogTitle = () => {
     return i18n.language === "uz" ? "Bizning katalog" : "Наш каталог";
@@ -145,6 +206,21 @@ export default function CatalogPage() {
     return i18n.language === "uz" ? ` Sotuvda bor (mavjud)` : `Есть в наличии`;
   };
 
+  // Utility functions
+  const getNoResultsMessage = () => {
+    return i18n.language === "uz" ? "Hech qanday mahsulot topilmadi" : "Товары не найдены";
+  };
+
+  const getNoResultsDescription = () => {
+    return i18n.language === "uz"
+      ? "Boshqa parametrlar bilan qidirishga harakat qiling"
+      : "Попробуйте поиск с другими параметрами";
+  };
+
+  const getClearText = () => {
+    return i18n.language === "uz" ? "Filtrni tozalash" : "Очистить фильтр";
+  };
+
   const getAllFilterText = () => {
     return i18n.language === "uz" ? "Hammasi" : "Все";
   };
@@ -153,70 +229,51 @@ export default function CatalogPage() {
     return i18n.language === "uz" ? category.name_uz : category.name_ru;
   };
 
-  const formatPrice = (price: string) => {
-    const numPrice = Number(price.replace(/[^\d.]/g, ""));
-
-    const formattedPrice = Math.floor(numPrice)
-      .toString()
-      .replace(/\B(?=(\d{3})+(?!\d))/g, " ");
-
-    return `${formattedPrice} uzs`;
+  // Add helper functions for price formatting
+  const formatPrice = (price: string | number) => {
+    // Remove any non-digit characters and convert to string
+    const numStr = price.toString().replace(/\D/g, '');
+    
+    // Split into groups of 3 from the right and join with spaces
+    const formattedNum = numStr.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    
+    // Return formatted price with 'uzs' suffix
+    return `${formattedNum} uzs`;
   };
 
-  const [filters, setFilters] = useState({
-    title_ru__icontains: "",
-    title_uz__icontains: "",
-    price__lt: "",
-    price__gt: "",
-    brand: "",
-    color: "",
-    size: "",
-    category: "",
-  });
-
-  const [currentFilterData, setCurrentFilterData] = useState({
-    searchQuery: "",
-    selectedBrands: [] as { id: number; name: string }[],
-    selectedSizes: [] as Size[],
-    selectedColors: [] as string[],
-    selectedCategory: null as Category | null,
-    priceRange: { min: "0", max: "1000000" },
-  });
-
-  const getActiveFiltersText = () => {
-    return i18n.language === "uz" ? "Faol filtrlar:" : "Активные фильтры:";
+  const unformatPrice = (formattedPrice: string | number) => {
+    // Remove all spaces and non-digit characters
+    return formattedPrice.toString().replace(/\s/g, '').replace(/\D/g, '');
   };
 
-  const getClearText = () => {
-    return i18n.language === "uz" ? "Tozalash" : "Очистить";
-  };
-
-  const ActiveFilters = () => {
-    const activeFilters = getActiveFiltersDisplay();
-
-    if (activeFilters.length === 0) {
-      return null;
+  const [currentFilterDataLocal, setCurrentFilterDataLocal] = useState(() => {
+    const storedData = sessionStorage.getItem(getStorageKey());
+    if (storedData) {
+      const parsedData = JSON.parse(storedData);
+      const now = new Date().getTime();
+      
+      // Check if the cached data is still valid
+      if (now - parsedData.timestamp < CACHE_EXPIRY_TIME) {
+        return {
+          ...parsedData.filters,
+          selectedBrands: parsedData.filters.brand ? [{ id: Number(parsedData.filters.brand), name: "" }] : [],
+          selectedSizes: parsedData.filters.size ? [{ id: Number(parsedData.filters.size), name_uz: "", name_ru: "" }] : [],
+          selectedColors: parsedData.filters.color ? [parsedData.filters.color] : [],
+          selectedCategory: null,
+          priceRange: { min: parsedData.filters.price__gt || "0", max: parsedData.filters.price__lt || "1000000" },
+        };
+      }
     }
 
-    return (
-      <div className="active-filters">
-        <span>{getActiveFiltersText()}</span>
-
-        {activeFilters.map((filter, index) => (
-          <span key={`${filter.type}-${index}`} className="filter-tag">
-            {filter.type === "color" ? t(`${filter.label}`) : filter.label}
-            <button className="remove-filter" onClick={() => removeFilter(filter.type)}>
-              ×
-            </button>
-          </span>
-        ))}
-
-        <button className="clear-filters" onClick={clearAllFilters}>
-          {getClearText()}
-        </button>
-      </div>
-    );
-  };
+    return {
+      searchQuery: "",
+      selectedBrands: [] as { id: number; name: string }[],
+      selectedSizes: [] as Size[],
+      selectedColors: [] as string[],
+      selectedCategory: null as Category | null,
+      priceRange: { min: "0", max: "1000000" },
+    };
+  });
 
   useEffect(() => {
     const fetchData = async () => {
@@ -341,8 +398,33 @@ export default function CatalogPage() {
     return allCategories;
   };
 
+  // Modify the fetchProducts function
   const fetchProducts = async (currentFilters: Filters) => {
     try {
+      const storageKey = getStorageKey();
+      const cachedData = localStorage.getItem(storageKey);
+      
+      if (cachedData) {
+        const { data, timestamp } = JSON.parse(cachedData);
+        
+        // Check if cache is still valid
+        if (Date.now() - timestamp < CACHE_EXPIRY_TIME) {
+          setProducts(data.products);
+          setNextProductsPage(data.nextPage);
+          setLoadedPages(data.loadedPages);
+          setLoading(false);
+          
+          // Restore scroll position
+          setTimeout(() => {
+            window.scrollTo(0, data.scrollPosition || 0);
+          }, 100);
+          
+          return;
+        } else {
+          localStorage.removeItem(storageKey);
+        }
+      }
+
       let queryParams = new URLSearchParams();
       Object.entries(currentFilters).forEach(([key, value]) => {
         if (value) {
@@ -355,10 +437,10 @@ export default function CatalogPage() {
       const productsData = await productsResponse.json();
 
       setNextProductsPage(productsData.next);
+      setLoadedPages(1);
 
       const formattedProducts = productsData.results.map((product: Product) => {
         const firstAvailableVariant = product.product_attributes[0] || {};
-        
         return {
           id: product.id,
           brand: product.brand_details.id,
@@ -377,8 +459,23 @@ export default function CatalogPage() {
       });
 
       setProducts(formattedProducts);
+
+      // Save to cache with timestamp
+      localStorage.setItem(storageKey, JSON.stringify({
+        timestamp: Date.now(),
+        data: {
+          products: formattedProducts,
+          nextPage: productsData.next,
+          loadedPages: 1,
+          filters: currentFilters,
+          scrollPosition: 0
+        }
+      }));
+
+      setLoading(false);
     } catch (error) {
       console.error("Error fetching products:", error);
+      setLoading(false)
     }
   };
 
@@ -444,6 +541,7 @@ export default function CatalogPage() {
     fetchProducts(filters).finally(() => setLoading(false));
   }, [filters, i18n.language]);
 
+  // Modify the loadMoreProducts function 
   const loadMoreProducts = async () => {
     if (!nextProductsPage || isLoadingMore) return;
 
@@ -453,33 +551,99 @@ export default function CatalogPage() {
       const response = await fetch(nextProductsPage);
       const data = await response.json();
 
-      setNextProductsPage(data.next);
-
-      const newProducts: Product[] = data.results.map((product: Product) => {
-        const firstVariant = product.product_attributes[0] || {};
+      const newProducts = data.results.map((product: Product) => {
+        const firstAvailableVariant = product.product_attributes[0] || {};
         return {
           id: product.id,
           brand: product.brand_details.id,
           brandName: product.brand_details.name,
           name: i18n.language === "uz" ? product.title_uz : product.title_ru,
           description: i18n.language === "uz" ? product.description_uz : product.description_ru,
-          price: formatPrice(firstVariant.price || "0"),
-          availability: getAvailabilityText(firstVariant.quantity),
-          image: firstVariant.image || null,
-          on_sale: firstVariant.on_sale || false,
-          new_price: firstVariant.new_price,
-          product_variant: firstVariant.id,
-          sizes: firstVariant.sizes,
+          price: formatPrice(firstAvailableVariant.price || "0"),
+          availability: getAvailabilityText(firstAvailableVariant.quantity),
+          image: firstAvailableVariant.attribute_images?.[0]?.image || "/placeholder.svg",
+          on_sale: firstAvailableVariant.on_sale || false,
+          new_price: firstAvailableVariant.new_price,
+          product_variant: firstAvailableVariant.id,
+          sizes: firstAvailableVariant.sizes || [],
+          product_attributes: product.product_attributes || []
         };
       });
 
-      setProducts((prevProducts:any) => [...prevProducts, ...newProducts]);
+      const updatedProducts = [...products, ...newProducts];
+      setProducts(updatedProducts);
+      setNextProductsPage(data.next);
+      const newLoadedPages = loadedPages + 1;
+      setLoadedPages(newLoadedPages);
+
+      // Save complete state to cache
+      const currentState = {
+        products: updatedProducts,
+        nextPage: data.next,
+        loadedPages: newLoadedPages,
+        filters,
+        scrollPosition: window.scrollY || 0
+      };
+
+      // Update both localStorage and sessionStorage
+      saveToCache(currentState);
+      const currentUrl = window.location.pathname + window.location.search;
+      sessionStorage.setItem(`categoryState_${currentUrl}`, JSON.stringify(currentState));
+
     } catch (error) {
       console.error("Error loading more products:", error);
     } finally {
       setIsLoadingMore(false);
     }
   };
+
+  // Add useEffect to restore state on component mount
+  useEffect(() => {
+    const currentUrl = window.location.pathname + window.location.search;
+    const savedSessionState = sessionStorage.getItem(`categoryState_${currentUrl}`);
+    const savedLocalState = loadFromCache();
+    
+    let stateToRestore = null;
+
+    // Check which state is more recent if both exist
+    if (savedSessionState && savedLocalState) {
+      const sessionState = JSON.parse(savedSessionState);
+      if (sessionState.loadedPages > savedLocalState.loadedPages) {
+        stateToRestore = sessionState;
+      } else {
+        stateToRestore = savedLocalState;
+      }
+    } else {
+      stateToRestore = savedSessionState ? JSON.parse(savedSessionState) : savedLocalState;
+    }
+
+    if (stateToRestore && JSON.stringify(stateToRestore.filters) === JSON.stringify(filters)) {
+      setProducts(stateToRestore.products);
+      setNextProductsPage(stateToRestore.nextPage);
+      setLoadedPages(stateToRestore.loadedPages);
+      setLoading(false);
+        
+      // Restore scroll position after a short delay
+      setTimeout(() => {
+        window.scrollTo(0, stateToRestore.scrollPosition || 0);
+      }, 100);
+    }
+  }, [filters]);
+
+  // Add new state for scroll position
+  const [savedScrollPosition, setSavedScrollPosition] = useState(0);
+
+  // Add scroll position saving
+  useEffect(() => {
+    const handleScroll = () => {
+      if (!loading && !isLoadingMore) {
+        setSavedScrollPosition(window.scrollY);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [loading, isLoadingMore]);
 
   const [showConfirmation, setShowConfirmation] = useState(false);
 
@@ -633,6 +797,83 @@ export default function CatalogPage() {
     updateURL(newFilters);
   };
 
+  // Active filters display component
+  const ActiveFilters = () => {
+    const activeFilters = [];
+
+    if (currentFilterData.searchQuery) {
+      activeFilters.push({
+        type: "search",
+        label: currentFilterData.searchQuery
+      });
+    }
+
+    if (currentFilterData.selectedBrands.length > 0) {
+      activeFilters.push({
+        type: "brand",
+        label: currentFilterData.selectedBrands.map(b => b.name).join(", ")
+      });
+    }
+
+    if (currentFilterData.selectedSizes.length > 0) {
+      activeFilters.push({
+        type: "size",
+        label: currentFilterData.selectedSizes.map(s => 
+          i18n.language === "uz" ? s.name_uz : s.name_ru
+        ).join(", ")
+      });
+    }
+
+    if (currentFilterData.selectedColors.length > 0) {
+      activeFilters.push({
+        type: "color",
+        label: currentFilterData.selectedColors.join(", ")
+      });
+    }
+
+    if (
+      currentFilterData.priceRange.min !== "0" ||
+      currentFilterData.priceRange.max !== "1000000"
+    ) {
+      activeFilters.push({
+        type: "price",
+        label: `${formatPrice(currentFilterData.priceRange.min)} - ${formatPrice(currentFilterData.priceRange.max)}`
+      });
+    }
+
+    if (currentFilterData.selectedCategory) {
+      activeFilters.push({
+        type: "category",
+        label: i18n.language === "uz" 
+          ? currentFilterData.selectedCategory.name_uz 
+          : currentFilterData.selectedCategory.name_ru
+      });
+    }
+
+    if (activeFilters.length === 0) return null;
+
+    return (
+      <div className="active-filters">
+        {activeFilters.map((filter, index) => (
+          <div key={index} className="filter-tag">
+            <span>{filter.label}</span>
+            <button
+              className="remove-filter"
+              onClick={() => removeFilter(filter.type)}
+            >
+              ×
+            </button>
+          </div>
+        ))}
+        {activeFilters.length > 1 && (
+          <button className="clear-filters" onClick={clearAllFilters}>
+            {i18n.language === "uz" ? "Hammasi o'chirish" : "Очистить все"}
+          </button>
+        )}
+      </div>
+    );
+  };
+
   const getActiveFiltersDisplay = () => {
     const activeFilters = [];
 
@@ -781,16 +1022,6 @@ export default function CatalogPage() {
       : `/${i18n.language}/categories`;
 
     router.push(newPath);
-  };
-
-  const getNoResultsMessage = () => {
-    return i18n.language === "uz" ? "Hech qanday mahsulot topilmadi" : "Товары не найдены";
-  };
-
-  const getNoResultsDescription = () => {
-    return i18n.language === "uz"
-      ? "Boshqa parametrlar bilan qidirishga harakat qiling"
-      : "Попробуйте поиск с другими параметрами";
   };
 
   const [showFloatingCart, setShowFloatingCart] = useState(false);
@@ -956,7 +1187,7 @@ export default function CatalogPage() {
                           {console.log('Before mapping attributes:', product.product_attributes)}
                           {product.product_attributes.map((attr:any) => {
                             console.log('Processing attribute:', attr);
-                            return (
+                        return (
                               <button
                                 key={attr.id}
                                 className={`color-circle ${selectedColors[product.id] === attr.id ? 'selected' : ''}`}
@@ -1107,6 +1338,7 @@ export default function CatalogPage() {
           max-width: 1422px;
           margin: 0 auto;
           padding: 20px;
+          background: #fcf9ea;
         }
 
         .catalog-title {
