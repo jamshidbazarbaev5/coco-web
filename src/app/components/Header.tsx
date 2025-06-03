@@ -128,13 +128,21 @@ export default function Header() {
               </li>
             </ul>
           </nav>
-          <div className="logo">
-            <Link href={`/${i18n.language}`}>
-              <Image 
-                src="/coco_header_1_1.png"
+          <div className="logo" style={{display: 'flex', alignItems: 'center',margin: '0 auto'}}>
+            <Link href={`/${i18n.language}`} style={{display: 'flex', alignItems: 'center',margin: '0 auto'}}>
+            <Image 
+                src="/coco_header_1_6.png"
                 alt="logo" 
-                width={isMobile ? 100 : 150} 
-                height={isMobile ? 40 : 60} 
+                width={isMobile ? 55 : 100} 
+                height={isMobile ? 30 : 60} 
+                unoptimized={true}
+                style={{marginRight: '-12px'}}
+              />
+              <Image 
+                src="/coco_header_1_5.png"
+                alt="logo" 
+                width={isMobile ? 90 : 150} 
+                height={isMobile ? 30 : 60} 
                 unoptimized={true}
               />
             </Link>
