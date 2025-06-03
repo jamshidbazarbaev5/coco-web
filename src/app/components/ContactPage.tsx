@@ -148,7 +148,7 @@ const cartConfirmationMessage = {
       <div className={styles.container}>
 
         <div className={styles.emptyDiv}>  <div className={styles.brandSection}>
-          <Image src="/coco_green_1_1.png" alt="COCO" width={200} height={100} unoptimized={true} />
+          <Image src="/coco_green_1_1.png" alt="COCO" width={150} height={70} unoptimized={true} />
           <p className={styles.brandTagline}>
             {t('contact_page.brand_tagline')}
           </p>
