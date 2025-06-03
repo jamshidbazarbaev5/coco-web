@@ -134,7 +134,7 @@ export default function Header() {
                 src="/coco_header_1_1.png"
                 alt="logo" 
                 width={isMobile ? 100 : 150} 
-                height={isMobile ? 70 : 50} 
+                height={isMobile ? 40 : 60} 
                 unoptimized={true}
               />
             </Link>
